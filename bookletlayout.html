@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booklet Print Order Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .page-pair {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            /* Use a flexible layout for the page numbers */
+            gap: 10px;
+        }
+        .page-number {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #1f2937;
+            padding: 4px 12px;
+            border-radius: 6px;
+            background-color: #e5e7eb;
+            display: inline-block; /* Ensure they stay on one line for flex */
+        }
+        .blank-page {
+            color: #dc2626;
+        }
+        /* Custom styles for the cover labels */
+        .page-label-container {
+            text-align: center;
+            line-height: 1;
+        }
+        .page-label {
+            display: block;
+            font-size: 0.75rem; /* text-xs */
+            color: #6b7280; /* text-gray-500 */
+            margin-top: 2px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 sm:p-8 font-sans">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10 border border-gray-200">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-2">Booklet Assembly Calculator</h1>
+        <p class="text-gray-600 mb-6">Enter the number of pages in your content. This tool calculates the print order for double-sided US letter paper, folded in half (saddle-stitched).</p>
+
+        <!-- Input Section -->
+        <div class="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+            <label for="pageCount" class="block text-xl font-semibold text-blue-800 mb-2">
+                Number of Content Pages (e.g., 15)
+            </label>
+            <input type="number" id="pageCount" value="16" min="1" class="w-full p-3 border-2 border-blue-400 rounded-lg text-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" placeholder="Enter number of pages (e.g., 16)">
+            
+            <button onclick="calculateBookletOrder()" class="mt-4 w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300">
+                Calculate Print Order
+            </button>
+        </div>
+
+        <!-- Results Display -->
+        <div id="results" class="space-y-6">
+            <!-- Summary -->
+            <div id="summary" class="hidden p-4 bg-green-100 rounded-lg border border-green-300"></div>
+
+            <!-- Sequential Print Order -->
+            <div id="sequentialOrderContainer" class="hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-3">Sequential Document Order</h2>
+                <p class="text-sm text-gray-600 mb-2">This is the exact page sequence you need to use in your document software (like Word or exporting a custom PDF).</p>
+                <div id="sequentialOrder" class="p-4 bg-gray-100 rounded-lg overflow-x-auto text-sm font-mono text-gray-800 whitespace-nowrap"></div>
+            </div>
+
+            <!-- Sheet-by-Sheet Breakdown -->
+            <div id="sheetBreakdownContainer" class="hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-3">Sheet-by-Sheet Print Guide</h2>
+                <div id="sheetBreakdown" class="space-y-4"></div>
+            </div>
+
+            <!-- Word/Document Instructions -->
+            <div id="instructions" class="hidden mt-8 p-6 bg-yellow-50 rounded-lg border border-yellow-300">
+                <h2 class="text-xl font-bold text-yellow-800 mb-3">How to Use This Order in Your Document:</h2>
+                <ol class="list-decimal list-inside space-y-3 text-gray-700">
+                    <li><strong class="text-yellow-900">Final Page Count:</strong> Your document *must* have the <span id="finalPageCountInst" class="font-bold underline"></span> pages determined above (including any required blank pages).</li>
+                    <li><strong class="text-yellow-900">Arrangement:</strong> In your document editor (Word, Google Docs, etc.), ensure your pages are arranged exactly in the <span class="font-bold italic">Sequential Document Order</span> calculated above.</li>
+                    <li><strong class="text-yellow-900">Printing:</strong> Print the document using a double-sided printer.
+                        <ul class="list-disc list-inside ml-5 mt-1 text-sm">
+                            <li>Set the printer to <strong class="font-semibold">"Flip on Short Edge"</strong> (this is crucial for folding correctly).</li>
+                            <li>Print all pages at once.</li>
+                        </ul>
+                    </li>
+                    <li><strong class="text-yellow-900">Assemble:</strong> Stack the printed sheets in order, fold them down the middle, and staple along the fold. You now have a perfect booklet!</li>
+                </ol>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Utility function to handle exponential backoff for API calls (though not strictly needed here, it's good practice)
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response;
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    const delay = Math.pow(2, i) * 1000;
+                    console.warn(`Request failed, retrying in ${delay / 1000}s...`, error);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        /**
+         * Calculates the correct printing order for a saddle-stitched booklet.
+         */
+        function calculateBookletOrder() {
+            const pageInput = document.getElementById('pageCount');
+            const P = parseInt(pageInput.value);
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.getElementById('summary');
+            const sequentialOrderDiv = document.getElementById('sequentialOrder');
+            const sheetBreakdownDiv = document.getElementById('sheetBreakdown');
+            const instructionsDiv = document.getElementById('instructions');
+            const finalPageCountInstSpan = document.getElementById('finalPageCountInst');
+
+            // Reset visibility
+            summaryDiv.classList.add('hidden');
+            document.getElementById('sequentialOrderContainer').classList.add('hidden');
+            document.getElementById('sheetBreakdownContainer').classList.add('hidden');
+            instructionsDiv.classList.add('hidden');
+            
+            // Basic validation
+            if (isNaN(P) || P <= 0) {
+                // Using console.error instead of alert per instructions
+                console.error("Please enter a valid number of pages greater than 0.");
+                // For user feedback, you might update a small message area instead of alert.
+                return;
+            }
+
+            // 1. Calculate the required total pages (N), must be a multiple of 4
+            // N = P + (4 - (P % 4)) % 4 
+            const N = P + (4 - (P % 4)) % 4; 
+            const blankPages = N - P;
+            const sheets = N / 4;
+
+            // Update Summary
+            summaryDiv.innerHTML = `
+                <p class="text-lg font-bold text-green-900">Calculation Complete!</p>
+                <p>Your content has <span class="font-bold">${P}</span> pages. The booklet requires <span class="font-bold">${N}</span> total pages (a multiple of 4).</p>
+                ${blankPages > 0 ? `<p class="text-red-700 font-semibold">You need to add <span class="font-bold">${blankPages}</span> blank page(s) at the end (pages ${P + 1} to ${N}).</p>` : ''}
+                <p>This will result in <span class="font-bold">${sheets}</span> double-sided sheets.</p>
+                <p class="mt-2 text-md text-green-800"><strong class="underline">Covers Note:</strong> Your document's page <span class="font-extrabold text-yellow-800">1</span> will be the <span class="font-extrabold text-yellow-800">Front Cover</span>. Your document's final page, <span class="font-extrabold text-yellow-800">${N}</span>, will be the <span class="font-extrabold text-yellow-800">Back Cover</span> position.</p>
+            `;
+            summaryDiv.classList.remove('hidden');
+
+            // 2. Generate the page order
+            let i = 1; // Front page counter
+            let j = N; // Back page counter
+            let sequentialPrintOrder = [];
+            let sheetBreakdownHTML = '';
+
+            // Helper function for labels in breakdown
+            const getLabel = (pageNum) => {
+                if (pageNum === 1) return 'Front Cover';
+                if (pageNum === N) return 'Back Cover';
+                if (pageNum === 2) return 'Inside Front Cover';
+                if (pageNum > P) return 'Required Blank Page';
+                return 'Content Page';
+            };
+
+            const getBgClass = (pageNum) => {
+                if (pageNum === 1 || pageNum === N) return 'bg-yellow-200 text-yellow-900';
+                if (pageNum > P) return 'blank-page bg-red-100';
+                return 'bg-indigo-200';
+            }
+
+            for (let k = 1; k <= sheets; k++) {
+                // Sheet k pairings:
+                // Side 1 (Paper back, visible when sheet is unfolded): (j, i)
+                // Side 2 (Paper front, visible when sheet is unfolded): (i+1, j-1)
+
+                // Pages for Side 1 (When stacked and folded, these are the OUTERMOST pages)
+                sequentialPrintOrder.push(j, i);
+
+                // Pages for Side 2 (When stacked and folded, these are the INNERMOST pages)
+                sequentialPrintOrder.push(i + 1, j - 1);
+                
+                // HTML for Sheet Breakdown
+                sheetBreakdownHTML += `
+                    <div class="p-4 rounded-xl bg-white shadow-lg border border-gray-100">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Sheet ${k}</h3>
+                        <div class="space-y-2">
+                            <div class="page-pair bg-indigo-50 border-l-4 border-indigo-500">
+                                <span class="font-medium text-indigo-800">Side 1 (Outermost Pages when folded):</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="page-label-container text-right">
+                                        <span class="page-number ${getBgClass(j)}">${j}</span>
+                                        <span class="page-label">${getLabel(j)}</span>
+                                    </div>
+                                    <span class="text-indigo-700 font-extrabold text-xl">&harr;</span>
+                                    <div class="page-label-container text-left">
+                                        <span class="page-number ${getBgClass(i)}">${i}</span>
+                                        <span class="page-label">${getLabel(i)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="page-pair bg-purple-50 border-l-4 border-purple-500">
+                                <span class="font-medium text-purple-800">Side 2 (Innermost Pages when folded):</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="page-label-container text-right">
+                                        <span class="page-number ${getBgClass(i + 1)}">${i + 1}</span>
+                                        <span class="page-label">${getLabel(i + 1)}</span>
+                                    </div>
+                                    <span class="text-purple-700 font-extrabold text-xl">&harr;</span>
+                                    <div class="page-label-container text-left">
+                                        <span class="page-number ${getBgClass(j - 1)}">${j - 1}</span>
+                                        <span class="page-label">${getLabel(j - 1)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Move to the next set of inner pages
+                i += 2;
+                j -= 2;
+                
+                // If the pages cross over, we're done (e.g., 5, 4 for N=8)
+                if (i >= j) break; 
+            }
+            
+            // 3. Display Results
+            
+            // Sequential Order
+            sequentialOrderDiv.textContent = sequentialPrintOrder.join(', ');
+            document.getElementById('sequentialOrderContainer').classList.remove('hidden');
+
+            // Sheet Breakdown
+            sheetBreakdownDiv.innerHTML = sheetBreakdownHTML;
+            document.getElementById('sheetBreakdownContainer').classList.remove('hidden');
+
+            // Instructions
+            finalPageCountInstSpan.textContent = N;
+            instructionsDiv.classList.remove('hidden');
+
+            // Scroll to results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Run calculation on load with the default value
+        window.onload = function() {
+            calculateBookletOrder();
+        };
+
+    </script>
+</body>
+</html>
