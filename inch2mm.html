@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Dimensional Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .converter-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+            appearance: none;
+            background-color: white;
+        }
+        .precision-group {
+            margin-top: -10px;
+            margin-bottom: 25px;
+        }
+        .precision-label {
+            display: flex;
+            align-items: center;
+        }
+        .indicator {
+            margin-left: 8px;
+            font-size: 0.8em;
+            color: #555;
+            padding: 2px 5px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .note {
+            margin-top: 20px;
+            padding: 10px;
+            border-left: 3px solid #0056b3;
+            background-color: #e6f0ff;
+            font-size: 0.9em;
+        }
+        .copied {
+            background-color: #d4edda !important;
+            border-color: #c3e6cb !important;
+            transition: background-color 0s;
+        }
+        #roundedOutput { 
+            background-color: #e0e0e0;
+            color: #333;
+            font-weight: bold;
+        }
+        #message-area {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            background-color: #ffdddd;
+            color: #555;
+            border: 1px solid #fcc;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
+        .show {
+            opacity: 1 !important;
+        }
+        /* Style for radio button group */
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 5px;
+            font-weight: normal;
+            font-size: 0.95em;
+        }
+        .radio-group label {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="converter-container">
+        <div id="message-area"></div>
+        
+        <h1>📐 Dimensional Converter</h1>
+
+        <div class="input-group">
+            <label>Metric Value</label> 
+            
+            <div class="radio-group" onchange="convertFromMetric(mmInput.value)">
+                <label>
+                    <input type="radio" name="metricUnit" value="mm" checked> mm
+                </label>
+                <label>
+                    <input type="radio" name="metricUnit" value="cm"> cm
+                </label>
+                <label>
+                    <input type="radio" name="metricUnit" value="m"> m
+                </label>
+            </div>
+            
+            <div class="input-wrapper">
+                <input type="text" id="mmInput" placeholder="Enter metric value" oninput="convertFromMetric(this.value)">
+                <button onclick="copyToClipboard('mmInput')">Copy</button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="decimalInchInput">Decimal Inches (in)</label>
+            <div class="input-wrapper">
+                <input type="text" id="decimalInchInput" placeholder="Enter decimal inches" oninput="convertFromDecimalInch(this.value)">
+                <button onclick="copyToClipboard('decimalInchInput')">Copy</button>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="fractionalInput">Fractional Inches (Input Value, Unrounded)</label>
+            <div class="input-wrapper">
+                <input type="text" id="fractionalInput" 
+                       placeholder="e.g. 1 1/2 or 5/8" 
+                       onkeypress="handleFractionalKey(event)" 
+                       onblur="convertFromFractionalInch()">
+                <button onclick="copyToClipboard('fractionalInput')">Copy</button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Fractional Inches (Rounded Output)</label>
+            <div class="input-wrapper">
+                <input type="text" id="roundedOutput" readonly value="">
+                <button onclick="copyToClipboard('roundedOutput')">Copy</button>
+            </div>
+        </div>
+
+        <div class="input-group precision-group">
+            <label for="precisionSelect" class="precision-label">
+                Fractional Precision <span class="indicator">Controls output rounding</span>
+            </label>
+            <select id="precisionSelect" onchange="recalculateCurrentValues()">
+                <option value="128">1/128 (Fine)</option>
+                <option value="64" selected>1/64 (Standard)</option>
+                <option value="32">1/32</option>
+                <option value="16">1/16</option>
+                <option value="8">1/8 (Coarse)</option>
+            </select>
+        </div>
+        
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <div class="note">
+            **Tip:** Your last converted value is saved! Press **Enter** or **tab out** of the fractional box to convert.
+        </div>
+    </div>
+
+    <script>
+        // Key Conversion Factor
+        const MM_PER_INCH = 25.4;
+        
+        // DOM element references
+        const mmInput = document.getElementById('mmInput');
+        const decimalInchInput = document.getElementById('decimalInchInput');
+        const fractionalInput = document.getElementById('fractionalInput'); 
+        const roundedOutput = document.getElementById('roundedOutput');
+        const precisionSelect = document.getElementById('precisionSelect'); 
+        const messageArea = document.getElementById('message-area'); 
+
+        // --- Core Conversion Functions (GCD and Fractional Conversions remain the same) ---
+
+        function gcd(a, b) {
+            return b ? gcd(b, a % b) : a;
+        }
+
+        function getPrecisionDenominator() {
+            return parseInt(precisionSelect.value) || 64;
+        }
+
+        /**
+         * Determines the multiplier to convert the input value (mm, cm, or m) to mm.
+         */
+        function getSelectedMetricUnit() {
+            const unit = document.querySelector('input[name="metricUnit"]:checked').value;
+            switch(unit) {
+                case 'cm':
+                    return 10; // 1 cm = 10 mm
+                case 'm':
+                    return 1000; // 1 m = 1000 mm
+                case 'mm':
+                default:
+                    return 1; // 1 mm = 1 mm
+            }
+        }
+        
+        /**
+         * Converts decimal value back to a simplified fractional string (e.g., 0.5 -> 1/2).
+         * Used for the UNROUNDED display (fractionalInput).
+         */
+        function toFractionString(value) {
+            if (isNaN(value) || value === 0) return '0';
+            const absDecimal = Math.abs(value);
+            const sign = value < 0 ? '-' : '';
+            const tolerance = 1.0E-6;
+            
+            for (let d = 1; d <= 4096; d++) {
+                const n = Math.round(absDecimal * d);
+                if (Math.abs(absDecimal - n / d) < tolerance) {
+                    const whole = Math.floor(absDecimal);
+                    const decimalPart = absDecimal - whole;
+                    if (decimalPart < tolerance) return sign + whole.toString();
+                    
+                    let numerator = Math.round(decimalPart * d);
+                    let denominator = d;
+
+                    if (numerator === 0) return sign + whole.toString();
+                    const commonDivisor = gcd(numerator, denominator);
+                    numerator /= commonDivisor;
+                    denominator /= commonDivisor;
+
+                    const fraction = `${numerator}/${denominator}`;
+                    if (whole > 0) {
+                        return sign + `${whole} ${fraction}`;
+                    } else {
+                        return sign + fraction;
+                    }
+                }
+            }
+            return value.toFixed(8);
+        }
+
+        /**
+         * Converts decimal inches to a reduced fractional string based on user-selected precision.
+         * Used for the ROUNDED display (roundedOutput).
+         */
+        function toFractionalInches(decimalInches) {
+            const DENOMINATOR = getPrecisionDenominator();
+            if (isNaN(decimalInches) || decimalInches === 0) return '0';
+            const absDecimal = Math.abs(decimalInches);
+            const sign = decimalInches < 0 ? '-' : '';
+            const whole = Math.floor(absDecimal);
+            const decimalPart = absDecimal - whole;
+
+            let numerator = Math.round(decimalPart * DENOMINATOR);
+            let denominator = DENOMINATOR;
+
+            if (numerator >= denominator) return sign + (whole + 1).toString();
+            if (numerator === 0) return sign + whole.toString();
+
+            const commonDivisor = gcd(numerator, denominator);
+            numerator /= commonDivisor;
+            denominator /= commonDivisor;
+            
+            const fraction = `${numerator}/${denominator}`;
+            if (whole > 0) {
+                return sign + `${whole} ${fraction}`;
+            } else {
+                return sign + fraction;
+            }
+        }
+
+        /**
+         * Converts a fractional string to decimal inches.
+         */
+        function fromFractionalInches(fractionalString) {
+            const trimmed = fractionalString.trim();
+            if (!trimmed) return 0;
+            let input = trimmed.replace(/,/g, '.');
+            const sign = input.startsWith('-') ? -1 : 1;
+            input = input.replace(/-/g, '').trim(); 
+            
+            if (/^\d+(\.\d+)?$/.test(input)) {
+                const totalDecimal = parseFloat(input);
+                if (!isNaN(totalDecimal)) return sign * totalDecimal;
+            }
+            const simpleFractionMatch = /^(\d+)\/(\d+)$/.exec(input);
+            if (simpleFractionMatch) {
+                const num = parseInt(simpleFractionMatch[1]);
+                const den = parseInt(simpleFractionMatch[2]);
+                if (den !== 0) return sign * (num / den);
+            }
+            const mixedFractionMatch = /^(\d+)\s+(\d+)\/(\d+)$/.exec(input);
+            if (mixedFractionMatch) {
+                const wholePart = parseInt(mixedFractionMatch[1]);
+                const num = parseInt(mixedFractionMatch[2]);
+                const den = parseInt(mixedFractionMatch[3]);
+                if (den !== 0) return sign * (wholePart + (num / den));
+            }
+            return NaN;
+        }
+
+        // --- Message/Utility Functions ---
+        let messageTimeout;
+
+        function showMessage(text) {
+            clearTimeout(messageTimeout);
+            messageArea.innerHTML = text;
+            messageArea.classList.add('show');
+            messageTimeout = setTimeout(() => {
+                messageArea.classList.remove('show');
+            }, 3000);
+        }
+
+        function clearMessage() {
+            clearTimeout(messageTimeout);
+            messageArea.classList.remove('show');
+        }
+
+        // --- Conversion Handlers ---
+
+        function handleFractionalKey(event) {
+            if (event.key === 'Enter') {
+                convertFromFractionalInch();
+                event.preventDefault(); 
+            }
+        }
+
+        /**
+         * UPDATED: Handles conversion from selected metric unit (mm, cm, m).
+         */
+        function convertFromMetric(value) {
+            clearMessage();
+            if (value.trim() === '') {
+                clearAndClearStorage();
+                return;
+            }
+            const numericValue = parseFloat(value);
+            if (isNaN(numericValue)) {
+                 showMessage("Invalid input detected in Metric Value.");
+                 return;
+            }
+            
+            // 1. Convert input to millimeters (mm)
+            const multiplier = getSelectedMetricUnit();
+            const mmValue = numericValue * multiplier;
+
+            // 2. Convert mm to inches
+            const decimalInches = mmValue / MM_PER_INCH;
+            
+            // 3. Update outputs
+            decimalInchInput.value = decimalInches.toFixed(6);
+            fractionalInput.value = ''; // CLEAR PRIMARY FRACTIONAL INPUT
+            roundedOutput.value = toFractionalInches(decimalInches);
+            localStorage.setItem('lastDecimalValue', decimalInches);
+        }
+
+        function convertFromDecimalInch(decInches) {
+            clearMessage();
+            if (decInches.trim() === '') {
+                clearAndClearStorage();
+                return;
+            }
+            const decInchValue = parseFloat(decInches);
+            if (isNaN(decInchValue)) {
+                showMessage("Invalid input detected in Decimal Inches.");
+                return;
+            }
+
+            // 1. Convert inches to mm
+            const mm = decInchValue * MM_PER_INCH;
+            
+            // 2. Adjust mm value based on currently selected metric unit for display
+            const divisor = getSelectedMetricUnit();
+            mmInput.value = (mm / divisor).toFixed(3);
+            
+            // 3. Update fractional outputs
+            fractionalInput.value = ''; // CLEAR PRIMARY FRACTIONAL INPUT
+            roundedOutput.value = toFractionalInches(decInchValue);
+            localStorage.setItem('lastDecimalValue', decInchValue);
+        }
+
+        /**
+         * Handler for Fractional Inches (Input Value).
+         */
+        function convertFromFractionalInch() {
+            clearMessage();
+            const fracInches = fractionalInput.value;
+            
+            if (fracInches.trim() === '') {
+                clearAndClearStorage();
+                return;
+            }
+            
+            const decimalInches = fromFractionalInches(fracInches);
+            
+            if (isNaN(decimalInches)) {
+                mmInput.value = '';
+                decimalInchInput.value = '';
+                roundedOutput.value = '';
+                showMessage("Invalid or incomplete fractional input. Please check format (e.g., 1 1/2).");
+                return; 
+            }
+
+            // 1. Convert inches to mm
+            const mm = decimalInches * MM_PER_INCH;
+            
+            // 2. Adjust mm value based on currently selected metric unit for display
+            const divisor = getSelectedMetricUnit();
+            mmInput.value = (mm / divisor).toFixed(3);
+            
+            // 3. Update outputs
+            decimalInchInput.value = decimalInches.toFixed(6);
+            fractionalInput.value = toFractionString(decimalInches);
+            roundedOutput.value = toFractionalInches(decimalInches); 
+            
+            localStorage.setItem('lastDecimalValue', decimalInches); 
+        }
+        
+        // --- Feature Functions ---
+
+        function recalculateCurrentValues() {
+            const decInches = decimalInchInput.value;
+            if (decInches.trim() !== '') {
+                // Rerun conversion from decimal inches to update metric display and fractional output
+                convertFromDecimalInch(decInches); 
+            }
+        }
+        
+        function clearAndClearStorage() {
+             mmInput.value = '';
+             decimalInchInput.value = '';
+             fractionalInput.value = '';
+             roundedOutput.value = '';
+             clearMessage();
+             localStorage.removeItem('lastDecimalValue');
+        }
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            
+            navigator.clipboard.writeText(element.value)
+                .then(() => {
+                    element.classList.add('copied');
+                    setTimeout(() => {
+                        element.classList.remove('copied');
+                    }, 500);
+                })
+                .catch(err => {
+                    console.error('Copy failed: ', err);
+                });
+        }
+        
+        // --- Initialization ---
+
+        window.onload = function() {
+            const lastValue = localStorage.getItem('lastDecimalValue');
+            if (lastValue) {
+                const floatValue = parseFloat(lastValue);
+                // Use convertFromDecimalInch to load, which correctly updates the metric box based on the default 'mm' radio button.
+                decimalInchInput.value = floatValue.toFixed(6);
+                convertFromDecimalInch(decimalInchInput.value); 
+            } else {
+                roundedOutput.value = '';
+            }
+        };
+    </script>
+
+</body>
+</html>
