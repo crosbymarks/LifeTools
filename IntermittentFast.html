@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intermittent Fasting Navigator</title>
+    <!-- Copyright 2025 Crosby Marks -->
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for grid */
+        .calendar-grid {
+            /* Ensures 7 columns take up equal, full width of the container */
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+        /* CRITICAL for mobile: Ensure cells maintain aspect ratio */
+        .aspect-square {
+            aspect-ratio: 1 / 1;
+        }
+        /* Style for the day cells */
+        .day-cell {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer; 
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .day-cell:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* Style for the navigation buttons */
+        .nav-btn {
+            @apply p-2 rounded-full hover:bg-indigo-100 text-indigo-600 transition duration-150 ease-in-out flex items-center justify-center;
+        }
+        /* Custom text size for tiny details on mobile */
+        .text-3xs {
+            font-size: 0.5rem;
+        }
+        
+        /* --- PRINT STYLES --- */
+        .print-view-details {
+            display: none; /* Hide print details in the live view */
+        }
+        
+        @media print {
+            body {
+                background-color: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            /* Global note about EFT (End Fast Time) */
+            #print-end-time-note {
+                display: block !important;
+                font-size: 14pt;
+                text-align: center;
+                margin-top: 10px;
+                margin-bottom: 20px;
+                font-weight: 600;
+                color: #333;
+            }
+            
+            /* Hide all non-essential UI elements for print */
+            .print-hidden, header .flex:not(:has(#current-month-display)), #message-box, footer, #schedule-description, .bg-gray-50.rounded-lg.border, .nav-btn {
+                display: none !important;
+            }
+
+            /* REVERTED: Now show the live view details (Fast/Eat hours - the hour labels) */
+            .live-view-details {
+                display: block !important;
+                font-size: 7pt !important; /* Make it tiny */
+                font-weight: 600 !important; 
+                line-height: 1.1; /* Keep it tight */
+                color: #333 !important; /* Ensure good contrast */
+            }
+            
+            /* MODIFIED: Keep the print view details (Start/End Time) visible too */
+            .print-view-details {
+                display: flex !important; /* CRITICAL: Use flex for column control */
+                flex-direction: column; /* Stack the lines */
+                align-items: center; /* Center them */
+                font-size: 7pt !important; /* Make it tiny */
+                font-weight: 500 !important; /* Slightly lighter */
+                margin-top: 1px !important; /* Minimal margin */
+                color: #555 !important;
+                line-height: 1.1;
+                /* Add min-height to ensure even the single-line Fast Day uses the space of two lines */
+                /* Height will be determined by the two structural span elements now in JS */
+            }
+            
+            /* Ensure the main container expands and removes shadow */
+            .max-w-4xl {
+                max-width: 100% !important;
+                box-shadow: none !important;
+                padding: 1rem !important;
+                margin: 0 auto !important;
+            }
+            
+            /* Make sure calendar grid and day cells print clearly */
+            .calendar-grid {
+                page-break-inside: avoid;
+                gap: 2px;
+            }
+            .day-cell {
+                /* IMPORTANT: Preserve the padding from the live view to ensure content separation */
+                box-shadow: 0 0 0 1px #ccc !important;
+                transform: none !important;
+                border-color: #ccc !important;
+                padding: 0.2rem !important; 
+            }
+            
+            /* Adjust month title size */
+            #current-month-display {
+                font-size: 24pt;
+                color: #000;
+                font-weight: 700;
+                padding-top: 1rem;
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen p-2 sm:p-8 font-sans">
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-4 sm:p-8">
+
+        <!-- Header and Navigation -->
+        <header class="text-center mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-4xl font-extrabold text-gray-900 mb-1 print-hidden">
+                Intermittent Fasting Plan
+            </h1>
+            
+            <div class="flex items-center justify-center mt-3 space-x-4">
+                <button id="prev-month-btn" class="nav-btn print-hidden">
+                    <!-- Left Arrow SVG Icon -->
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                
+                <h2 id="current-month-display" class="text-xl font-light text-indigo-600 w-32 sm:w-48">
+                    <!-- Text updated via JS -->
+                    Loading...
+                </h2>
+                
+                <button id="next-month-btn" class="nav-btn print-hidden">
+                    <!-- Right Arrow SVG Icon -->
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+            
+        </header>
+        
+        <!-- NEW: Global Print Note (Hidden in live view by CSS) -->
+        <h3 id="print-end-time-note" class="text-xl font-medium text-gray-800" style="display: none;"></h3>
+
+
+        <!-- Days of the Week Header -->
+        <div class="calendar-grid grid text-center font-bold text-xs sm:text-sm text-gray-500 mb-1 border-b-2 border-gray-100 pb-1">
+            <span class="p-1">Sun</span>
+            <span class="p-1">Mon</span>
+            <span class="p-1">Tue</span>
+            <span class="p-1">Wed</span>
+            <span class="p-1">Thu</span>
+            <span class="p-1">Fri</span>
+            <span class="p-1">Sat</span>
+        </div>
+
+        <!-- Calendar Grid Container -->
+        <div id="calendar-grid" class="calendar-grid grid gap-1 sm:gap-2 mb-8">
+            <!-- Calendar days will be inserted here by JavaScript -->
+        </div>
+
+        <!-- Schedule Chooser and Time Selector -->
+        <div class="flex flex-col md:flex-row justify-center items-center space-y-3 md:space-y-0 md:space-x-6 mt-4 print-hidden">
+            <!-- Schedule Chooser -->
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                <button id="mode-fixed-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition" data-mode="0">
+                    4-5-4-1 Repeating Cycle
+                </button>
+                <button id="mode-two-cycle-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition" data-mode="2">
+                    Two-Cycle Thursday Anchor
+                </button>
+            </div>
+
+            <!-- Time Selector -->
+            <div class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg">
+                <label for="end-fast-time" class="text-sm font-semibold text-gray-700">End Fast Time (EFT):</label>
+                <!-- W-28 makes the input wider to accommodate the clock icon -->
+                <input type="time" id="end-fast-time" value="20:00" class="p-1 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 w-28 text-center text-sm font-mono cursor-pointer">
+            </div>
+            
+            <!-- Print Button -->
+            <button id="print-calendar-btn" class="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
+                🖨️ Print Calendar
+            </button>
+            
+            <!-- NEW: Export Button -->
+            <button id="export-ics-btn" class="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition">
+                📅 Export to Calendar
+            </button>
+        </div>
+        
+        <!-- Message Box for Click Events / Error Display -->
+        <div id="message-box" class="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-center text-sm text-gray-700 hidden transition-opacity duration-300 print-hidden">
+            <!-- Content filled by JavaScript on day click or error -->
+        </div>
+
+        <!-- Legend -->
+        <div class="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-200 print-hidden">
+            <h3 class="text-base font-semibold text-gray-700 mb-3 text-center">Schedule Key</h3>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 justify-center">
+                <!-- 12h/12h Entry -->
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                    <span class="text-xs text-gray-600">12h/12h</span>
+                </div>
+                <!-- Existing Entries -->
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                    <span class="text-xs text-gray-600">14h/10h</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                    <span class="text-xs text-gray-600">16h/8h</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                    <span class="text-xs text-gray-600">18h/6h</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                    <span class="text-xs text-gray-600">Fast (36h/38h)</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-indigo-500 text-sm">★</span>
+                    <span class="text-xs text-gray-600">Today</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Explanation moved to the very bottom -->
+        <p id="schedule-description" class="mt-6 text-gray-600 text-sm max-w-xl mx-auto text-center print-hidden">
+            <!-- Content set dynamically by updateUI function -->
+        </p>
+
+        <!-- Copyright Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-100 text-center print-hidden">
+            <p class="text-xs text-gray-400">
+                &copy; 2025 Crosby Marks. All rights reserved.
+            </p>
+        </footer>
+
+
+    </div>
+
+    <!-- The script is now a standard module to use local storage -->
+    <script type="module">
+        // --- GLOBAL STATE & CONSTANTS ---
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthDisplay = document.getElementById('current-month-display');
+        const descriptionElement = document.getElementById('schedule-description');
+        const fixedBtn = document.getElementById('mode-fixed-btn');
+        const twoCycleBtn = document.getElementById('mode-two-cycle-btn');
+        const endTimeInput = document.getElementById('end-fast-time');
+        const messageBox = document.getElementById('message-box');
+        const printBtn = document.getElementById('print-calendar-btn');
+        const exportBtn = document.getElementById('export-ics-btn'); 
+        const printEndTimeNote = document.getElementById('print-end-time-note'); 
+
+        // FIX: Corrected the month names array to include March and remove the duplicate February.
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        // Define today's date for highlighting
+        const TODAY = new Date();
+        const TODAY_YEAR = TODAY.getFullYear();
+        const TODAY_MONTH = TODAY.getMonth();
+        const TODAY_DAY = TODAY.getDate();
+
+        // Calendar now starts on today's month and year
+        let currentMonth = TODAY_MONTH; 
+        let currentYear = TODAY_YEAR;
+        
+        // 0: Fixed 14-day cycle (4-5-4-1), 2: Two-Cycle Thursday Anchor
+        let scheduleMode = 2; // Default starting value
+        let endFastTime = '20:00'; // Default end time (8:00 PM)
+
+        // Cache the schedule for the current month so we can look up the next day's schedule for the 38h fast calculation
+        let currentMonthSchedule = []; 
+        
+        // Define Tailwind classes and schedule data 
+        const STYLES = {
+            '12/12': { fast: 12, eat: 12, bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300', name: '12h/12h' }, 
+            '14/10': { fast: 14, eat: 10, bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300', name: '14h/10h' },
+            '16/8':  { fast: 16, eat: 8, bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300', name: '16h/8h' },
+            '18/6':  { fast: 18, eat: 6, bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300', name: '18h/6h' },
+            '38h':   { fast: 38, eat: 0, bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300', name: '38h Fast' } 
+        };
+
+        const s12 = STYLES['12/12']; 
+        const s14 = STYLES['14/10'];
+        const s16 = STYLES['16/8'];
+        const s18 = STYLES['18/6'];
+        const s38 = STYLES['38h'];
+
+        // --- UTILITY FUNCTIONS ---
+        function getDaysInMonth(month, year) {
+            return new Date(year, month + 1, 0).getDate();
+        }
+
+        function findNthDay(n, dayOfWeek, month, year) {
+            let count = 0;
+            let day = 1;
+            while (day <= getDaysInMonth(month, year)) {
+                const date = new Date(year, month, day);
+                if (date.getDay() === dayOfWeek) {
+                    count++;
+                    if (count === n) {
+                        return day;
+                    }
+                }
+                day++;
+            }
+            return null;
+        }
+        
+        // Helper to format time strings for display (e.g., '20:00' -> '8:00 PM')
+        const timeFormatter = new Intl.DateTimeFormat('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: true 
+        });
+
+        /**
+         * Formats a Date object into the iCalendar format: YYYYMMDDTHHMMSS
+         * Uses local time, so no 'Z' (Zulu/UTC) marker is appended.
+         */
+        function formatIcsDate(date) {
+            const pad = (num) => String(num).padStart(2, '0');
+            const YYYY = date.getFullYear();
+            const MM = pad(date.getMonth() + 1);
+            const DD = pad(date.getDate());
+            const HH = pad(date.getHours());
+            const MIN = pad(date.getMinutes());
+            const SS = pad(date.getSeconds());
+            return `${YYYY}${MM}${DD}T${HH}${MIN}${SS}`;
+        }
+
+
+        // --- LOCAL STORAGE FUNCTIONS ---
+        function saveScheduleMode(mode) {
+            try { localStorage.setItem('fastingScheduleMode', mode.toString()); } catch (e) { console.error("Error saving schedule mode locally:", e); }
+        }
+        function loadScheduleModeFromLocal() {
+            try {
+                const storedMode = localStorage.getItem('fastingScheduleMode');
+                if (storedMode !== null) {
+                    const loadedMode = parseInt(storedMode, 10);
+                    if (!isNaN(loadedMode) && (loadedMode === 0 || loadedMode === 2)) { scheduleMode = loadedMode; }
+                }
+            } catch (e) { console.error("Error loading schedule mode locally:", e); }
+        }
+        function saveEndFastTime(time) {
+            try { localStorage.setItem('endFastTime', time); } catch (e) { console.error("Error saving end fast time locally:", e); }
+        }
+        function loadEndFastTimeFromLocal() {
+            try {
+                const storedTime = localStorage.getItem('endFastTime');
+                if (storedTime !== null) {
+                    endFastTime = storedTime;
+                    // Update input value only if element exists (which it should now, thanks to initialization change)
+                    if (endTimeInput) {
+                        endTimeInput.value = storedTime;
+                    }
+                }
+            } catch (e) { console.error("Error loading end fast time locally:", e); }
+        }
+
+
+        // --- SCHEDULE GENERATION (No Logic Change) ---
+        function generateFixedCycleSchedule(daysInMonth) {
+            const scheduleData = [];
+            while (scheduleData.length < daysInMonth) {
+                for (let i = 0; i < 4 && scheduleData.length < daysInMonth; i++) { scheduleData.push(s14); }
+                for (let i = 0; i < 5 && scheduleData.length < daysInMonth; i++) { scheduleData.push(s16); }
+                for (let i = 0; i < 4 && scheduleData.length < daysInMonth; i++) { scheduleData.push(s18); }
+                for (let i = 0; i < 1 && scheduleData.length < daysInMonth; i++) { scheduleData.push(s38); }
+            }
+            return scheduleData;
+        }
+
+        function generateTwoCycleAnchorSchedule(month, year) {
+            const daysInMonth = getDaysInMonth(month, year);
+            const scheduleData = new Array(daysInMonth).fill(null);
+            const THURSDAY = 4;
+
+            const firstThursday = findNthDay(1, THURSDAY, month, year); 
+            
+            if (firstThursday === null) { return new Array(daysInMonth).fill(s12); }
+
+            const applyFast = (day, fastType) => {
+                if (day >= 1 && day <= daysInMonth) { scheduleData[day - 1] = fastType; }
+            };
+            
+            for(let day = 1; day < firstThursday; day++) { applyFast(day, s12); }
+
+            const cyclePattern = [
+                { style: s14, count: 4 }, { style: s16, count: 5 },
+                { style: s18, count: 4 }, { style: s38, count: 1 }
+            ];
+
+            const applyCycle = (startDay) => {
+                let currentDay = startDay;
+                for (const segment of cyclePattern) {
+                    for (let i = 0; i < segment.count; i++) {
+                        if (currentDay <= daysInMonth) {
+                            if (!scheduleData[currentDay - 1]) { applyFast(currentDay, segment.style); }
+                            currentDay++;
+                        } else { return null; }
+                    }
+                }
+                return currentDay;
+            };
+
+            let nextDay = applyCycle(firstThursday);
+            if (nextDay && nextDay <= daysInMonth) { nextDay = applyCycle(nextDay); }
+
+            if (nextDay && nextDay <= daysInMonth) {
+                for (let day = nextDay; day <= daysInMonth; day++) { applyFast(day, s12); }
+            }
+
+            for(let day = 1; day <= daysInMonth; day++) {
+                if (!scheduleData[day - 1]) { scheduleData[day - 1] = s12; }
+                if (scheduleData[day - 1] === null) { console.error("Missing schedule data for day", day); }
+            }
+            return scheduleData;
+        }
+        
+        function generateSchedule(month, year) {
+            if (scheduleMode === 0) {
+                return generateFixedCycleSchedule(getDaysInMonth(month, year));
+            } else { 
+                return generateTwoCycleAnchorSchedule(month, year);
+            }
+        }
+        
+        // --- CORE LOGIC FOR DYNAMIC 38H/36H CALCULATION (Refactored to be reusable) ---
+        function getNextDaySchedule(day, month, year) {
+            const clickedDayIndex = day - 1;
+            
+            if (clickedDayIndex + 1 < currentMonthSchedule.length) {
+                return currentMonthSchedule[clickedDayIndex + 1];
+            } 
+            
+            // If we are at the end of the month, we need to look at the next month's schedule
+            if (scheduleMode === 0) {
+                // Fixed cycle always repeats
+                return s14; 
+            } else { 
+                // Two-Cycle Anchor: need to check if next day is the first day of a new cycle
+                const nextDate = new Date(year, month, day + 1);
+                const nextMonth = nextDate.getMonth();
+                const nextYear = nextDate.getFullYear();
+                
+                const THURSDAY = 4;
+                const firstThursdayOfNextMonth = findNthDay(1, THURSDAY, nextMonth, nextYear);
+
+                if (firstThursdayOfNextMonth === 1) {
+                    // Next day is the start of a cycle segment (14/10)
+                    return s14;
+                } else {
+                    // Next day is a buffer day
+                    return s12;
+                }
+            }
+        }
+
+        /**
+         * Calculates the precise fast and eating start/end times for any given day.
+         * @returns {Object} { type: 'fast'|'standard', fastStart: Date, fastEnd: Date, eatStart: Date|null, eatEnd: Date|null, calculatedFastHours: Number|null }
+         */
+        function getEventDetailsForDay(day, month, year, scheduleData) {
+            const dayData = scheduleData[day - 1];
+            const fastDuration = dayData.fast;
+            const eatingWindow = dayData.eat;
+            const [hours, minutes] = endFastTime.split(':').map(Number);
+            
+            // Default EFT (End Fast Time, which is End Eating Time) for Day D
+            const endTimeD = new Date(year, month, day, hours, minutes);
+            
+            const details = { type: 'standard', fastStart: null, fastEnd: null, eatStart: null, eatEnd: null, calculatedFastHours: null };
+
+            if (fastDuration === 38) {
+                // --- 38h Fast Calculation ---
+                const nextDaySchedule = getNextDaySchedule(day, month, year);
+                const eatingWindowDPlus1 = nextDaySchedule.eat; 
+                
+                // Fast Start Time (FST) is EFT of Day D-1
+                details.fastStart = new Date(year, month, day, hours, minutes);
+                details.fastStart.setDate(details.fastStart.getDate() - 1); 
+
+                // Fast End Time (FET) is SET of Day D+1
+                details.fastEnd = new Date(year, month, day + 1, hours, minutes); 
+                details.fastEnd.setHours(details.fastEnd.getHours() - eatingWindowDPlus1); 
+
+                const diffMs = details.fastEnd.getTime() - details.fastStart.getTime();
+                details.calculatedFastHours = Math.round(diffMs / (1000 * 60 * 60)); 
+                details.type = 'fast';
+                
+            } else {
+                // --- Standard Fast Calculation (12h/12h, 14h/10h, 16h/8h, 18h/6h) ---
+                
+                // End Eating Time (EET) is the user-set EFT for the current day
+                details.eatEnd = endTimeD;
+                
+                // Start Eating Time (SET) = EET - Eating Window Hours
+                details.eatStart = new Date(details.eatEnd);
+                details.eatStart.setHours(details.eatEnd.getHours() - eatingWindow);
+
+                // Fast End Time (FET) is the Start Eating Time
+                details.fastEnd = details.eatStart;
+                
+                // Fast Start Time (FST) = FET - Fast Duration Hours
+                details.fastStart = new Date(details.fastEnd);
+                details.fastStart.setHours(details.fastEnd.getHours() - fastDuration);
+                details.type = 'standard';
+            }
+            return details;
+        }
+
+
+        // --- RENDER & UI UPDATES ---
+        
+        function showMessageBox(message) {
+            messageBox.innerHTML = message;
+            messageBox.classList.remove('hidden', 'opacity-0');
+            messageBox.classList.add('opacity-100');
+            
+            // Auto-hide the message after 8 seconds
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-100');
+                messageBox.classList.add('opacity-0');
+                setTimeout(() => messageBox.classList.add('hidden'), 300); // Wait for transition
+            }, 8000);
+        }
+
+        // REFACTORED to use the new getEventDetailsForDay helper
+        function handleDayClick(event) {
+            const cell = event.currentTarget;
+            const day = parseInt(cell.dataset.day);
+            const fastDuration = parseInt(cell.dataset.fastDuration);
+            const eatingWindow = parseInt(cell.dataset.eatingWindow);
+            
+            let message = "";
+            const details = getEventDetailsForDay(day, currentMonth, currentYear, currentMonthSchedule);
+
+
+            if (fastDuration === 38) {
+                const colorClass = cell.classList.contains('text-red-800') ? 'text-red-700' : 'text-gray-700';
+
+                message = `
+                    <span class="font-bold ${colorClass}">${details.calculatedFastHours}h Fast Day:</span><br>
+                    Your fast started at <span class="font-extrabold">${timeFormatter.format(details.fastStart)}</span> 
+                    on <span class="font-extrabold">${details.fastStart.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span> and ends at:<br>
+                    <span class="font-extrabold text-xl">${timeFormatter.format(details.fastEnd)}</span> 
+                    on <span class="font-extrabold">${details.fastEnd.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>.
+                `;
+
+            } else {
+                message = `
+                    <span class="font-bold text-indigo-700">${fastDuration}h Fast (${eatingWindow}h Eating Window):</span><br>
+                    Start Eating: <span class="font-extrabold">${timeFormatter.format(details.eatStart)}</span><br>
+                    End Eating: <span class="font-extrabold">${timeFormatter.format(details.eatEnd)}</span>
+                `;
+            }
+
+            showMessageBox(message);
+        }
+
+        function updateUI(mode) {
+            // Reset all buttons
+            [fixedBtn, twoCycleBtn].forEach(btn => 
+                btn.classList.remove('bg-indigo-600', 'text-white', 'bg-gray-200', 'text-gray-700')
+            );
+            
+            let activeBtn, description;
+
+            if (mode === 0) {
+                activeBtn = fixedBtn;
+                description = 'The **14-day cycle** (4-5-4-1) restarts on the first of the month. The long fast is always **38h**.';
+            } else { // mode 2
+                activeBtn = twoCycleBtn;
+                description = 'Two 14-day cycles (4-5-4-1) start on the **First Thursday** of the month. Buffer days use **12h/12h**. The long fast dynamically calculates to **36h or 38h**. Check the click message for the exact duration.';
+            }
+
+            activeBtn.classList.add('bg-indigo-600', 'text-white');
+            [fixedBtn, twoCycleBtn].filter(btn => btn !== activeBtn).forEach(btn => 
+                btn.classList.add('bg-gray-200', 'text-gray-700')
+            );
+            
+            descriptionElement.innerHTML = description;
+        }
+
+
+        function renderCalendar(month, year) {
+            calendarGrid.innerHTML = '';
+            monthDisplay.textContent = `${monthNames[month]} ${year}`;
+            
+            // Set the global print note based on the current EFT
+            const [hours, minutes] = endFastTime.split(':').map(Number);
+            const dummyDate = new Date(2000, 0, 1, hours, minutes);
+            printEndTimeNote.textContent = `Eating Ends At (EFT): ${timeFormatter.format(dummyDate)}`;
+
+            const daysInMonth = getDaysInMonth(month, year);
+            const scheduleData = generateSchedule(month, year);
+            
+            currentMonthSchedule = scheduleData; 
+            
+            const date = new Date(year, month, 1);
+            const startDayOfWeek = date.getDay(); 
+            const isCurrentMonth = (year === TODAY_YEAR && month === TODAY_MONTH);
+
+            // A. Insert padding
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.classList.add('p-1', 'aspect-square', 'bg-white', 'rounded-lg', 'shadow-inner', 'h-full');
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            // B. Insert days with schedule data
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayData = scheduleData[day - 1]; 
+                const { fast, eat, name, bg, text, border } = dayData;
+
+                const cell = document.createElement('div');
+                
+                const classesToAdd = [
+                    'day-cell', 'rounded-lg', 'p-1', 'sm:p-3', 'text-center',
+                    'flex', 'flex-col', 'justify-between', 'aspect-square',
+                    'border-2', bg, text, border 
+                ];
+                
+                cell.classList.add(...classesToAdd);
+                
+                // Data attributes for click handling
+                cell.dataset.day = day;
+                cell.dataset.fastDuration = fast;
+                cell.dataset.eatingWindow = eat;
+                cell.addEventListener('click', handleDayClick);
+
+                const dayNum = document.createElement('div');
+                dayNum.classList.add('text-lg', 'sm:text-xl', 'font-extrabold', 'mb-0', 'flex', 'items-center', 'justify-center');
+                
+                dayNum.textContent = day;
+                
+                if (isCurrentMonth && day === TODAY_DAY) {
+                    const todayIcon = document.createElement('span');
+                    todayIcon.innerHTML = '★'; 
+                    todayIcon.classList.add('text-indigo-500', 'text-xs', 'ml-1', 'align-top', 'font-normal');
+                    dayNum.appendChild(todayIcon);
+                }
+                
+                cell.appendChild(dayNum);
+
+                // --- LIVE VIEW DETAILS / HOUR LABELS ---
+                const liveViewDetails = document.createElement('div');
+                // The live-view-details already uses block spans for stacking the fast/eat hours
+                liveViewDetails.classList.add('live-view-details', 'text-3xs', 'sm:text-xs', 'font-semibold', 'leading-tight', 'truncate');
+
+                if (fast === 38) {
+                    liveViewDetails.innerHTML = `<span class="block">Fast</span><span class="block font-normal">(36h/38h)</span>`;
+                } else {
+                    liveViewDetails.innerHTML = `<span class="block">${fast}h Fast</span><span class="block font-normal">${eat}h Eat</span>`;
+                }
+                cell.appendChild(liveViewDetails);
+
+                // --- PRINT VIEW DETAILS (Time Range) ---
+                const printViewDetails = document.createElement('div');
+                printViewDetails.classList.add('print-view-details', 'text-3xs', 'sm:text-xs', 'font-semibold', 'leading-tight', 'truncate', 'mt-1');
+                
+                let printTimeString = ""; // Initialize empty
+
+                if (fast !== 38) {
+                    // Calculate SET/EFT for printing the window
+                    const details = getEventDetailsForDay(day, month, year, scheduleData);
+                    
+                    // The replace(/\s/g, '') removes spaces often inserted before AM/PM by the formatter.
+                    const formattedStartTime = timeFormatter.format(details.eatStart).replace(/\s/g, '');
+                    const formattedEndTime = timeFormatter.format(details.eatEnd).replace(/\s/g, '');
+                    
+                    // Stacked format using HTML structure for two lines
+                    printTimeString = `
+                        <span>${formattedStartTime}</span>
+                        <span>${formattedEndTime}</span>
+                    `;
+                    
+                } else {
+                    // ** FIX: For the 38h fast, use two lines to match the height of other cells **
+                    printTimeString = `
+                        <span class="font-bold">FAST DAY</span>
+                        <span class="text-gray-400">---</span>
+                    `;
+                }
+                
+                // Use innerHTML to inject the stacked <span> tags
+                printViewDetails.innerHTML = printTimeString;
+                cell.appendChild(printViewDetails);
+                
+                calendarGrid.appendChild(cell); 
+            }
+        }
+        
+        /**
+         * Generates an iCalendar (.ics) file with all fasting and eating events for the current month.
+         * Now only includes ONE event per day: Eating Window for standard days, or Fast End Marker for long fasts.
+         */
+        function generateIcsFile() {
+            const filename = `FastingSchedule_${monthNames[currentMonth]}${currentYear}.ics`;
+            const scheduleData = generateSchedule(currentMonth, currentYear);
+            const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+            // Get local timezone ID for TZID property in iCalendar (e.g., 'America/New_York')
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; 
+
+            let icsContent = `BEGIN:VCALENDAR\n`;
+            icsContent += `VERSION:2.0\n`;
+            icsContent += `PRODID:-//FastingNavigator//NONSGML v1.0//EN\n`;
+            
+            // Loop through all days and create events
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayData = scheduleData[day - 1];
+                const details = getEventDetailsForDay(day, currentMonth, currentYear, scheduleData);
+                
+                // Use a unique ID based on the date and time of generation to prevent duplicate entries
+                const uidPrefix = `NAV-${currentYear}${String(currentMonth + 1).padStart(2, '0')}${String(day).padStart(2, '0')}-${Date.now()}`;
+
+                if (details.type === 'fast') {
+                    // --- 1. 38h Fast End Marker Event (Only event for this calendar day) ---
+                    // This event marks the start of the next eating window.
+                    
+                    const summary = `${details.calculatedFastHours}h Fast ENDS`;
+                    const description = `This marks the end of your ${details.calculatedFastHours}h fast. Start your eating window now. (Fasting began on ${details.fastStart.toLocaleDateString('en-US')}).`;
+                    
+                    icsContent += `BEGIN:VEVENT\n`;
+                    icsContent += `UID:${uidPrefix}-FASTEND\n`;
+                    icsContent += `DTSTAMP:${formatIcsDate(new Date())}\n`;
+                    // Use TZID for accurate local time representation
+                    icsContent += `DTSTART;TZID=${timezone}:${formatIcsDate(details.fastEnd)}\n`;
+                    // Make the event 1 minute long so it appears clearly on the calendar
+                    const endMarker = new Date(details.fastEnd);
+                    endMarker.setMinutes(endMarker.getMinutes() + 1);
+                    icsContent += `DTEND;TZID=${timezone}:${formatIcsDate(endMarker)}\n`;
+                    icsContent += `SUMMARY:${summary}\n`;
+                    icsContent += `DESCRIPTION:${description}\n`;
+                    icsContent += `END:VEVENT\n`;
+
+                } else {
+                    // --- 2. Standard Fast Event: ONLY the Eating Window (1 event per standard day) ---
+                    
+                    const eatSummary = `EATING: ${dayData.eat}h Window (${dayData.fast}/${dayData.eat} Schedule)`;
+                    const eatDescription = `Your ${dayData.eat}h eating window starts at ${timeFormatter.format(details.eatStart)} and ends at the specified End Fast Time (EFT) of ${timeFormatter.format(details.eatEnd)}.`;
+                    
+                    icsContent += `BEGIN:VEVENT\n`;
+                    icsContent += `UID:${uidPrefix}-EATWIN\n`;
+                    icsContent += `DTSTAMP:${formatIcsDate(new Date())}\n`;
+                    icsContent += `DTSTART;TZID=${timezone}:${formatIcsDate(details.eatStart)}\n`;
+                    icsContent += `DTEND;TZID=${timezone}:${formatIcsDate(details.eatEnd)}\n`;
+                    icsContent += `SUMMARY:${eatSummary}\n`;
+                    icsContent += `DESCRIPTION:${eatDescription}\n`;
+                    icsContent += `END:VEVENT\n`;
+                }
+                
+                // CRITICAL CHECK: Only one BEGIN:VEVENT...END:VEVENT block is generated in each iteration.
+            }
+
+            icsContent += `END:VCALENDAR\n`;
+            
+            // --- Download Logic ---
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link); // Append to body is necessary for click() to work in all browsers
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            // The total number of events is now equal to the number of days in the month
+            showMessageBox(`✅ Exported **${daysInMonth} events** (one per day) for ${monthNames[currentMonth]} ${currentYear} to **${filename}**. Import this file into your calendar app!`);
+        }
+
+
+        // --- NAVIGATION & INITIALIZATION ---
+
+        function setScheduleMode(mode) {
+            if (scheduleMode === mode) return; 
+
+            scheduleMode = mode;
+            updateUI(mode);
+            renderCalendar(currentMonth, currentYear);
+            saveScheduleMode(mode);
+        }
+
+        function setEndFastTime(event) {
+            endFastTime = event.target.value;
+            saveEndFastTime(endFastTime);
+            // Re-render is necessary to update the global print time note AND recalculate all time strings in cells
+            renderCalendar(currentMonth, currentYear);
+        }
+
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar(currentMonth, currentYear);
+        }
+
+        function prevMonth() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar(currentMonth, currentYear);
+        }
+        
+        // **REVISED Initializer Function with Error Handling**
+        function initialize() {
+            // Load settings first
+            loadScheduleModeFromLocal();
+            loadEndFastTimeFromLocal();
+
+            // Attach event listeners to buttons and input
+            document.getElementById('next-month-btn').addEventListener('click', nextMonth);
+            document.getElementById('prev-month-btn').addEventListener('click', prevMonth);
+            fixedBtn.addEventListener('click', () => setScheduleMode(0));
+            twoCycleBtn.addEventListener('click', () => setScheduleMode(2));
+            endTimeInput.addEventListener('change', setEndFastTime);
+            
+            // Print button functionality
+            printBtn.addEventListener('click', () => {
+                window.print();
+            });
+            
+            // NEW: Export button functionality
+            exportBtn.addEventListener('click', generateIcsFile);
+
+            // Initial rendering with ERROR PROTECTION
+            updateUI(scheduleMode);
+            try {
+                renderCalendar(currentMonth, currentYear);
+            } catch (error) {
+                // Display the error in the message box if rendering fails
+                showMessageBox(`💥 A critical error prevented the calendar from loading. Error details: ${error.message}.`);
+                console.error("Critical rendering error:", error);
+            }
+        }
+        
+        // Execute initialization using DOMContentLoaded for robust loading
+        document.addEventListener('DOMContentLoaded', initialize);
+
+    </script>
+</body>
+</html>
