@@ -1,920 +1,329 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intermittent Fasting Navigator</title>
-    <!-- Copyright 2025 Crosby Marks -->
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom styles for grid */
-        .calendar-grid {
-            /* Ensures 7 columns take up equal, full width of the container */
-            grid-template-columns: repeat(7, minmax(0, 1fr));
-        }
-        /* CRITICAL for mobile: Ensure cells maintain aspect ratio */
-        .aspect-square {
-            aspect-ratio: 1 / 1;
-        }
-        /* Style for the day cells */
-        .day-cell {
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer; 
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        }
-        .day-cell:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        /* Style for the navigation buttons */
-        .nav-btn {
-            @apply p-2 rounded-full hover:bg-indigo-100 text-indigo-600 transition duration-150 ease-in-out flex items-center justify-center;
-        }
-        /* Custom text size for tiny details on mobile */
-        .text-3xs {
-            font-size: 0.5rem;
-        }
-        
-        /* --- PRINT STYLES --- */
-        .print-view-details {
-            display: none; /* Hide print details in the live view */
-        }
-        
-        @media print {
-            body {
-                background-color: white !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            
-            /* Global note about EFT (End Fast Time) */
-            #print-end-time-note {
-                display: block !important;
-                font-size: 14pt;
-                text-align: center;
-                margin-top: 10px;
-                margin-bottom: 20px;
-                font-weight: 600;
-                color: #333;
-            }
-            
-            /* Hide all non-essential UI elements for print */
-            .print-hidden, header .flex:not(:has(#current-month-display)), #message-box, footer, #schedule-description, .bg-gray-50.rounded-lg.border, .nav-btn, #view-toggle-container {
-                display: none !important;
-            }
+import React, { useState, useMemo, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarDays } from 'lucide-react';
 
-            /* Show the time range, hide the hour/hour display */
-            .live-view-details {
-                display: none !important;
-            }
-            
-            /* MODIFIED: Keep the print view details (Start/End Time) visible too */
-            .print-view-details {
-                display: flex !important; /* CRITICAL: Use flex for column control */
-                flex-direction: column; /* Stack the lines */
-                align-items: center; /* Center them */
-                font-size: 7pt !important; /* Make it tiny */
-                font-weight: 500 !important; /* Slightly lighter */
-                margin-top: 1px !important; /* Minimal margin */
-                color: #555 !important;
-                line-height: 1.1;
-                /* Add min-height to ensure even the single-line Fast Day uses the space of two lines */
-            }
-            
-            /* Ensure the main container expands and removes shadow */
-            .max-w-4xl {
-                max-width: 100% !important;
-                box-shadow: none !important;
-                padding: 1rem !important;
-                margin: 0 auto !important;
-            }
-            
-            /* Make sure calendar grid and day cells print clearly */
-            .calendar-grid {
-                page-break-inside: avoid;
-                gap: 2px;
-            }
-            .day-cell {
-                /* IMPORTANT: Preserve the padding from the live view to ensure content separation */
-                box-shadow: 0 0 0 1px #ccc !important;
-                transform: none !important;
-                border-color: #ccc !important;
-                padding: 0.2rem !important; 
-            }
-            
-            /* Adjust month title size */
-            #current-month-display {
-                font-size: 24pt;
-                color: #000;
-                font-weight: 700;
-                padding-top: 1rem;
-            }
-            
-            /* Force show calendar grid even if in Single Day Mode when printing */
-            #calendar-container {
-                display: block !important;
-            }
-            #single-day-container {
-                display: none !important;
-            }
-        }
-    </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                },
-            },
-        }
-    </script>
-</head>
-<body class="bg-gray-50 min-h-screen p-2 sm:p-8 font-sans">
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-4 sm:p-8">
+// Tailwind is assumed to be available
 
-        <!-- Header and Navigation -->
-        <header class="text-center mb-6 sm:mb-8">
-            <h1 class="text-2xl sm:text-4xl font-extrabold text-gray-900 mb-1 print-hidden">
-                Intermittent Fasting Plan
-            </h1>
-            
-            <div class="flex items-center justify-center mt-3 space-x-4">
-                <button id="prev-btn" class="nav-btn print-hidden">
-                    <!-- Left Arrow SVG Icon -->
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                
-                <h2 id="current-month-display" class="text-xl font-light text-indigo-600 w-full sm:w-auto px-4 truncate">
-                    <!-- Text updated via JS -->
-                    Loading...
-                </h2>
-                
-                <button id="next-btn" class="nav-btn print-hidden">
-                    <!-- Right Arrow SVG Icon -->
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
+// --- Utility Functions ---
+
+/**
+ * Gets the number of days in a given month.
+ * @param {Date} date
+ * @returns {number}
+ */
+const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+};
+
+/**
+ * Gets the first day of the month (0=Sunday, 6=Saturday).
+ * @param {Date} date
+ * @returns {number}
+ */
+const getFirstDayOfMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+};
+
+/**
+ * Checks if a given date is today.
+ * @param {Date} date
+ * @param {Date} reference
+ * @returns {boolean}
+ */
+const isSameDay = (date1, date2) => {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+};
+
+/**
+ * Checks if a given date is in the month of the reference date.
+ * @param {Date} date
+ * @param {Date} reference
+ * @returns {boolean}
+ */
+const isSameMonth = (date, reference) => {
+    return date.getFullYear() === reference.getFullYear() &&
+           date.getMonth() === reference.getMonth();
+};
+
+
+// --- Components ---
+
+/**
+ * Displays a single day's box in the month view.
+ */
+const DayBox = ({ dayDate, currentDate, today, onClick }) => {
+    const isToday = isSameDay(dayDate, today);
+    const isCurrentMonth = isSameMonth(dayDate, currentDate);
+
+    const baseClasses = "flex flex-col items-center justify-start p-1 h-16 sm:h-20 lg:h-24 transition-colors duration-200 border-r border-b";
+    
+    // Non-current month days are faded
+    const opacityClass = isCurrentMonth ? 'opacity-100' : 'opacity-40';
+    
+    // Highlight today
+    const backgroundClass = isToday ? 'bg-indigo-100/70 border-indigo-500' : 'hover:bg-gray-50';
+
+    return (
+        <div
+            className={`${baseClasses} ${backgroundClass} ${opacityClass} cursor-pointer`}
+            onClick={() => onClick(dayDate)}
+        >
+            <div className={`text-xs sm:text-sm font-semibold p-1 rounded-full ${isToday ? 'bg-indigo-600 text-white' : 'text-gray-800'}`}>
+                {dayDate.getDate()}
             </div>
-            
-        </header>
-        
-        <!-- NEW: Global Print Note (Hidden in live view by CSS) -->
-        <h3 id="print-end-time-note" class="text-xl font-medium text-gray-800" style="display: none;"></h3>
-
-        <!-- MONTH VIEW CONTAINER -->
-        <div id="calendar-container">
-            <!-- Days of the Week Header -->
-            <div class="calendar-grid grid text-center font-bold text-xs sm:text-sm text-gray-500 mb-1 border-b-2 border-gray-100 pb-1">
-                <span class="p-1">Sun</span>
-                <span class="p-1">Mon</span>
-                <span class="p-1">Tue</span>
-                <span class="p-1">Wed</span>
-                <span class="p-1">Thu</span>
-                <span class="p-1">Fri</span>
-                <span class="p-1">Sat</span>
-            </div>
-
-            <!-- Calendar Grid Container -->
-            <div id="calendar-grid" class="calendar-grid grid gap-1 sm:gap-2 mb-8">
-                <!-- Calendar days will be inserted here by JavaScript -->
+            {/* Placeholder for events */}
+            <div className="mt-1 space-y-1 w-full px-1 overflow-hidden">
+                {/* Could map event previews here */}
             </div>
         </div>
+    );
+};
 
-        <!-- SINGLE DAY VIEW CONTAINER (Hidden by default) -->
-        <div id="single-day-container" class="hidden mb-8">
-            <div id="day-card" class="bg-white border-2 rounded-xl p-6 shadow-md transition-all duration-300">
-                <!-- Content injected via JS -->
-            </div>
-        </div>
+/**
+ * Month view component.
+ */
+const MonthView = ({ currentDate, setCurrentDate, setViewMode, today }) => {
+    const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-        <!-- Schedule Chooser and Time Selector -->
-        <div class="flex flex-col md:flex-row justify-center items-center space-y-3 md:space-y-0 md:space-x-6 mt-4 print-hidden">
-            <!-- Schedule Chooser -->
-            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                <button id="mode-fixed-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition" data-mode="0">
-                    4-5-4-1 Repeating Cycle
-                </button>
-                <button id="mode-two-cycle-btn" class="px-4 py-2 text-sm font-semibold rounded-lg transition" data-mode="2">
-                    Two-Cycle Thursday Anchor
-                </button>
-            </div>
+    const firstDayOfMonth = getFirstDayOfMonth(currentDate);
+    const daysInMonth = getDaysInMonth(currentDate);
 
-            <!-- Time Selector -->
-            <div class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg">
-                <label for="end-fast-time" class="text-sm font-semibold text-gray-700">End Fast Time (EFT):</label>
-                <input type="time" id="end-fast-time" value="20:00" class="p-1 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 w-28 text-center text-sm font-mono cursor-pointer">
-            </div>
-            
-            <!-- Print Button -->
-            <button id="print-calendar-btn" class="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
-                🖨️
-            </button>
-            
-            <!-- Export Button -->
-            <button id="export-ics-btn" class="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition">
-                📅
-            </button>
-        </div>
-        
-        <!-- View Toggle -->
-        <div id="view-toggle-container" class="flex justify-center mt-6 print-hidden">
-            <div class="bg-gray-100 p-1 rounded-lg flex items-center">
-                <button id="view-month-btn" class="px-6 py-2 text-sm font-semibold rounded-md transition bg-white shadow-sm text-indigo-600">Month View</button>
-                <button id="view-day-btn" class="px-6 py-2 text-sm font-semibold rounded-md transition text-gray-500 hover:text-gray-700">Single Day View</button>
-            </div>
-        </div>
-        
-        <!-- Message Box for Click Events / Error Display -->
-        <div id="message-box" class="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-center text-sm text-gray-700 hidden transition-opacity duration-300 print-hidden">
-            <!-- Content filled by JavaScript on day click or error -->
-        </div>
+    // Calculate days for the grid
+    const days = useMemo(() => {
+        const totalCells = 42; // Max 6 weeks * 7 days
+        const startOffset = firstDayOfMonth;
+        const previousMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        const daysInPreviousMonth = getDaysInMonth(previousMonthDate);
+        const daysArray = [];
 
-        <!-- Legend -->
-        <div class="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-200 print-hidden">
-            <h3 class="text-base font-semibold text-gray-700 mb-3 text-center">Schedule Key</h3>
-            <div class="flex flex-wrap gap-x-4 gap-y-2 justify-center">
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
-                    <span class="text-xs text-gray-600">12h/12h</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                    <span class="text-xs text-gray-600">14h/10h</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                    <span class="text-xs text-gray-600">16h/8h</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-orange-500"></span>
-                    <span class="text-xs text-gray-600">18h/6h</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                    <span class="text-xs text-gray-600">Fast (36h/38h)</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="text-indigo-500 text-sm">★</span>
-                    <span class="text-xs text-gray-600">Today</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Explanation -->
-        <p id="schedule-description" class="mt-6 text-gray-600 text-sm max-w-xl mx-auto text-center print-hidden">
-            <!-- Content set dynamically -->
-        </p>
-
-        <!-- Copyright Footer -->
-        <footer class="mt-8 pt-4 border-t border-gray-100 text-center print-hidden">
-            <p class="text-xs text-gray-400">
-                &copy; 2025 Crosby Marks. All rights reserved.
-            </p>
-        </footer>
-
-
-    </div>
-
-    <!-- The script is now a standard module to use local storage -->
-    <script type="module">
-        // --- GLOBAL STATE & CONSTANTS ---
-        const calendarGrid = document.getElementById('calendar-grid');
-        const monthDisplay = document.getElementById('current-month-display');
-        const descriptionElement = document.getElementById('schedule-description');
-        const fixedBtn = document.getElementById('mode-fixed-btn');
-        const twoCycleBtn = document.getElementById('mode-two-cycle-btn');
-        const endTimeInput = document.getElementById('end-fast-time');
-        const messageBox = document.getElementById('message-box');
-        const printBtn = document.getElementById('print-calendar-btn');
-        const exportBtn = document.getElementById('export-ics-btn'); 
-        const printEndTimeNote = document.getElementById('print-end-time-note');
-        
-        // Containers
-        const calendarContainer = document.getElementById('calendar-container');
-        const singleDayContainer = document.getElementById('single-day-container');
-        
-        // View Toggle Buttons
-        const viewMonthBtn = document.getElementById('view-month-btn');
-        const viewDayBtn = document.getElementById('view-day-btn');
-        
-        // Nav Buttons
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        
-        // Define today's date for highlighting
-        const TODAY = new Date();
-        const TODAY_YEAR = TODAY.getFullYear();
-        const TODAY_MONTH = TODAY.getMonth();
-        const TODAY_DAY = TODAY.getDate();
-
-        // Calendar now starts on today's month and year
-        let currentMonth = TODAY_MONTH; 
-        let currentYear = TODAY_YEAR;
-        
-        // New State for Single Day View
-        let viewMode = 'month'; // 'month' or 'day'
-        let selectedDate = new Date(TODAY); // Defaults to today
-        
-        // 0: Fixed 14-day cycle, 2: Two-Cycle Thursday Anchor
-        let scheduleMode = 2; 
-        let endFastTime = '20:00'; 
-
-        // Cache the schedule for the current month
-        let currentMonthSchedule = []; 
-        
-        // Define Tailwind classes and schedule data 
-        const STYLES = {
-            '12/12': { fast: 12, eat: 12, bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300', name: '12h/12h' }, 
-            '14/10': { fast: 14, eat: 10, bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300', name: '14h/10h' },
-            '16/8':  { fast: 16, eat: 8, bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300', name: '16h/8h' },
-            '18/6':  { fast: 18, eat: 6, bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300', name: '18h/6h' },
-            '38h':   { fast: 38, eat: 0, bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300', name: '38h Fast' } 
-        };
-
-        const s12 = STYLES['12/12']; 
-        const s14 = STYLES['14/10'];
-        const s16 = STYLES['16/8'];
-        const s18 = STYLES['18/6'];
-        const s38 = STYLES['38h'];
-
-        // --- UTILITY FUNCTIONS ---
-        function getDaysInMonth(month, year) {
-            return new Date(year, month + 1, 0).getDate();
+        // Fill in days from the previous month
+        for (let i = startOffset - 1; i >= 0; i--) {
+            daysArray.push(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, daysInPreviousMonth - i));
         }
 
-        function findNthDay(n, dayOfWeek, month, year) {
-            let count = 0;
-            let day = 1;
-            while (day <= getDaysInMonth(month, year)) {
-                const date = new Date(year, month, day);
-                if (date.getDay() === dayOfWeek) {
-                    count++;
-                    if (count === n) { return day; }
-                }
-                day++;
-            }
-            return null;
-        }
-        
-        const timeFormatter = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        const dayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-        function formatIcsDate(date) {
-            const pad = (num) => String(num).padStart(2, '0');
-            return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+        // Fill in days of the current month
+        for (let i = 1; i <= daysInMonth; i++) {
+            daysArray.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), i));
         }
 
-
-        // --- LOCAL STORAGE FUNCTIONS ---
-        function saveSettings() {
-            try { 
-                localStorage.setItem('fastingScheduleMode', scheduleMode.toString());
-                localStorage.setItem('endFastTime', endFastTime);
-                localStorage.setItem('viewMode', viewMode);
-            } catch (e) { console.error("Error saving settings:", e); }
-        }
-        
-        function loadSettings() {
-            try {
-                const storedMode = localStorage.getItem('fastingScheduleMode');
-                if (storedMode !== null) {
-                    const loadedMode = parseInt(storedMode, 10);
-                    if (!isNaN(loadedMode) && (loadedMode === 0 || loadedMode === 2)) { scheduleMode = loadedMode; }
-                }
-                const storedTime = localStorage.getItem('endFastTime');
-                if (storedTime !== null) {
-                    endFastTime = storedTime;
-                    if (endTimeInput) endTimeInput.value = storedTime;
-                }
-                const storedView = localStorage.getItem('viewMode');
-                if (storedView === 'month' || storedView === 'day') {
-                    viewMode = storedView;
-                }
-            } catch (e) { console.error("Error loading settings:", e); }
+        // Fill in days from the next month
+        const remainingCells = totalCells - daysArray.length;
+        for (let i = 1; i <= remainingCells; i++) {
+            daysArray.push(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, i));
         }
 
+        return daysArray;
+    }, [currentDate, firstDayOfMonth, daysInMonth]);
 
-        // --- SCHEDULE GENERATION (Unchanged) ---
-        function generateFixedCycleSchedule(daysInMonth) {
-            const strictSchedule = new Array(daysInMonth).fill(null);
-            const cycle = [...Array(4).fill(s14), ...Array(5).fill(s16), ...Array(4).fill(s18), s38];
-            let ptr = 0;
-            // Fill full cycles
-            while (ptr + 14 <= daysInMonth) {
-                for(let i=0; i<14; i++) strictSchedule[ptr+i] = cycle[i];
-                ptr += 14;
-            }
-            // Fill remainder with s12
-            for(let i=ptr; i<daysInMonth; i++) strictSchedule[i] = s12;
-            
-            return strictSchedule;
-        }
+    const handleDayClick = (date) => {
+        setCurrentDate(date);
+        setViewMode('day');
+    };
 
-        function generateTwoCycleAnchorSchedule(month, year) {
-            const daysInMonth = getDaysInMonth(month, year);
-            const scheduleData = new Array(daysInMonth).fill(null);
-            const THURSDAY = 4;
-            const firstThursday = findNthDay(1, THURSDAY, month, year); 
-            
-            if (firstThursday === null) { return new Array(daysInMonth).fill(s12); }
-
-            const applyFast = (day, fastType) => { if (day >= 1 && day <= daysInMonth) { scheduleData[day - 1] = fastType; } };
-            
-            for(let day = 1; day < firstThursday; day++) { applyFast(day, s12); }
-
-            const cyclePattern = [{ style: s14, count: 4 }, { style: s16, count: 5 }, { style: s18, count: 4 }, { style: s38, count: 1 }];
-
-            const applyCycle = (startDay) => {
-                let currentDay = startDay;
-                for (const segment of cyclePattern) {
-                    for (let i = 0; i < segment.count; i++) {
-                        if (currentDay <= daysInMonth) {
-                            if (!scheduleData[currentDay - 1]) { applyFast(currentDay, segment.style); }
-                            currentDay++;
-                        } else { return null; }
-                    }
-                }
-                return currentDay;
-            };
-
-            let nextDay = applyCycle(firstThursday);
-            if (nextDay && nextDay <= daysInMonth) { nextDay = applyCycle(nextDay); }
-
-            if (nextDay && nextDay <= daysInMonth) {
-                for (let day = nextDay; day <= daysInMonth; day++) { applyFast(day, s12); }
-            }
-
-            for(let day = 1; day <= daysInMonth; day++) {
-                if (!scheduleData[day - 1]) { scheduleData[day - 1] = s12; }
-            }
-            return scheduleData;
-        }
-        
-        function generateSchedule(month, year) {
-            if (scheduleMode === 0) { return generateFixedCycleSchedule(getDaysInMonth(month, year)); } 
-            else { return generateTwoCycleAnchorSchedule(month, year); }
-        }
-        
-        // --- DYNAMIC CALCULATION HELPERS ---
-        function getNextDaySchedule(day, month, year) {
-            const clickedDayIndex = day - 1;
-            
-            let monthSchedule = currentMonthSchedule;
-            if (!monthSchedule || monthSchedule.length === 0) {
-                monthSchedule = generateSchedule(month, year);
-            }
-
-            if (clickedDayIndex + 1 < monthSchedule.length) {
-                return monthSchedule[clickedDayIndex + 1];
-            } 
-            
-            const nextDate = new Date(year, month, day + 1);
-            if (scheduleMode === 0) {
-                return s14; // Fixed cycle resets
-            } else { 
-                const THURSDAY = 4;
-                const firstThursdayOfNextMonth = findNthDay(1, THURSDAY, nextDate.getMonth(), nextDate.getFullYear());
-                if (nextDate.getDate() === firstThursdayOfNextMonth) { return s14; } 
-                else { return s12; }
-            }
-        }
-
-        function getEventDetailsForDay(day, month, year, scheduleData) {
-            const dayData = scheduleData[day - 1];
-            const fastDuration = dayData.fast;
-            const eatingWindow = dayData.eat;
-            const [hours, minutes] = endFastTime.split(':').map(Number);
-            
-            const endTimeD = new Date(year, month, day, hours, minutes);
-            const details = { type: 'standard', fastStart: null, fastEnd: null, eatStart: null, eatEnd: null, calculatedFastHours: null, schedule: dayData };
-
-            if (fastDuration === 38) {
-                const nextDaySchedule = getNextDaySchedule(day, month, year);
-                const eatingWindowDPlus1 = nextDaySchedule.eat; 
-                
-                details.fastStart = new Date(year, month, day, hours, minutes);
-                details.fastStart.setDate(details.fastStart.getDate() - 1); 
-
-                details.fastEnd = new Date(year, month, day + 1, hours, minutes); 
-                details.fastEnd.setHours(details.fastEnd.getHours() - eatingWindowDPlus1); 
-
-                const diffMs = details.fastEnd.getTime() - details.fastStart.getTime();
-                details.calculatedFastHours = Math.round(diffMs / (1000 * 60 * 60)); 
-                details.type = 'fast';
-                
-            } else {
-                details.eatEnd = endTimeD;
-                details.eatStart = new Date(details.eatEnd);
-                details.eatStart.setHours(details.eatEnd.getHours() - eatingWindow);
-                details.fastEnd = details.eatStart;
-                details.fastStart = new Date(details.fastEnd);
-                details.fastStart.setHours(details.fastEnd.getHours() - fastDuration);
-                details.type = 'standard';
-            }
-            return details;
-        }
-
-
-        // --- RENDER FUNCTIONS ---
-        
-        function updateViewToggleUI() {
-            if (viewMode === 'month') {
-                viewMonthBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
-                viewMonthBtn.classList.add('bg-white', 'shadow-sm', 'text-indigo-600');
-                viewDayBtn.classList.add('text-gray-500', 'hover:text-gray-700');
-                viewDayBtn.classList.remove('bg-white', 'shadow-sm', 'text-indigo-600');
-                
-                calendarContainer.classList.remove('hidden');
-                singleDayContainer.classList.add('hidden');
-                
-                // Header update for month
-                monthDisplay.textContent = `${monthNames[currentMonth]} ${currentYear}`;
-                
-            } else {
-                viewDayBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
-                viewDayBtn.classList.add('bg-white', 'shadow-sm', 'text-indigo-600');
-                viewMonthBtn.classList.add('text-gray-500', 'hover:text-gray-700');
-                viewMonthBtn.classList.remove('bg-white', 'shadow-sm', 'text-indigo-600');
-                
-                calendarContainer.classList.add('hidden');
-                singleDayContainer.classList.remove('hidden');
-                
-                // Header update for day
-                monthDisplay.textContent = dayFormatter.format(selectedDate);
-                renderSingleDayView();
-            }
-        }
-
-        function renderSingleDayView() {
-            const dayCard = document.getElementById('day-card');
-            
-            // Ensure we have schedule data for the selected date
-            const sMonth = selectedDate.getMonth();
-            const sYear = selectedDate.getFullYear();
-            const sDay = selectedDate.getDate();
-            
-            // Regenerate schedule if needed (e.g. crossing month boundaries)
-            const scheduleData = generateSchedule(sMonth, sYear);
-            const details = getEventDetailsForDay(sDay, sMonth, sYear, scheduleData);
-            const data = details.schedule;
-            
-            // Determine Styling
-            const isToday = (TODAY_YEAR === sYear && TODAY_MONTH === sMonth && TODAY_DAY === sDay);
-            const borderColor = data.bg.replace('bg-', 'border-').replace('100', '500'); // Approximate darker border
-            const bgColor = data.bg;
-            const textColor = data.text;
-            
-            // Build the HTML for the card
-            let html = `
-                <div class="flex flex-col items-center">
-                    <div class="w-full text-center mb-4">
-                        <span class="inline-block px-4 py-1 rounded-full text-sm font-bold ${bgColor} ${textColor} mb-2">
-                            ${isToday ? '★ TODAY - ' : ''}${data.name}
-                        </span>
-                        <h3 class="text-3xl font-extrabold text-gray-800">${data.fast === 38 ? 'Extended Fast' : data.fast + 'h Fasting Day'}</h3>
+    return (
+        <div className="w-full bg-white shadow-xl rounded-lg overflow-hidden">
+            {/* Weekday Headers */}
+            <div className="grid grid-cols-7 border-t border-l bg-gray-50/80">
+                {DAYS_OF_WEEK.map(day => (
+                    <div key={day} className="text-center font-bold text-sm py-2 text-indigo-700 border-r border-b">
+                        {day}
                     </div>
+                ))}
+            </div>
+            
+            {/* Days Grid */}
+            <div className="grid grid-cols-7 border-l">
+                {days.map((dayDate, index) => (
+                    <DayBox
+                        key={index}
+                        dayDate={dayDate}
+                        currentDate={currentDate}
+                        today={today}
+                        onClick={handleDayClick}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * Single day view component.
+ */
+const DayView = ({ currentDate, today }) => {
+    const formattedDate = currentDate.toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const isCurrentDay = isSameDay(currentDate, today);
+
+    // Mock events for demonstration
+    const mockEvents = [
+        { time: '09:00', title: 'Team Standup', color: 'bg-green-500' },
+        { time: '11:00', title: 'Project Review with Client', color: 'bg-blue-500' },
+        { time: '14:30', title: '1-on-1 with Mentor', color: 'bg-yellow-500' },
+        { time: '16:00', title: 'Deep Work Session', color: 'bg-indigo-500' },
+    ];
+
+    const events = isCurrentDay ? mockEvents : [];
+
+    return (
+        <div className="p-6 bg-white shadow-xl rounded-lg space-y-6">
+            <h2 className="text-2xl font-extrabold text-gray-900 border-b pb-3">
+                <span className="text-indigo-600">{currentDate.toLocaleDateString('en-US', { weekday: 'long' })}</span>, {formattedDate.split(', ')[1]}
+            </h2>
+
+            <div className="space-y-4">
+                {events.length > 0 ? events.map((event, index) => (
+                    <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg transition-shadow hover:shadow-md">
+                        <div className={`flex-shrink-0 w-2 h-16 rounded-full ${event.color}`}></div>
+                        <div>
+                            <p className="text-sm font-semibold text-gray-500">{event.time}</p>
+                            <h3 className="text-lg font-bold text-gray-800 mt-1">{event.title}</h3>
+                        </div>
+                    </div>
+                )) : (
+                    <div className="text-center py-12 text-gray-500">
+                        <p className="text-xl font-semibold">No events scheduled.</p>
+                        <p className="mt-2 text-sm">Enjoy your flexible day!</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+/**
+ * Main Calendar Application Component.
+ */
+const App = () => {
+    const [today] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState(today);
+    const [viewMode, setViewMode] = useState('month'); // 'month' or 'day'
+
+    // Formatted date string for display in the header
+    const formattedHeader = useMemo(() => {
+        if (viewMode === 'month') {
+            return currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        } else { // day view
+            return currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+    }, [currentDate, viewMode]);
+
+    // Function to navigate month/day
+    const navigate = (direction) => {
+        const newDate = new Date(currentDate);
+        if (viewMode === 'month') {
+            newDate.setMonth(currentDate.getMonth() + direction);
+        } else { // day view
+            newDate.setDate(currentDate.getDate() + direction);
+        }
+        setCurrentDate(newDate);
+    };
+    
+    // Function to handle view mode change and reset to today
+    const handleViewModeChange = (newMode) => {
+        if (viewMode !== newMode) {
+            // Reset to today's date when switching views
+            setCurrentDate(today);
+            setViewMode(newMode);
+        }
+    }
+
+    // Button style class
+    const buttonClass = (active) => 
+        `px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+            active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/50' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`;
+    
+    const navButtonClass = "p-2 rounded-full text-indigo-600 hover:bg-indigo-100 transition-colors duration-200";
+
+    return (
+        <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8 lg:p-12">
+            <div className="max-w-7xl mx-auto">
+                
+                {/* Fixed Header/Navigation Section */}
+                <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm pt-4 pb-4 border-b border-gray-200 mb-6">
+                    <header className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+                        <h1 className="text-3xl font-extrabold text-indigo-800">
+                            Calendar Dashboard
+                        </h1>
+
+                        {/* View Mode Switcher */}
+                        <div className="flex space-x-2 p-1 bg-white rounded-full shadow-lg">
+                            <button 
+                                onClick={() => handleViewModeChange('day')} 
+                                className={buttonClass(viewMode === 'day')}
+                            >
+                                <Calendar className="w-4 h-4 mr-1 inline-block" /> Day
+                            </button>
+                            <button 
+                                onClick={() => handleViewModeChange('month')} 
+                                className={buttonClass(viewMode === 'month')}
+                            >
+                                <CalendarDays className="w-4 h-4 mr-1 inline-block" /> Month
+                            </button>
+                        </div>
+                    </header>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
-            `;
-            
-            if (details.type === 'fast') {
-                // 38h/36h Fast Layout
-                html += `
-                        <div class="bg-gray-50 p-4 rounded-lg text-center border">
-                            <p class="text-xs uppercase text-gray-500 font-bold mb-1">Fast Duration</p>
-                            <p class="text-2xl font-bold text-red-600">${details.calculatedFastHours} Hours</p>
+                    {/* Date Navigation and Today Button */}
+                    <div className="flex justify-between items-center mt-6 p-4 bg-white rounded-xl shadow-md">
+                        {/* Navigation Arrows */}
+                        <div className="flex space-x-1">
+                            <button 
+                                onClick={() => navigate(-1)} 
+                                className={navButtonClass}
+                                aria-label="Previous"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+                            <button 
+                                onClick={() => navigate(1)} 
+                                className={navButtonClass}
+                                aria-label="Next"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-lg text-center border">
-                            <p class="text-xs uppercase text-gray-500 font-bold mb-1">Status</p>
-                            <p class="text-xl font-medium text-gray-700">No Eating Window</p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg text-center border sm:col-span-2">
-                            <p class="text-xs uppercase text-gray-500 font-bold mb-1">Fasting Timeline</p>
-                            <div class="flex justify-between items-center px-4 mt-2">
-                                <div class="text-left">
-                                    <span class="block text-xs text-gray-400">Started</span>
-                                    <span class="block font-bold text-gray-800">${timeFormatter.format(details.fastStart)}</span>
-                                    <span class="block text-xs text-gray-500">Yesterday</span>
-                                </div>
-                                <div class="text-gray-300">➜</div>
-                                <div class="text-right">
-                                    <span class="block text-xs text-gray-400">Ends</span>
-                                    <span class="block font-bold text-gray-800">${timeFormatter.format(details.fastEnd)}</span>
-                                    <span class="block text-xs text-gray-500">Tomorrow</span>
-                                </div>
-                            </div>
-                        </div>
-                `;
-            } else {
-                // Standard Day Layout
-                html += `
-                        <div class="bg-indigo-50 p-4 rounded-lg text-center border border-indigo-100">
-                            <p class="text-xs uppercase text-indigo-400 font-bold mb-1">Eating Window</p>
-                            <p class="text-2xl font-bold text-indigo-700">${data.eat} Hours</p>
-                            <p class="text-sm font-medium text-indigo-600 mt-1">
-                                ${timeFormatter.format(details.eatStart)} - ${timeFormatter.format(details.eatEnd)}
-                            </p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg text-center border border-gray-100">
-                            <p class="text-xs uppercase text-gray-400 font-bold mb-1">Fasting</p>
-                            <p class="text-2xl font-bold text-gray-600">${data.fast} Hours</p>
-                            <p class="text-sm font-medium text-gray-500 mt-1">
-                                until ${timeFormatter.format(details.eatStart)}
-                            </p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg text-center border sm:col-span-2">
-                            <p class="text-xs uppercase text-gray-500 font-bold mb-1">Schedule Breakdown</p>
-                            <div class="flex justify-between text-sm mt-2 px-2">
-                                <div>
-                                    <span class="block font-bold text-gray-700">Fast Ends</span>
-                                    <span class="block text-gray-500">${timeFormatter.format(details.eatStart)}</span>
-                                </div>
-                                <div>
-                                    <span class="block font-bold text-indigo-600">Eat Start</span>
-                                    <span class="block text-indigo-400">${timeFormatter.format(details.eatStart)}</span>
-                                </div>
-                                <div>
-                                    <span class="block font-bold text-gray-700">Fast Starts</span>
-                                    <span class="block text-gray-500">${timeFormatter.format(details.eatEnd)}</span>
-                                </div>
-                            </div>
-                        </div>
-                `;
-            }
-            
-            html += `</div></div>`;
-            
-            // Apply a colored border to the card corresponding to the day type
-            dayCard.className = `bg-white border-4 rounded-xl p-6 shadow-md transition-all duration-300 ${borderColor}`;
-            dayCard.innerHTML = html;
-        }
 
-        function renderCalendar(month, year) {
-            // Update cache for current month context
-            currentMonth = month;
-            currentYear = year;
-            
-            // Month Header
-            if (viewMode === 'month') {
-                monthDisplay.textContent = `${monthNames[month]} ${year}`;
-            }
+                        {/* Current Display Date */}
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 px-4 text-center">
+                            {formattedHeader}
+                        </h2>
 
-            // Print Note
-            const [hours, minutes] = endFastTime.split(':').map(Number);
-            const dummyDate = new Date(2000, 0, 1, hours, minutes);
-            printEndTimeNote.textContent = `Eating Ends At (EFT): ${timeFormatter.format(dummyDate)}`;
+                        {/* Today Button */}
+                        <button
+                            onClick={() => setCurrentDate(today)}
+                            className="bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition duration-150 shadow-md"
+                        >
+                            Today
+                        </button>
+                    </div>
+                </div>
 
-            // Generate Data
-            const daysInMonth = getDaysInMonth(month, year);
-            const scheduleData = generateSchedule(month, year);
-            currentMonthSchedule = scheduleData; 
-            
-            // Clear Grid
-            calendarGrid.innerHTML = '';
-            
-            const date = new Date(year, month, 1);
-            const startDayOfWeek = date.getDay(); 
-            const isCurrentMonth = (year === TODAY_YEAR && month === TODAY_MONTH);
+                {/* Main Content Area */}
+                <div className="mt-8">
+                    {viewMode === 'month' ? (
+                        <MonthView 
+                            currentDate={currentDate} 
+                            setCurrentDate={setCurrentDate} 
+                            setViewMode={handleViewModeChange} 
+                            today={today}
+                        />
+                    ) : (
+                        <DayView currentDate={currentDate} today={today} />
+                    )}
+                </div>
 
-            // Padding
-            for (let i = 0; i < startDayOfWeek; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.classList.add('p-1', 'aspect-square', 'bg-white', 'rounded-lg', 'shadow-inner', 'h-full');
-                calendarGrid.appendChild(emptyCell);
-            }
+                {/* Optional Footer/Information */}
+                <footer className="mt-12 text-center text-gray-400 text-sm">
+                    <p>Reactive Calendar Interface v1.1</p>
+                </footer>
+            </div>
+        </div>
+    );
+};
 
-            // Days
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayData = scheduleData[day - 1]; 
-                const { fast, eat, name, bg, text, border } = dayData;
-
-                const cell = document.createElement('div');
-                
-                const classesToAdd = [
-                    'day-cell', 'rounded-lg', 'p-1', 'sm:p-3', 'text-center',
-                    'flex', 'flex-col', 'justify-between', 'aspect-square',
-                    'border-2', bg, text, border 
-                ];
-                
-                cell.classList.add(...classesToAdd);
-                
-                // Add click handler
-                cell.addEventListener('click', () => {
-                    // Update selected date and switch view
-                    selectedDate = new Date(year, month, day);
-                    viewMode = 'day';
-                    saveSettings();
-                    updateViewToggleUI();
-                });
-
-                const dayNum = document.createElement('div');
-                dayNum.classList.add('text-lg', 'sm:text-xl', 'font-extrabold', 'mb-0', 'flex', 'items-center', 'justify-center');
-                dayNum.textContent = day;
-                
-                if (isCurrentMonth && day === TODAY_DAY) {
-                    const todayIcon = document.createElement('span');
-                    todayIcon.innerHTML = '★'; 
-                    todayIcon.classList.add('text-indigo-500', 'text-xs', 'ml-1', 'align-top', 'font-normal');
-                    dayNum.appendChild(todayIcon);
-                }
-                
-                cell.appendChild(dayNum);
-
-                const liveViewDetails = document.createElement('div');
-                liveViewDetails.classList.add('live-view-details', 'text-3xs', 'sm:text-xs', 'font-semibold', 'leading-tight', 'truncate');
-
-                if (fast === 38) {
-                    liveViewDetails.innerHTML = `<span class="block">Fast</span><span class="block font-normal">(36h/38h)</span>`;
-                } else {
-                    liveViewDetails.innerHTML = `<span class="block">${fast}h Fast</span><span class="block font-normal">${eat}h Eat</span>`;
-                }
-                cell.appendChild(liveViewDetails);
-
-                // Print Details (Hidden in Live)
-                const printViewDetails = document.createElement('div');
-                printViewDetails.classList.add('print-view-details', 'text-3xs', 'sm:text-xs', 'font-semibold', 'leading-tight', 'truncate', 'mt-1');
-                
-                let printTimeString = ""; 
-
-                if (fast !== 38) {
-                    const details = getEventDetailsForDay(day, month, year, scheduleData);
-                    const formattedStartTime = timeFormatter.format(details.eatStart).replace(/\s/g, '');
-                    const formattedEndTime = timeFormatter.format(details.eatEnd).replace(/\s/g, '');
-                    printTimeString = `<span>${formattedStartTime}</span><span>${formattedEndTime}</span>`;
-                } else {
-                    printTimeString = `<span class="font-bold">FAST DAY</span><span class="text-gray-400">---</span>`;
-                }
-                
-                printViewDetails.innerHTML = printTimeString;
-                cell.appendChild(printViewDetails);
-                
-                calendarGrid.appendChild(cell); 
-            }
-        }
-
-        // --- HANDLERS ---
-
-        function handlePrev() {
-            if (viewMode === 'month') {
-                currentMonth--;
-                if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-                renderCalendar(currentMonth, currentYear);
-            } else {
-                // Single Day Prev
-                selectedDate.setDate(selectedDate.getDate() - 1);
-                renderSingleDayView();
-            }
-        }
-
-        function handleNext() {
-            if (viewMode === 'month') {
-                currentMonth++;
-                if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-                renderCalendar(currentMonth, currentYear);
-            } else {
-                // Single Day Next
-                selectedDate.setDate(selectedDate.getDate() + 1);
-                renderSingleDayView();
-            }
-        }
-
-        function setScheduleMode(mode) {
-            if (scheduleMode === mode) return; 
-            scheduleMode = mode;
-            updateUI(mode);
-            renderCalendar(currentMonth, currentYear);
-            if(viewMode === 'day') renderSingleDayView();
-            saveSettings();
-        }
-
-        function setEndFastTime(event) {
-            endFastTime = event.target.value;
-            saveSettings();
-            renderCalendar(currentMonth, currentYear);
-            if(viewMode === 'day') renderSingleDayView();
-        }
-        
-        function toggleView(mode) {
-            viewMode = mode;
-            saveSettings();
-            updateViewToggleUI();
-        }
-
-        function updateUI(mode) {
-            [fixedBtn, twoCycleBtn].forEach(btn => btn.classList.remove('bg-indigo-600', 'text-white', 'bg-gray-200', 'text-gray-700'));
-            let activeBtn, description;
-            if (mode === 0) {
-                activeBtn = fixedBtn;
-                description = 'The **14-day cycle** (4-5-4-1) restarts on the first of the month. The long fast is always **38h**.';
-            } else { 
-                activeBtn = twoCycleBtn;
-                description = 'Two 14-day cycles (4-5-4-1) start on the **First Thursday** of the month. Buffer days use **12h/12h**. The long fast dynamically calculates to **36h or 38h**.';
-            }
-            activeBtn.classList.add('bg-indigo-600', 'text-white');
-            [fixedBtn, twoCycleBtn].filter(btn => btn !== activeBtn).forEach(btn => btn.classList.add('bg-gray-200', 'text-gray-700'));
-            descriptionElement.innerHTML = description;
-        }
-
-        // --- EXPORT FUNCTION ---
-        function generateIcsFile() {
-            const filename = `FastingSchedule_${monthNames[currentMonth]}${currentYear}.ics`;
-            const scheduleData = generateSchedule(currentMonth, currentYear);
-            const daysInMonth = getDaysInMonth(currentMonth, currentYear);
-            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; 
-
-            let icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//FastingNavigator//NONSGML v1.0//EN\n`;
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayData = scheduleData[day - 1];
-                const details = getEventDetailsForDay(day, currentMonth, currentYear, scheduleData);
-                const uidPrefix = `NAV-${currentYear}${String(currentMonth + 1).padStart(2, '0')}${String(day).padStart(2, '0')}-${Date.now()}`;
-
-                if (details.type === 'fast') {
-                    // 38h Fast: One event (Fast Ends)
-                    const summary = `${details.calculatedFastHours}h Fast ENDS`;
-                    const description = `This marks the end of your ${details.calculatedFastHours}h fast. Start your eating window now.`;
-                    
-                    icsContent += `BEGIN:VEVENT\n`;
-                    icsContent += `UID:${uidPrefix}-FASTEND\n`;
-                    icsContent += `DTSTAMP:${formatIcsDate(new Date())}\n`;
-                    icsContent += `DTSTART;TZID=${timezone}:${formatIcsDate(details.fastEnd)}\n`;
-                    const endMarker = new Date(details.fastEnd);
-                    endMarker.setMinutes(endMarker.getMinutes() + 1);
-                    icsContent += `DTEND;TZID=${timezone}:${formatIcsDate(endMarker)}\n`;
-                    icsContent += `SUMMARY:${summary}\n`;
-                    icsContent += `DESCRIPTION:${description}\n`;
-                    icsContent += `END:VEVENT\n`;
-
-                } else {
-                    // Standard Day: One event (Eating Window)
-                    const eatSummary = `EATING: ${dayData.eat}h Window (${dayData.fast}/${dayData.eat})`;
-                    const eatDescription = `Your ${dayData.eat}h eating window starts at ${timeFormatter.format(details.eatStart)} and ends at ${timeFormatter.format(details.eatEnd)}.`;
-                    
-                    icsContent += `BEGIN:VEVENT\n`;
-                    icsContent += `UID:${uidPrefix}-EATWIN\n`;
-                    icsContent += `DTSTAMP:${formatIcsDate(new Date())}\n`;
-                    icsContent += `DTSTART;TZID=${timezone}:${formatIcsDate(details.eatStart)}\n`;
-                    icsContent += `DTEND;TZID=${timezone}:${formatIcsDate(details.eatEnd)}\n`;
-                    icsContent += `SUMMARY:${eatSummary}\n`;
-                    icsContent += `DESCRIPTION:${eatDescription}\n`;
-                    icsContent += `END:VEVENT\n`;
-                }
-            }
-
-            icsContent += `END:VCALENDAR\n`;
-            
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            showMessageBox(`✅ Exported **${daysInMonth} events** for ${monthNames[currentMonth]} ${currentYear} to **${filename}**.`);
-        }
-
-        // --- INITIALIZATION ---
-        function initialize() {
-            loadSettings();
-            
-            // Listeners
-            prevBtn.addEventListener('click', handlePrev);
-            nextBtn.addEventListener('click', handleNext);
-            fixedBtn.addEventListener('click', () => setScheduleMode(0));
-            twoCycleBtn.addEventListener('click', () => setScheduleMode(2));
-            endTimeInput.addEventListener('change', setEndFastTime);
-            printBtn.addEventListener('click', () => window.print());
-            
-            // Ensure export button listener is attached
-            if (exportBtn) {
-                exportBtn.addEventListener('click', generateIcsFile);
-            }
-
-            viewMonthBtn.addEventListener('click', () => toggleView('month'));
-            viewDayBtn.addEventListener('click', () => toggleView('day'));
-
-            // Render
-            updateUI(scheduleMode);
-            try {
-                // Always render calendar first to prep data
-                renderCalendar(currentMonth, currentYear);
-                // Then set UI based on stored view mode
-                updateViewToggleUI();
-            } catch (error) {
-                showMessageBox(`💥 Critical Error: ${error.message}`);
-                console.error(error);
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', initialize);
-
-    </script>
-</body>
-</html>
+export default App;
