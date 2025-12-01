@@ -134,7 +134,7 @@
 <body class="bg-gray-50 min-h-screen font-sans">
     <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl">
 
-        <!-- Fixed Header and Navigation Container (FIXED POSITION) -->
+        <!-- Fixed Header and Navigation Container (STICKY TOP) -->
         <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-4 sm:p-8 rounded-t-xl border-b border-gray-100">
             
             <header class="text-center mb-4">
@@ -160,20 +160,13 @@
                 </button>
             </div>
             
-            <!-- View Toggle -->
-            <div id="view-toggle-container" class="flex justify-center mt-4 print-hidden">
-                <div class="bg-gray-100 p-1 rounded-lg flex items-center">
-                    <button id="view-month-btn" class="px-6 py-2 text-sm font-semibold rounded-md transition bg-white shadow-sm text-indigo-600">Month View</button>
-                    <button id="view-day-btn" class="px-6 py-2 text-sm font-semibold rounded-md transition text-gray-500 hover:text-gray-700">Single Day View</button>
-                </div>
-            </div>
+            <!-- Global Print Note (Hidden in live view by CSS) -->
+            <h3 id="print-end-time-note" class="text-xl font-medium text-gray-800" style="display: none;"></h3>
         </div>
         
         <!-- Main Content Area (Scrollable) -->
         <div class="p-4 sm:p-8">
             
-            <!-- NEW: Global Print Note (Hidden in live view by CSS) -->
-            <h3 id="print-end-time-note" class="text-xl font-medium text-gray-800" style="display: none;"></h3>
 
             <!-- MONTH VIEW CONTAINER -->
             <div id="calendar-container">
@@ -198,6 +191,19 @@
             <div id="single-day-container" class="hidden mb-8">
                 <div id="day-card" class="bg-white border-2 rounded-xl p-6 shadow-md transition-all duration-300">
                     <!-- Content injected via JS -->
+                </div>
+            </div>
+            
+            <!-- VIEW TOGGLE CONTAINER (MOVED HERE) -->
+            <div id="view-toggle-container" class="flex justify-center items-center space-x-3 mt-4 mb-6 print-hidden">
+                <!-- Today Button -->
+                <button id="view-today-btn" class="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition shadow-sm">
+                    Today
+                </button>
+                
+                <div class="bg-gray-100 p-1 rounded-lg flex items-center">
+                    <button id="view-month-btn" class="px-6 py-2 text-sm font-semibold rounded-md transition bg-white shadow-sm text-indigo-600">Month View</button>
+                    <button id="view-day-btn" class="px-6 py-2 text-sm font-semibold rounded-md transition text-gray-500 hover:text-gray-700">Single Day View</button>
                 </div>
             </div>
 
@@ -294,7 +300,7 @@
         const messageBox = document.getElementById('message-box');
         const printBtn = document.getElementById('print-calendar-btn');
         const exportBtn = document.getElementById('export-ics-btn'); 
-        const printEndTimeNote = document.getElementById('print-end-time-note');
+        const printEndTimeNote = document.getElementById('print-end-time-note'); 
         
         // Containers
         const calendarContainer = document.getElementById('calendar-container');
@@ -303,6 +309,7 @@
         // View Toggle Buttons
         const viewMonthBtn = document.getElementById('view-month-btn');
         const viewDayBtn = document.getElementById('view-day-btn');
+        const viewTodayBtn = document.getElementById('view-today-btn'); 
         
         // Nav Buttons
         const prevBtn = document.getElementById('prev-btn');
@@ -697,7 +704,9 @@
             // Print Note
             const [hours, minutes] = endFastTime.split(':').map(Number);
             const dummyDate = new Date(2000, 0, 1, hours, minutes);
-            printEndTimeNote.textContent = `Eating Ends At (EFT): ${timeFormatter.format(dummyDate)}`;
+            if(printEndTimeNote) {
+                printEndTimeNote.textContent = `Eating Ends At (EFT): ${timeFormatter.format(dummyDate)}`;
+            }
 
             // Generate Data
             const daysInMonth = getDaysInMonth(month, year);
@@ -733,11 +742,9 @@
                 
                 cell.classList.add(...classesToAdd);
                 
-                // Add click handler
+                // NEW/FIXED: Add click handler to switch to day view for the clicked date
                 cell.addEventListener('click', () => {
-                    // Update selected date and switch view
-                    selectedDate = new Date(year, month, day);
-                    toggleView('day');
+                    handleDayClick(year, month, day);
                 });
 
                 const dayNum = document.createElement('div');
@@ -793,10 +800,10 @@
                 if (currentMonth < 0) { currentMonth = 11; currentYear--; }
                 renderCalendar(currentMonth, currentYear);
             } else {
-                // Single Day Prev (FIXED: Updates date display and rerenders day view)
+                // Single Day Prev: Create a new Date object to avoid modifying the previous day's object
+                selectedDate = new Date(selectedDate);
                 selectedDate.setDate(selectedDate.getDate() - 1);
-                monthDisplay.textContent = dayFormatter.format(selectedDate);
-                renderSingleDayView();
+                updateViewToggleUI(); // Rerenders single day view and updates header
             }
         }
 
@@ -806,10 +813,10 @@
                 if (currentMonth > 11) { currentMonth = 0; currentYear++; }
                 renderCalendar(currentMonth, currentYear);
             } else {
-                // Single Day Next (FIXED: Updates date display and rerenders day view)
+                // Single Day Next: Create a new Date object
+                selectedDate = new Date(selectedDate);
                 selectedDate.setDate(selectedDate.getDate() + 1);
-                monthDisplay.textContent = dayFormatter.format(selectedDate);
-                renderSingleDayView();
+                updateViewToggleUI(); // Rerenders single day view and updates header
             }
         }
 
@@ -829,19 +836,51 @@
             if(viewMode === 'day') renderSingleDayView();
         }
         
+        // NEW: Handles the click from a day cell to set the date and switch view
+        function handleDayClick(year, month, day) {
+            selectedDate = new Date(year, month, day);
+            viewMode = 'day'; // Explicitly switch to day mode
+            updateViewToggleUI(); // Updates UI and renders single day view
+            saveSettings();
+            showMessageBox(`📅 Switched to Single Day View for **${monthNames[month]} ${day}, ${year}**.`);
+        }
+        
+        /**
+         * Toggles the view mode using the buttons. This function DOES NOT reset the date.
+         * @param {string} mode - 'month' or 'day'
+         */
         function toggleView(mode) {
             if (viewMode !== mode) {
                 viewMode = mode;
-                // CRITICAL FIX: Reset to today when switching views
-                selectedDate = new Date(TODAY); 
-                currentMonth = TODAY_MONTH;
-                currentYear = TODAY_YEAR;
                 
-                // Re-render based on new mode/date
-                renderCalendar(currentMonth, currentYear);
-                updateViewToggleUI();
+                // If switching back to month view, ensure the current month/year is rendered
+                if (mode === 'month') {
+                    renderCalendar(currentMonth, currentYear);
+                }
+                
+                updateViewToggleUI(); 
+                saveSettings(); // Save the new view mode
             }
         }
+        
+        /**
+         * Resets the current view's date back to today.
+         */
+        function goToToday() {
+            if (viewMode === 'month') {
+                currentMonth = TODAY_MONTH;
+                currentYear = TODAY_YEAR;
+                renderCalendar(currentMonth, currentYear);
+                showMessageBox('📅 Calendar reset to **Today** (Month View).');
+            } else { // viewMode === 'day'
+                selectedDate = new Date(TODAY);
+                renderSingleDayView(); // Renders the day view for the new selectedDate
+                showMessageBox('📅 Calendar reset to **Today** (Single Day View).');
+            }
+            updateViewToggleUI(); // Updates the header text for both modes
+            saveSettings(); // Save current view mode
+        }
+
 
         function updateUI(mode) {
             [fixedBtn, twoCycleBtn].forEach(btn => btn.classList.remove('bg-indigo-600', 'text-white', 'bg-gray-200', 'text-gray-700'));
@@ -931,13 +970,16 @@
             endTimeInput.addEventListener('change', setEndFastTime);
             printBtn.addEventListener('click', () => window.print());
             
-            // Ensure export button listener is attached
             if (exportBtn) {
                 exportBtn.addEventListener('click', generateIcsFile);
             }
 
+            // View Toggle Listeners (use toggleView which preserves date/time)
             viewMonthBtn.addEventListener('click', () => toggleView('month'));
             viewDayBtn.addEventListener('click', () => toggleView('day'));
+            
+            // Today Button Listener (uses goToToday which handles the date reset)
+            viewTodayBtn.addEventListener('click', goToToday); 
 
             // Render
             updateUI(scheduleMode);
