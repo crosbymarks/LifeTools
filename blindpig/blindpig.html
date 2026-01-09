@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #ff4081; /* Pig Pink */
+            --primary: #ff4081;
             --primary-dark: #c60055;
             --bg: #f3f4f6;
             --card-bg: #ffffff;
@@ -26,19 +26,13 @@
             padding-bottom: 80px;
         }
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        .container { max-width: 600px; margin: 0 auto; }
 
         /* --- Header --- */
         header { text-align: center; margin-bottom: 30px; }
         h1 { font-size: 2.5rem; margin: 0; color: var(--text-main); letter-spacing: -0.05em; }
         .pig-icon { font-size: 3rem; display: block; margin-bottom: 5px; animation: bounce 2s infinite; }
-        @keyframes bounce { 
-            0%, 100% { transform: translateY(0); } 
-            50% { transform: translateY(-10px); } 
-        }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         p.subtitle { color: var(--text-muted); margin-top: 5px; font-size: 1rem; }
 
         /* --- Status Bar --- */
@@ -53,7 +47,7 @@
         .card {
             background: var(--card-bg); border-radius: var(--radius);
             box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05); position: relative;
         }
         .card-header {
             font-weight: 800; text-transform: uppercase; font-size: 0.75rem;
@@ -61,84 +55,96 @@
             display: flex; justify-content: space-between; align-items: center;
         }
 
-        /* --- Image Uploaders --- */
+        /* --- NEW Upload UI --- */
         .upload-zone {
-            position: relative; border: 2px dashed #cbd5e1; border-radius: var(--radius);
-            height: 160px; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; cursor: pointer; transition: border-color 0.2s;
-            overflow: hidden; background: #f8fafc;
+            border: 2px dashed #cbd5e1; border-radius: var(--radius);
+            height: 180px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; background: #f8fafc; position: relative; overflow: hidden;
+            transition: background 0.2s;
         }
-        .upload-zone:hover { border-color: var(--primary); background: #fff0f6; }
-        
-        /* FIX: Ensure input is always on top (z-index 10) so it remains clickable */
-        .upload-zone input[type="file"] {
-            position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;
-        }
-        
-        .upload-label { color: var(--text-muted); font-size: 0.9rem; pointer-events: none; z-index: 1; }
-        .upload-icon { font-size: 1.5rem; margin-bottom: 8px; color: var(--text-muted); }
-        
-        .preview-img {
-            position: absolute; width: 100%; height: 100%; object-fit: contain;
-            background: #fff; display: none; z-index: 2; /* Image is below input now */
+        .upload-zone.has-image { border-style: solid; border-color: var(--primary); }
+
+        .action-buttons {
+            display: flex; gap: 10px; z-index: 5;
         }
 
-        /* --- Buttons --- */
+        .action-btn {
+            background: white; border: 1px solid #e2e8f0; padding: 10px 16px;
+            border-radius: 8px; font-size: 0.9rem; font-weight: 600; color: var(--text-main);
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;
+        }
+        .action-btn:hover { background: #f1f5f9; transform: translateY(-1px); }
+        .action-btn.camera { color: var(--primary-dark); border-color: #fbcfe8; background: #fff1f2; }
+        .action-btn.camera:hover { background: #ffe4e6; }
+
+        .preview-img {
+            position: absolute; top:0; left:0; width: 100%; height: 100%; object-fit: contain;
+            background: #fff; display: none; z-index: 1;
+        }
+        
+        /* Floating "Change" button that appears over image */
+        .reset-overlay {
+            position: absolute; top: 10px; right: 10px; z-index: 10;
+            background: rgba(0,0,0,0.6); color: white; border: none; padding: 5px 10px;
+            border-radius: 20px; font-size: 0.75rem; cursor: pointer; display: none;
+        }
+        .upload-zone.has-image .reset-overlay { display: block; }
+        .upload-zone.has-image .action-buttons { display: none; }
+
+        /* Hidden file input */
+        input[type="file"] { display: none; }
+
+        /* --- Camera Modal --- */
+        #cameraModal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 100; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        video { width: 100%; max-width: 600px; height: auto; background: #333; }
+        .camera-controls {
+            position: absolute; bottom: 30px; width: 100%; 
+            display: flex; justify-content: center; gap: 20px;
+        }
+        .cam-btn {
+            width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .snap-btn { background: white; border: 4px solid #ddd; }
+        .snap-btn:active { background: #ccc; }
+        .close-cam { background: #ef4444; color: white; width: 50px; height: 50px; font-size: 1.2rem; }
+
+        /* --- Buttons & Results (Same as before) --- */
         .btn {
             background-color: var(--primary); color: white; border: none; padding: 14px 20px;
             font-size: 1rem; font-weight: 600; border-radius: var(--radius); cursor: pointer;
             width: 100%; box-shadow: 0 4px 6px rgba(255, 64, 129, 0.3);
-            transition: transform 0.1s, background-color 0.2s;
+            transition: transform 0.1s;
         }
         .btn:hover { background-color: var(--primary-dark); }
-        .btn:active { transform: scale(0.98); }
         .btn:disabled { background-color: #cbd5e1; box-shadow: none; cursor: not-allowed; }
-        
         .btn-secondary {
             background-color: white; color: var(--text-main); border: 2px solid #e5e7eb;
             box-shadow: none; margin-top: 10px;
         }
-        .btn-secondary:hover { background-color: #f9fafb; border-color: #d1d5db; }
         .btn-link {
             background: none; border: none; color: var(--text-muted); text-decoration: underline;
-            cursor: pointer; display: block; margin: 10px auto; font-size: 0.85rem; box-shadow: none;
+            cursor: pointer; display: block; margin: 10px auto; font-size: 0.85rem;
         }
-
-        /* --- Results --- */
         .result-item {
             display: flex; align-items: center; justify-content: space-between;
             padding: 15px; border-bottom: 1px solid #f3f4f6;
         }
-        .result-item:last-child { border-bottom: none; }
-        .result-rank { font-weight: 800; width: 30px; color: var(--text-muted); }
-        .result-name { flex-grow: 1; font-weight: 600; }
-        .result-score {
-            font-family: monospace; background: #f3f4f6; padding: 4px 8px;
-            border-radius: 4px; font-size: 0.9rem;
-        }
-        .winner-card {
-            background: linear-gradient(135deg, #fff0f6 0%, #fff 100%);
-            border: 2px solid var(--primary); transform: scale(1.02);
-        }
-        .winner-badge {
-            background: var(--primary); color: white; padding: 2px 8px;
-            border-radius: 10px; font-size: 0.7rem; text-transform: uppercase; margin-left: 10px;
-        }
-
-        /* --- Loader for OpenCV --- */
-        .lds-dual-ring {
-            display: inline-block; width: 16px; height: 16px; margin-right: 8px;
-        }
+        .winner-card { background: linear-gradient(135deg, #fff0f6 0%, #fff 100%); border: 2px solid var(--primary); }
+        
+        .lds-dual-ring { display: inline-block; width: 16px; height: 16px; margin-right: 8px; }
         .lds-dual-ring:after {
             content: " "; display: block; width: 12px; height: 12px; border-radius: 50%;
             border: 2px solid var(--text-muted);
             border-color: var(--text-muted) transparent var(--text-muted) transparent;
             animation: lds-dual-ring 1.2s linear infinite;
         }
-        @keyframes lds-dual-ring {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes lds-dual-ring { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -157,42 +163,50 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="card-target">
             <div class="card-header">
-                <span>The Target</span>
-                <span>🎯</span>
+                <span>The Target</span><span>🎯</span>
             </div>
-            <div class="upload-zone">
-                <input type="file" id="targetInput" accept="image/*">
-                <div class="upload-label">
-                    <div class="upload-icon">📷</div>
-                    Click to upload Original
+            <div class="upload-zone" id="zone-target">
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="triggerFile('target')">📁 Upload</button>
+                    <button class="action-btn camera" onclick="openCamera('target')">📷 Photo</button>
                 </div>
-                <img id="targetPreview" class="preview-img">
+                <button class="reset-overlay" onclick="clearImage('target')">✕ Change</button>
+                <img id="preview-target" class="preview-img">
+                <input type="file" id="file-target" accept="image/*" onchange="handleFile('target')">
             </div>
         </div>
 
         <div id="playersContainer">
-            <div class="card player-card">
+            <div class="card player-card" id="card-p1">
                 <div class="card-header">
                     <span>Player 1</span>
                     <button onclick="removePlayer(this)" style="border:none; background:none; cursor:pointer; color:#999;">✕</button>
                 </div>
-                <div class="upload-zone">
-                    <input type="file" class="playerInput" accept="image/*" data-player="1">
-                    <div class="upload-label"><div class="upload-icon">🖌️</div>Upload Drawing</div>
-                    <img class="preview-img">
+                <div class="upload-zone" id="zone-p1">
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="triggerFile('p1')">📁 Upload</button>
+                        <button class="action-btn camera" onclick="openCamera('p1')">📷 Photo</button>
+                    </div>
+                    <button class="reset-overlay" onclick="clearImage('p1')">✕ Change</button>
+                    <img id="preview-p1" class="preview-img player-img">
+                    <input type="file" id="file-p1" class="playerInput" accept="image/*" onchange="handleFile('p1')">
                 </div>
             </div>
-             <div class="card player-card">
+             <div class="card player-card" id="card-p2">
                 <div class="card-header">
                     <span>Player 2</span>
                     <button onclick="removePlayer(this)" style="border:none; background:none; cursor:pointer; color:#999;">✕</button>
                 </div>
-                <div class="upload-zone">
-                    <input type="file" class="playerInput" accept="image/*" data-player="2">
-                    <div class="upload-label"><div class="upload-icon">🖌️</div>Upload Drawing</div>
-                    <img class="preview-img">
+                <div class="upload-zone" id="zone-p2">
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="triggerFile('p2')">📁 Upload</button>
+                        <button class="action-btn camera" onclick="openCamera('p2')">📷 Photo</button>
+                    </div>
+                    <button class="reset-overlay" onclick="clearImage('p2')">✕ Change</button>
+                    <img id="preview-p2" class="preview-img player-img">
+                    <input type="file" id="file-p2" class="playerInput" accept="image/*" onchange="handleFile('p2')">
                 </div>
             </div>
         </div>
@@ -203,10 +217,18 @@
 
         <div id="resultsArea" style="margin-top: 30px; display:none;">
             <h3 style="text-align:center; color: var(--text-main);">Results</h3>
-            <div class="card" id="resultsList">
-                </div>
+            <div class="card" id="resultsList"></div>
             <button class="btn btn-secondary" onclick="hideResults()">Try Again (Keep Photos)</button>
             <button class="btn btn-link" onclick="fullReset()">Clear All Images</button>
+        </div>
+
+        <div id="cameraModal">
+            <video id="cameraVideo" autoplay playsinline></video>
+            <canvas id="cameraCanvas" style="display:none;"></canvas>
+            <div class="camera-controls">
+                <button class="cam-btn close-cam" onclick="closeCamera()">✕</button>
+                <button class="cam-btn snap-btn" onclick="snapPhoto()"></button>
+            </div>
         </div>
 
         <canvas id="canvasOutput" style="display:none;"></canvas>
@@ -219,7 +241,7 @@
         };
 
         setTimeout(function() {
-            if (!cvReady) showError("Loading timed out. \n\nSecurity Tip: If you opened this file directly (file://), browsers block the vision engine. Please run a local server or upload this to a website.");
+            if (!cvReady) showError("Loading timed out. Browsers may block the vision engine on local files. Try using a local server.");
         }, 15000);
 
         function showError(msg) { 
@@ -235,56 +257,132 @@
     <script>
         let cvReady = false;
         let playerCount = 2;
+        let currentCameraId = null; // Tracks which player is using the camera
+        let stream = null;
 
         function onOpenCvReady() {
             if(cvReady) return; 
             cvReady = true;
-            const sb = document.getElementById('status-bar');
-            sb.classList.add('ready');
+            document.getElementById('status-bar').classList.add('ready');
             document.getElementById('statusText').innerText = "Vision Engine Ready";
             document.getElementById('loaderIcon').style.display = 'none';
             document.getElementById('judgeBtn').disabled = false;
             
             const debugDiv = document.createElement('div');
-            debugDiv.style.textAlign = 'center';
-            debugDiv.style.marginTop = '10px';
-            debugDiv.innerHTML = `<label style="color:#666; font-size:0.8rem;"><input type="checkbox" id="debugMode"> Show what the computer sees (Debug Mode)</label>`;
+            debugDiv.style.textAlign = 'center'; debugDiv.style.marginTop = '10px';
+            debugDiv.innerHTML = `<label style="color:#666; font-size:0.8rem;"><input type="checkbox" id="debugMode"> Debug Mode</label>`;
             document.getElementById('judgeBtn').after(debugDiv);
         }
 
-        // --- Image Preview Logic ---
-        document.body.addEventListener('change', function(e) {
-            if (e.target.type === 'file' && e.target.files && e.target.files[0]) {
+        // --- NEW Upload/Camera Logic ---
+
+        function triggerFile(id) {
+            document.getElementById('file-' + id).click();
+        }
+
+        function handleFile(id) {
+            const input = document.getElementById('file-' + id);
+            if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                const uploadZone = e.target.closest('.upload-zone');
-                const imgPreview = uploadZone.querySelector('.preview-img');
-                const label = uploadZone.querySelector('.upload-label');
-                
-                reader.onload = function(evt) {
-                    imgPreview.src = evt.target.result;
-                    imgPreview.style.display = 'block';
-                    label.style.opacity = '0';
-                    document.getElementById('resultsArea').style.display = 'none';
+                reader.onload = function(e) {
+                    setImage(id, e.target.result);
                 }
-                reader.readAsDataURL(e.target.files[0]);
+                reader.readAsDataURL(input.files[0]);
             }
-        });
+        }
+
+        function setImage(id, src) {
+            const img = document.getElementById('preview-' + id);
+            const zone = document.getElementById('zone-' + id);
+            img.src = src;
+            img.style.display = 'block';
+            zone.classList.add('has-image');
+            document.getElementById('resultsArea').style.display = 'none';
+        }
+
+        function clearImage(id) {
+            const img = document.getElementById('preview-' + id);
+            const zone = document.getElementById('zone-' + id);
+            const input = document.getElementById('file-' + id);
+            img.src = '';
+            img.style.display = 'none';
+            input.value = '';
+            zone.classList.remove('has-image');
+            document.getElementById('resultsArea').style.display = 'none';
+        }
+
+        // --- Camera Functions ---
+
+        async function openCamera(id) {
+            currentCameraId = id;
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" }, // Prefer back camera on mobile
+                    audio: false 
+                });
+                video.srcObject = stream;
+                modal.style.display = 'flex';
+            } catch (err) {
+                alert("Camera access denied or not available. Please use 'Upload' instead.");
+                console.error(err);
+            }
+        }
+
+        function closeCamera() {
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            video.srcObject = null;
+            modal.style.display = 'none';
+        }
+
+        function snapPhoto() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            const context = canvas.getContext('2d');
+
+            // Set canvas size to match video stream
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to data URL
+            const dataUrl = canvas.toDataURL('image/png');
+            
+            // Set as image for the current player
+            setImage(currentCameraId, dataUrl);
+            
+            closeCamera();
+        }
 
         // --- Player Management ---
         function addPlayer() {
             playerCount++;
+            const id = 'p' + playerCount;
             const container = document.getElementById('playersContainer');
             const div = document.createElement('div');
             div.className = 'card player-card';
+            div.id = 'card-' + id;
             div.innerHTML = `
                 <div class="card-header">
                     <span>Player ${playerCount}</span>
                     <button onclick="removePlayer(this)" style="border:none; background:none; cursor:pointer; color:#999;">✕</button>
                 </div>
-                <div class="upload-zone">
-                    <input type="file" class="playerInput" accept="image/*" data-player="${playerCount}">
-                    <div class="upload-label"><div class="upload-icon">🖌️</div>Upload Drawing</div>
-                    <img class="preview-img">
+                <div class="upload-zone" id="zone-${id}">
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="triggerFile('${id}')">📁 Upload</button>
+                        <button class="action-btn camera" onclick="openCamera('${id}')">📷 Photo</button>
+                    </div>
+                    <button class="reset-overlay" onclick="clearImage('${id}')">✕ Change</button>
+                    <img id="preview-${id}" class="preview-img player-img">
+                    <input type="file" id="file-${id}" class="playerInput" accept="image/*" onchange="handleFile('${id}')">
                 </div>`;
             container.appendChild(div);
         }
@@ -302,21 +400,24 @@
 
         function fullReset() {
             hideResults();
-            document.querySelectorAll('img.preview-img').forEach(img => img.style.display = 'none');
-            document.querySelectorAll('.upload-label').forEach(lbl => lbl.style.opacity = '1');
+            document.querySelectorAll('img.preview-img').forEach(img => {
+                img.style.display = 'none';
+                img.src = '';
+            });
+            document.querySelectorAll('.upload-zone').forEach(z => z.classList.remove('has-image'));
             document.querySelectorAll('input[type="file"]').forEach(inp => inp.value = '');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- OpenCV Logic ---
+        // --- OpenCV Logic (Adaptive) ---
         function judgeGame() {
             if (!cvReady) return;
-            const targetImg = document.getElementById('targetPreview');
-            if (!targetImg.src || targetImg.style.display === 'none') { alert("Please upload a Target image first."); return; }
+            const targetImg = document.getElementById('preview-target');
+            if (!targetImg.src || targetImg.style.display === 'none') { alert("Please set a Target image first."); return; }
 
             const btn = document.getElementById('judgeBtn');
             const originalText = btn.innerText;
-            btn.innerText = "Analyzing Shapes...";
+            btn.innerText = "Analyzing...";
             btn.disabled = true;
 
             setTimeout(() => { runAnalysis(targetImg, btn, originalText); }, 100);
@@ -329,19 +430,19 @@
             try {
                 targetContour = getLargestContour(targetImg, debugMode);
             } catch (err) {
-                alert("Error: " + err.message + "\n\nTry turning on 'Show what the computer sees' to check.");
-                resetButton(btn, originalText);
+                alert("Error: " + err.message + "\n\nTry turning on 'Debug Mode' to check what the computer sees.");
+                btn.innerText = originalText;
+                btn.disabled = false;
                 return;
             }
 
-            const playerInputs = document.querySelectorAll('.playerInput');
+            const playerImages = document.querySelectorAll('.player-img');
             let scores = [];
 
-            playerInputs.forEach((input) => {
-                const uploadZone = input.closest('.upload-zone');
-                const imgElement = uploadZone.querySelector('.preview-img');
-                const cardHeader = input.closest('.card').querySelector('.card-header span');
-                const playerName = cardHeader ? cardHeader.innerText : "Unknown";
+            playerImages.forEach((imgElement) => {
+                // Find player name from card header
+                const card = imgElement.closest('.card');
+                const playerName = card.querySelector('.card-header span').innerText;
 
                 if (imgElement.src && imgElement.style.display !== 'none') {
                     try {
@@ -358,13 +459,14 @@
             if (targetContour) targetContour.delete();
             scores.sort((a, b) => a.score - b.score);
             displayResults(scores);
-            resetButton(btn, originalText);
+            
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
 
         function displayResults(scores) {
             const list = document.getElementById('resultsList');
             let html = "";
-            
             scores.forEach((s, i) => {
                 const isWinner = i === 0 && s.score < 999;
                 const scoreText = s.score === 999 ? "No Shape Found" : s.score.toFixed(3);
@@ -379,7 +481,6 @@
                     <span class="result-score">${scoreText}</span>
                 </div>`;
             });
-
             if(scores.length === 0) html = "<div style='padding:15px; text-align:center;'>No players found!</div>";
 
             list.innerHTML = html;
@@ -387,24 +488,13 @@
             document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function resetButton(btn, text) {
-            btn.innerText = text;
-            btn.disabled = false;
-        }
-
-        // --- UPDATED VISION FUNCTION ---
         function getLargestContour(imgElement, showDebug) {
             let src = cv.imread(imgElement);
             let dst = new cv.Mat();
-            
             cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
             
-            // 1. Blur is essential before Adaptive Thresholding to remove paper texture
+            // Blur + Adaptive Threshold
             cv.GaussianBlur(src, src, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-
-            // 2. ADAPTIVE THRESHOLD (The Fix)
-            // Block Size 21: Looks at 21x21 neighborhood
-            // C = 2: Subtracts 2 from the mean (fine-tuning)
             cv.adaptiveThreshold(src, src, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 21, 2);
 
             if (showDebug) {
@@ -424,7 +514,6 @@
             let maxContourIndex = -1;
             for (let i = 0; i < contours.size(); ++i) {
                 let area = cv.contourArea(contours.get(i));
-                // Filter out tiny dots (noise)
                 if (area > 100 && area > maxArea) {
                     maxArea = area;
                     maxContourIndex = i;
@@ -433,11 +522,10 @@
 
             if (maxContourIndex === -1) {
                 src.delete(); dst.delete(); contours.delete(); hierarchy.delete();
-                throw new Error("No shape found. Is the lighting okay?");
+                throw new Error("No shape found.");
             }
 
             let largestContour = contours.get(maxContourIndex);
-            
             src.delete(); dst.delete(); hierarchy.delete();
             return largestContour; 
         }
