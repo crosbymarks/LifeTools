@@ -55,7 +55,7 @@
             display: flex; justify-content: space-between; align-items: center;
         }
 
-        /* --- NEW Upload UI --- */
+        /* --- Upload UI --- */
         .upload-zone {
             border: 2px dashed #cbd5e1; border-radius: var(--radius);
             height: 180px; display: flex; flex-direction: column; align-items: center;
@@ -64,10 +64,7 @@
         }
         .upload-zone.has-image { border-style: solid; border-color: var(--primary); }
 
-        .action-buttons {
-            display: flex; gap: 10px; z-index: 5;
-        }
-
+        .action-buttons { display: flex; gap: 10px; z-index: 5; }
         .action-btn {
             background: white; border: 1px solid #e2e8f0; padding: 10px 16px;
             border-radius: 8px; font-size: 0.9rem; font-weight: 600; color: var(--text-main);
@@ -83,7 +80,6 @@
             background: #fff; display: none; z-index: 1;
         }
         
-        /* Floating "Change" button that appears over image */
         .reset-overlay {
             position: absolute; top: 10px; right: 10px; z-index: 10;
             background: rgba(0,0,0,0.6); color: white; border: none; padding: 5px 10px;
@@ -91,8 +87,6 @@
         }
         .upload-zone.has-image .reset-overlay { display: block; }
         .upload-zone.has-image .action-buttons { display: none; }
-
-        /* Hidden file input */
         input[type="file"] { display: none; }
 
         /* --- Camera Modal --- */
@@ -114,12 +108,11 @@
         .snap-btn:active { background: #ccc; }
         .close-cam { background: #ef4444; color: white; width: 50px; height: 50px; font-size: 1.2rem; }
 
-        /* --- Buttons & Results (Same as before) --- */
+        /* --- General UI --- */
         .btn {
             background-color: var(--primary); color: white; border: none; padding: 14px 20px;
             font-size: 1rem; font-weight: 600; border-radius: var(--radius); cursor: pointer;
-            width: 100%; box-shadow: 0 4px 6px rgba(255, 64, 129, 0.3);
-            transition: transform 0.1s;
+            width: 100%; box-shadow: 0 4px 6px rgba(255, 64, 129, 0.3); transition: transform 0.1s;
         }
         .btn:hover { background-color: var(--primary-dark); }
         .btn:disabled { background-color: #cbd5e1; box-shadow: none; cursor: not-allowed; }
@@ -164,9 +157,7 @@
         </div>
 
         <div class="card" id="card-target">
-            <div class="card-header">
-                <span>The Target</span><span>🎯</span>
-            </div>
+            <div class="card-header"><span>The Target</span><span>🎯</span></div>
             <div class="upload-zone" id="zone-target">
                 <div class="action-buttons">
                     <button class="action-btn" onclick="triggerFile('target')">📁 Upload</button>
@@ -257,7 +248,7 @@
     <script>
         let cvReady = false;
         let playerCount = 2;
-        let currentCameraId = null; // Tracks which player is using the camera
+        let currentCameraId = null;
         let stream = null;
 
         function onOpenCvReady() {
@@ -270,95 +261,64 @@
             
             const debugDiv = document.createElement('div');
             debugDiv.style.textAlign = 'center'; debugDiv.style.marginTop = '10px';
-            debugDiv.innerHTML = `<label style="color:#666; font-size:0.8rem;"><input type="checkbox" id="debugMode"> Debug Mode</label>`;
+            debugDiv.innerHTML = `<label style="color:#666; font-size:0.8rem;"><input type="checkbox" id="debugMode"> Debug Mode (Show Vision)</label>`;
             document.getElementById('judgeBtn').after(debugDiv);
         }
 
         // --- NEW Upload/Camera Logic ---
-
-        function triggerFile(id) {
-            document.getElementById('file-' + id).click();
-        }
-
+        function triggerFile(id) { document.getElementById('file-' + id).click(); }
         function handleFile(id) {
             const input = document.getElementById('file-' + id);
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    setImage(id, e.target.result);
-                }
+                reader.onload = function(e) { setImage(id, e.target.result); }
                 reader.readAsDataURL(input.files[0]);
             }
         }
-
         function setImage(id, src) {
             const img = document.getElementById('preview-' + id);
             const zone = document.getElementById('zone-' + id);
-            img.src = src;
-            img.style.display = 'block';
+            img.src = src; img.style.display = 'block';
             zone.classList.add('has-image');
             document.getElementById('resultsArea').style.display = 'none';
         }
-
         function clearImage(id) {
             const img = document.getElementById('preview-' + id);
             const zone = document.getElementById('zone-' + id);
             const input = document.getElementById('file-' + id);
-            img.src = '';
-            img.style.display = 'none';
-            input.value = '';
-            zone.classList.remove('has-image');
+            img.src = ''; img.style.display = 'none';
+            input.value = ''; zone.classList.remove('has-image');
             document.getElementById('resultsArea').style.display = 'none';
         }
 
         // --- Camera Functions ---
-
         async function openCamera(id) {
             currentCameraId = id;
             const modal = document.getElementById('cameraModal');
             const video = document.getElementById('cameraVideo');
-            
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" }, // Prefer back camera on mobile
-                    audio: false 
+                    video: { facingMode: "environment" }, audio: false 
                 });
                 video.srcObject = stream;
                 modal.style.display = 'flex';
             } catch (err) {
                 alert("Camera access denied or not available. Please use 'Upload' instead.");
-                console.error(err);
             }
         }
-
         function closeCamera() {
             const modal = document.getElementById('cameraModal');
             const video = document.getElementById('cameraVideo');
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            video.srcObject = null;
-            modal.style.display = 'none';
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            video.srcObject = null; modal.style.display = 'none';
         }
-
         function snapPhoto() {
             const video = document.getElementById('cameraVideo');
             const canvas = document.getElementById('cameraCanvas');
             const context = canvas.getContext('2d');
-
-            // Set canvas size to match video stream
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            
-            // Draw video frame to canvas
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // Convert to data URL
-            const dataUrl = canvas.toDataURL('image/png');
-            
-            // Set as image for the current player
-            setImage(currentCameraId, dataUrl);
-            
+            setImage(currentCameraId, canvas.toDataURL('image/png'));
             closeCamera();
         }
 
@@ -368,48 +328,34 @@
             const id = 'p' + playerCount;
             const container = document.getElementById('playersContainer');
             const div = document.createElement('div');
-            div.className = 'card player-card';
-            div.id = 'card-' + id;
+            div.className = 'card player-card'; div.id = 'card-' + id;
             div.innerHTML = `
-                <div class="card-header">
-                    <span>Player ${playerCount}</span>
-                    <button onclick="removePlayer(this)" style="border:none; background:none; cursor:pointer; color:#999;">✕</button>
-                </div>
+                <div class="card-header"><span>Player ${playerCount}</span><button onclick="removePlayer(this)" style="border:none; background:none; cursor:pointer; color:#999;">✕</button></div>
                 <div class="upload-zone" id="zone-${id}">
-                    <div class="action-buttons">
-                        <button class="action-btn" onclick="triggerFile('${id}')">📁 Upload</button>
-                        <button class="action-btn camera" onclick="openCamera('${id}')">📷 Photo</button>
-                    </div>
+                    <div class="action-buttons"><button class="action-btn" onclick="triggerFile('${id}')">📁 Upload</button><button class="action-btn camera" onclick="openCamera('${id}')">📷 Photo</button></div>
                     <button class="reset-overlay" onclick="clearImage('${id}')">✕ Change</button>
-                    <img id="preview-${id}" class="preview-img player-img">
-                    <input type="file" id="file-${id}" class="playerInput" accept="image/*" onchange="handleFile('${id}')">
+                    <img id="preview-${id}" class="preview-img player-img"><input type="file" id="file-${id}" class="playerInput" accept="image/*" onchange="handleFile('${id}')">
                 </div>`;
             container.appendChild(div);
         }
-
         function removePlayer(btn) {
             if(document.querySelectorAll('.player-card').length > 1) btn.closest('.card').remove();
             else alert("You need at least one player!");
         }
-
         function hideResults() {
             document.getElementById('resultsArea').style.display = 'none';
             document.getElementById('canvasOutput').style.display = 'none'; 
             window.scrollTo({ top: document.getElementById('playersContainer').offsetTop, behavior: 'smooth' });
         }
-
         function fullReset() {
             hideResults();
-            document.querySelectorAll('img.preview-img').forEach(img => {
-                img.style.display = 'none';
-                img.src = '';
-            });
+            document.querySelectorAll('img.preview-img').forEach(img => { img.style.display = 'none'; img.src = ''; });
             document.querySelectorAll('.upload-zone').forEach(z => z.classList.remove('has-image'));
             document.querySelectorAll('input[type="file"]').forEach(inp => inp.value = '');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- OpenCV Logic (Adaptive) ---
+        // --- SUPER ADAPTIVE VISION LOGIC ---
         function judgeGame() {
             if (!cvReady) return;
             const targetImg = document.getElementById('preview-target');
@@ -417,8 +363,7 @@
 
             const btn = document.getElementById('judgeBtn');
             const originalText = btn.innerText;
-            btn.innerText = "Analyzing...";
-            btn.disabled = true;
+            btn.innerText = "Analyzing..."; btn.disabled = true;
 
             setTimeout(() => { runAnalysis(targetImg, btn, originalText); }, 100);
         }
@@ -428,19 +373,17 @@
             const debugMode = document.getElementById('debugMode') && document.getElementById('debugMode').checked;
 
             try {
+                // Get Target Shape
                 targetContour = getLargestContour(targetImg, debugMode);
             } catch (err) {
-                alert("Error: " + err.message + "\n\nTry turning on 'Debug Mode' to check what the computer sees.");
-                btn.innerText = originalText;
-                btn.disabled = false;
-                return;
+                alert("Error on Target Image: " + err.message + "\n\nTry checking 'Debug Mode'.");
+                btn.innerText = originalText; btn.disabled = false; return;
             }
 
             const playerImages = document.querySelectorAll('.player-img');
             let scores = [];
 
             playerImages.forEach((imgElement) => {
-                // Find player name from card header
                 const card = imgElement.closest('.card');
                 const playerName = card.querySelector('.card-header span').innerText;
 
@@ -459,9 +402,7 @@
             if (targetContour) targetContour.delete();
             scores.sort((a, b) => a.score - b.score);
             displayResults(scores);
-            
-            btn.innerText = originalText;
-            btn.disabled = false;
+            btn.innerText = originalText; btn.disabled = false;
         }
 
         function displayResults(scores) {
@@ -474,15 +415,9 @@
                 const badge = isWinner ? `<span class="winner-badge">Winner</span>` : "";
                 const rank = isWinner ? "👑" : (i + 1);
 
-                html += `
-                <div class="${rowClass}">
-                    <span class="result-rank">${rank}</span>
-                    <span class="result-name">${s.name} ${badge}</span>
-                    <span class="result-score">${scoreText}</span>
-                </div>`;
+                html += `<div class="${rowClass}"><span class="result-rank">${rank}</span><span class="result-name">${s.name} ${badge}</span><span class="result-score">${scoreText}</span></div>`;
             });
             if(scores.length === 0) html = "<div style='padding:15px; text-align:center;'>No players found!</div>";
-
             list.innerHTML = html;
             document.getElementById('resultsArea').style.display = 'block';
             document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
@@ -491,11 +426,25 @@
         function getLargestContour(imgElement, showDebug) {
             let src = cv.imread(imgElement);
             let dst = new cv.Mat();
+            
+            // 1. Grayscale
             cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
             
-            // Blur + Adaptive Threshold
-            cv.GaussianBlur(src, src, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-            cv.adaptiveThreshold(src, src, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 21, 2);
+            // 2. Strong Blur (To ignore paper texture)
+            // Increased from 5x5 to 7x7 for camera noise
+            cv.GaussianBlur(src, src, new cv.Size(7, 7), 0, 0, cv.BORDER_DEFAULT);
+
+            // 3. ADAPTIVE THRESHOLD (Tuned for Noise)
+            // Block Size: 45 (Was 21). Looks at a larger area to ignore small shadows.
+            // C: 10 (Was 2). Requires line to be VERY dark compared to background.
+            cv.adaptiveThreshold(src, src, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 45, 10);
+
+            // 4. Morphological Open (Cleanup)
+            // Removes white noise (dust) from the binary image
+            let M = cv.Mat.ones(3, 3, cv.CV_8U);
+            let anchor = new cv.Point(-1, -1);
+            cv.morphologyEx(src, src, cv.MORPH_OPEN, M, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
+            M.delete();
 
             if (showDebug) {
                 const canvas = document.getElementById('canvasOutput');
@@ -506,6 +455,7 @@
                 cv.imshow('canvasOutput', src);
             }
 
+            // 5. Find Contours
             let contours = new cv.MatVector();
             let hierarchy = new cv.Mat();
             cv.findContours(src, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -514,7 +464,8 @@
             let maxContourIndex = -1;
             for (let i = 0; i < contours.size(); ++i) {
                 let area = cv.contourArea(contours.get(i));
-                if (area > 100 && area > maxArea) {
+                // Filter small noise (Must be significant size)
+                if (area > 500 && area > maxArea) {
                     maxArea = area;
                     maxContourIndex = i;
                 }
