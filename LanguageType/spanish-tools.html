@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Hola! Spanish Character Helper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Darker, richer "Terra Cotta" gradient */
+            --primary-gradient: linear-gradient(135deg, #A04000, #7E2613);
+            --button-hover: #00897B; /* Teal pop (darker for better contrast) */
+            --text-dark: #2D3436;
+            --button-bg: #E3E6EA; /* Darker gray for better contrast against white */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--primary-gradient);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .main-card {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 650px;
+            width: 100%;
+            position: relative;
+        }
+
+        h1 {
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        /* Grid layout for buttons */
+        .grid-section {
+            margin-bottom: 30px;
+        }
+        
+        .grid-label {
+            font-size: 0.85em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: block;
+            text-align: left;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 12px;
+        }
+
+        /* Stylish Buttons */
+        .char-btn {
+            background: var(--button-bg);
+            border: 1px solid #D1D5DB; /* Added border for definition */
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 26px;
+            padding: 12px 0;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: var(--text-dark);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .char-btn:hover {
+            background-color: var(--button-hover);
+            color: white;
+            border-color: var(--button-hover);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 8px 15px rgba(0, 137, 123, 0.4);
+        }
+
+        .char-btn:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        /* Decorative divider */
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 25px 0;
+        }
+
+        /* Toast Notification Styling */
+        .toast-notification {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #263238;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 10;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        .toast-notification.active {
+            top: 20px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div id="toast" class="toast-notification">Copied!</div>
+
+        <h1>¡Hola! Spanish Character Helper</h1>
+        <p class="subtitle">Click any character to copy it instantly.</p>
+        
+        <div class="grid-section">
+            <span class="grid-label">Lowercase</span>
+            <div class="grid">
+                <button class="char-btn" onclick="copyChar('á')">á</button>
+                <button class="char-btn" onclick="copyChar('é')">é</button>
+                <button class="char-btn" onclick="copyChar('í')">í</button>
+                <button class="char-btn" onclick="copyChar('ó')">ó</button>
+                <button class="char-btn" onclick="copyChar('ú')">ú</button>
+                <button class="char-btn" onclick="copyChar('ñ')">ñ</button>
+                <button class="char-btn" onclick="copyChar('ü')">ü</button>
+            </div>
+        </div>
+
+        <div class="grid-section">
+            <span class="grid-label">Punctuation</span>
+            <div class="grid" style="grid-template-columns: repeat(5, 1fr);">
+                <button class="char-btn" onclick="copyChar('¿')">¿</button>
+                <button class="char-btn" onclick="copyChar('¡')">¡</button>
+                <button class="char-btn" onclick="copyChar('«')">«</button>
+                <button class="char-btn" onclick="copyChar('»')">»</button>
+                <button class="char-btn" onclick="copyChar('—')">—</button>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="grid-section">
+            <span class="grid-label">Uppercase</span>
+            <div class="grid">
+                <button class="char-btn" onclick="copyChar('Á')">Á</button>
+                <button class="char-btn" onclick="copyChar('É')">É</button>
+                <button class="char-btn" onclick="copyChar('Í')">Í</button>
+                <button class="char-btn" onclick="copyChar('Ó')">Ó</button>
+                <button class="char-btn" onclick="copyChar('Ú')">Ú</button>
+                <button class="char-btn" onclick="copyChar('Ñ')">Ñ</button>
+                <button class="char-btn" onclick="copyChar('Ü')">Ü</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let toastTimeout;
+
+        function copyChar(char) {
+            navigator.clipboard.writeText(char).then(() => {
+                const toast = document.getElementById('toast');
+                toast.textContent = `Copied "${char}"!`;
+                toast.classList.add('active');
+                
+                // Clear previous timer if the user clicks rapidly
+                clearTimeout(toastTimeout);
+
+                // Hide message after 1.5 seconds
+                toastTimeout = setTimeout(() => {
+                    toast.classList.remove('active');
+                }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>
