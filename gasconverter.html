@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Gas Price Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
+        .loader {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #4f46e5;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .tooltip-container { position: relative; display: inline-block; }
+        .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: left;
+            border-radius: 12px;
+            padding: 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .lang-btn-active { background-color: #4f46e5; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .lang-btn-inactive { color: #64748b; }
+        .lang-btn-inactive:hover { color: #334155; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full card rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-indigo-600 p-8 text-white text-center">
+            <h1 id="t-title" class="text-2xl font-semibold mb-1">Gas Price Converter</h1>
+            <p id="t-subtitle" class="text-indigo-100 text-sm opacity-90">Convert between currencies and volumes</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- Utility Row (Language Selector) -->
+            <div class="flex justify-end -mb-4">
+                <div class="bg-slate-100 p-1 rounded-full flex items-center border border-slate-200">
+                    <button id="btnEng" class="px-3 py-1 rounded-full text-[10px] font-bold transition-all uppercase tracking-wider lang-btn-active">
+                        ENG
+                    </button>
+                    <button id="btnEsp" class="px-3 py-1 rounded-full text-[10px] font-bold transition-all uppercase tracking-wider lang-btn-inactive">
+                        ESP
+                    </button>
+                </div>
+            </div>
+
+            <!-- Price Input -->
+            <div class="space-y-4">
+                <label id="t-step1" class="block text-sm font-semibold text-slate-700">1. Enter Known Price</label>
+                <div class="flex space-x-2">
+                    <div class="relative flex-1">
+                        <span class="absolute left-3 top-3 text-slate-400" id="price-symbol">$</span>
+                        <input type="number" id="inputPrice" value="3.23" step="0.01"
+                            class="w-full pl-8 pr-4 py-3 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-lg font-medium"
+                            placeholder="0.00">
+                    </div>
+                    <select id="inputUnit" class="bg-slate-100 border-none rounded-xl px-4 py-3 font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="gallon" id="t-opt-gallon">per Gallon</option>
+                        <option value="liter" id="t-opt-liter">per Liter</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Currency/Exchange -->
+            <div class="space-y-4 pt-4 border-t border-slate-100">
+                <div class="flex justify-between items-end">
+                    <div class="flex items-center gap-2">
+                        <label id="t-step2" class="block text-sm font-semibold text-slate-700">2. Currency & Rate</label>
+                        <div class="tooltip-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                                <line x1="12" y1="16" x2="12" y2="12" stroke-width="2"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8" stroke-width="2"/>
+                            </svg>
+                            <div class="tooltip-text" id="t-tooltip-content">
+                                <strong>Common Codes:</strong><br>
+                                USD ($) - US Dollar<br>
+                                CAD ($) - Canadian Dollar<br>
+                                MXN ($) - Mexican Peso<br>
+                                EUR (€) - Euro<br>
+                                GBP (£) - British Pound<br>
+                                JPY (¥) - Japanese Yen<br>
+                                CHF (Fr) - Swiss Franc<br>
+                                AUD ($) - Australian Dollar
+                            </div>
+                        </div>
+                    </div>
+                    <button id="fetchRateBtn" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded">
+                        <span id="btnText">FETCH LIVE RATE</span>
+                        <span id="btnLoader" class="loader hidden"></span>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <div class="flex-1">
+                        <p id="t-base-label" class="text-[10px] text-slate-400 mb-1 ml-1 uppercase">Base</p>
+                        <input type="text" id="baseCurrency" value="USD" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg uppercase font-semibold text-center outline-none focus:border-indigo-300">
+                    </div>
+                    
+                    <button id="swapBtn" class="mt-4 p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-100 transition-all shadow-sm" title="Swap Currencies">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                    </button>
+
+                    <div class="flex-1">
+                        <p id="t-target-label" class="text-[10px] text-slate-400 mb-1 ml-1 uppercase">Target</p>
+                        <input type="text" id="targetCurrency" value="MXN" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg uppercase font-semibold text-center outline-none focus:border-indigo-300">
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 p-4 rounded-2xl">
+                    <div class="flex justify-between items-center">
+                        <span id="t-rate-label" class="text-sm font-medium text-indigo-700">Exchange Rate</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-slate-500">1 <span class="base-label-txt">USD</span> =</span>
+                            <input type="number" id="exchangeRate" value="17.73" step="0.0001"
+                                class="w-24 px-2 py-1 bg-white border border-indigo-200 rounded-md text-right font-bold text-indigo-600 outline-none">
+                            <span class="text-xs text-slate-500 target-label-txt">MXN</span>
+                        </div>
+                    </div>
+                    <p id="errorMsg" class="text-[10px] text-red-500 mt-2 hidden text-center font-medium"></p>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="pt-6 space-y-3">
+                <label id="t-results-label" class="block text-sm font-semibold text-slate-700">Converted Prices</label>
+                
+                <!-- Result 1: Local Currency, Other Unit -->
+                <div class="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium uppercase"><span class="base-label-txt">USD</span> / <span class="alt-unit-name">Liter</span></p>
+                        <p class="text-2xl font-bold text-slate-800" id="resBaseAlt">--</p>
+                    </div>
+                    <div class="text-right">
+                        <p id="t-same-curr" class="text-xs text-slate-400 font-medium">Same Currency</p>
+                    </div>
+                </div>
+
+                <!-- Result 2: Target Currency, Liter -->
+                <div class="flex justify-between items-center p-4 bg-indigo-600 rounded-2xl shadow-md text-white">
+                    <div>
+                        <p class="text-xs text-indigo-200 font-medium uppercase"><span class="target-label-txt">MXN</span> / <span class="liter-unit-txt">Liter</span></p>
+                        <p class="text-2xl font-bold" id="resTargetLiter">--</p>
+                    </div>
+                    <div class="text-right">
+                        <p id="t-intl" class="text-xs text-indigo-200 font-medium">International</p>
+                    </div>
+                </div>
+
+                <!-- Result 3: Target Currency, Gallon -->
+                <div class="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium uppercase"><span class="target-label-txt">MXN</span> / <span class="gallon-unit-txt">Gallon</span></p>
+                        <p class="text-xl font-bold text-slate-800" id="resTargetGallon">--</p>
+                    </div>
+                    <div class="text-right">
+                        <p id="t-total-conv" class="text-xs text-slate-400 font-medium uppercase">Total Conv.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 bg-slate-50 text-center text-[10px] text-slate-400 uppercase tracking-widest">
+            1 <span class="gallon-unit-txt">Gallon</span> = 3.78541 <span class="liter-unit-txt">Liters</span>
+        </div>
+    </div>
+
+    <script>
+        const inputPrice = document.getElementById('inputPrice');
+        const inputUnit = document.getElementById('inputUnit');
+        const baseCurrency = document.getElementById('baseCurrency');
+        const targetCurrency = document.getElementById('targetCurrency');
+        const exchangeRate = document.getElementById('exchangeRate');
+        const fetchRateBtn = document.getElementById('fetchRateBtn');
+        const swapBtn = document.getElementById('swapBtn');
+        
+        const btnEng = document.getElementById('btnEng');
+        const btnEsp = document.getElementById('btnEsp');
+        
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+        const errorMsg = document.getElementById('errorMsg');
+
+        const resBaseAlt = document.getElementById('resBaseAlt');
+        const resTargetLiter = document.getElementById('resTargetLiter');
+        const resTargetGallon = document.getElementById('resTargetGallon');
+        
+        const G_TO_L = 3.78541;
+        let currentLang = 'en';
+
+        const i18n = {
+            en: {
+                title: 'Gas Price Converter',
+                subtitle: 'Convert between currencies and volumes',
+                step1: '1. Enter Known Price',
+                step2: '2. Currency & Rate',
+                optGallon: 'per Gallon',
+                optLiter: 'per Liter',
+                fetch: 'FETCH LIVE RATE',
+                base: 'Base',
+                target: 'Target',
+                rateLabel: 'Exchange Rate',
+                resultsLabel: 'Converted Prices',
+                sameCurr: 'Same Currency',
+                intl: 'International',
+                totalConv: 'Total Conv.',
+                unitGallon: 'Gallon',
+                unitLiter: 'Liter',
+                unitLiters: 'Liters',
+                tooltip: '<strong>Common Codes:</strong><br>USD ($) - US Dollar<br>CAD ($) - Canadian Dollar<br>MXN ($) - Mexican Peso<br>EUR (€) - Euro<br>GBP (£) - British Pound<br>JPY (¥) - Japanese Yen<br>CHF (Fr) - Swiss Franc<br>AUD ($) - Australian Dollar',
+                error: 'Could not fetch rate. Please enter manually.'
+            },
+            es: {
+                title: 'Convertidor de Gasolina',
+                subtitle: 'Convierte entre monedas y volúmenes',
+                step1: '1. Ingresa el Precio Conocido',
+                step2: '2. Moneda y Tasa',
+                optGallon: 'por Galón',
+                optLiter: 'por Litro',
+                fetch: 'OBTENER TASA',
+                base: 'Origen',
+                target: 'Destino',
+                rateLabel: 'Tasa de Cambio',
+                resultsLabel: 'Precios Convertidos',
+                sameCurr: 'Misma Moneda',
+                intl: 'Internacional',
+                totalConv: 'Conv. Total',
+                unitGallon: 'Galón',
+                unitLiter: 'Litro',
+                unitLiters: 'Litros',
+                tooltip: '<strong>Códigos Comunes:</strong><br>USD ($) - Dólar EE.UU.<br>CAD ($) - Dólar Canadiense<br>MXN ($) - Peso Mexicano<br>EUR (€) - Euro<br>GBP (£) - Libra Esterlina<br>JPY (¥) - Yen Japonés<br>CHF (Fr) - Franco Suizo<br>AUD ($) - Dólar Australiano',
+                error: 'No se pudo obtener la tasa. Ingrese manualmente.'
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = i18n[currentLang];
+            
+            // Update Toggle Styles
+            if (currentLang === 'en') {
+                btnEng.className = 'px-3 py-1 rounded-full text-[10px] font-bold transition-all uppercase tracking-wider lang-btn-active';
+                btnEsp.className = 'px-3 py-1 rounded-full text-[10px] font-bold transition-all uppercase tracking-wider lang-btn-inactive';
+            } else {
+                btnEng.className = 'px-3 py-1 rounded-full text-[10px] font-bold transition-all uppercase tracking-wider lang-btn-inactive';
+                btnEsp.className = 'px-3 py-1 rounded-full text-[10px] font-bold transition-all uppercase tracking-wider lang-btn-active';
+            }
+
+            // Update Text
+            document.getElementById('t-title').textContent = t.title;
+            document.getElementById('t-subtitle').textContent = t.subtitle;
+            document.getElementById('t-step1').textContent = t.step1;
+            document.getElementById('t-step2').textContent = t.step2;
+            document.getElementById('t-opt-gallon').textContent = t.optGallon;
+            document.getElementById('t-opt-liter').textContent = t.optLiter;
+            document.getElementById('btnText').textContent = t.fetch;
+            document.getElementById('t-base-label').textContent = t.base;
+            document.getElementById('t-target-label').textContent = t.target;
+            document.getElementById('t-rate-label').textContent = t.rateLabel;
+            document.getElementById('t-results-label').textContent = t.resultsLabel;
+            document.getElementById('t-same-curr').textContent = t.sameCurr;
+            document.getElementById('t-intl').textContent = t.intl;
+            document.getElementById('t-total-conv').textContent = t.totalConv;
+            document.getElementById('t-tooltip-content').innerHTML = t.tooltip;
+            
+            update();
+        }
+
+        async function fetchExchangeRate() {
+            const base = baseCurrency.value.toLowerCase().trim();
+            const target = targetCurrency.value.toLowerCase().trim();
+            if (!base || !target) return;
+
+            btnText.classList.add('hidden');
+            btnLoader.classList.remove('hidden');
+            errorMsg.classList.add('hidden');
+            fetchRateBtn.disabled = true;
+
+            try {
+                const response = await fetch(`https://www.floatrates.com/daily/${base}.json`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                
+                if (data[target]) {
+                    exchangeRate.value = data[target].rate.toFixed(4);
+                    update();
+                } else {
+                    throw new Error();
+                }
+            } catch (error) {
+                errorMsg.textContent = i18n[currentLang].error;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                btnText.classList.remove('hidden');
+                btnLoader.classList.add('hidden');
+                fetchRateBtn.disabled = false;
+            }
+        }
+
+        function swapCurrencies() {
+            const tempBase = baseCurrency.value;
+            baseCurrency.value = targetCurrency.value;
+            targetCurrency.value = tempBase;
+            const currentRate = parseFloat(exchangeRate.value);
+            if (currentRate && currentRate !== 0) {
+                exchangeRate.value = (1 / currentRate).toFixed(4);
+            }
+            update();
+        }
+
+        function update() {
+            const t = i18n[currentLang];
+            const price = parseFloat(inputPrice.value) || 0;
+            const rate = parseFloat(exchangeRate.value) || 1;
+            const unit = inputUnit.value;
+            const base = baseCurrency.value.toUpperCase();
+            const target = targetCurrency.value.toUpperCase();
+
+            document.querySelectorAll('.base-label-txt').forEach(el => el.textContent = base);
+            document.querySelectorAll('.target-label-txt').forEach(el => el.textContent = target);
+            
+            document.querySelectorAll('.gallon-unit-txt').forEach(el => el.textContent = t.unitGallon);
+            document.querySelectorAll('.liter-unit-txt').forEach(el => el.textContent = (el.closest('div.p-6') ? t.unitLiters : t.unitLiter));
+            
+            const altUnitEl = document.querySelector('.alt-unit-name');
+            if (altUnitEl) altUnitEl.textContent = unit === 'gallon' ? t.unitLiter : t.unitGallon;
+
+            let pricePerLiterBase, pricePerGallonBase;
+
+            if (unit === 'gallon') {
+                pricePerGallonBase = price;
+                pricePerLiterBase = price / G_TO_L;
+                resBaseAlt.textContent = `${pricePerLiterBase.toFixed(3)}`;
+            } else {
+                pricePerLiterBase = price;
+                pricePerGallonBase = price * G_TO_L;
+                resBaseAlt.textContent = `${pricePerGallonBase.toFixed(3)}`;
+            }
+
+            const pricePerLiterTarget = pricePerLiterBase * rate;
+            const pricePerGallonTarget = pricePerGallonBase * rate;
+
+            resTargetLiter.textContent = `${pricePerLiterTarget.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            resTargetGallon.textContent = `${pricePerGallonTarget.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+
+        [inputPrice, inputUnit, baseCurrency, targetCurrency, exchangeRate].forEach(el => {
+            el.addEventListener('input', update);
+        });
+
+        fetchRateBtn.addEventListener('click', fetchExchangeRate);
+        swapBtn.addEventListener('click', swapCurrencies);
+        
+        btnEng.addEventListener('click', () => setLanguage('en'));
+        btnEsp.addEventListener('click', () => setLanguage('es'));
+
+        update();
+    </script>
+</body>
+</html>
