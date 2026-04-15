@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Gas Trip Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Smooth opening for the details accordion */
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        /* Mobile-friendly slider styling with safer touch areas */
+        .slider-container {
+            padding: 12px 0;
+            touch-action: pan-y; /* Allows vertical page scrolling, but captures horizontal swipes for the slider */
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            min-height: 30px; /* larger touch target */
+            pointer-events: none; /* Prevents clicking on the track to jump */
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+            border: 2px solid white;
+            pointer-events: auto; /* Re-enables touch/drag on the thumb only */
+        }
+        /* Firefox support for thumb drag */
+        input[type=range]::-moz-range-thumb {
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+            border: 2px solid white;
+            pointer-events: auto;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-100 p-4 sm:p-6 md:p-8 pb-20 font-sans text-slate-800" id="main-body">
+    <div class="max-w-3xl mx-auto space-y-4 md:space-y-6">
+        
+        <!-- Header -->
+        <div class="text-center pt-2 pb-2">
+            <h1 class="text-2xl font-bold text-slate-900 flex justify-center items-center gap-2">
+                <i data-lucide="fuel" class="w-6 h-6 text-blue-600"></i>
+                Gas Trip Calculator
+            </h1>
+        </div>
+
+        <!-- 1. The Core Inputs (Prices) -->
+        <div class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Near Station</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-slate-400 font-medium">$</span>
+                        <input 
+                            type="number" 
+                            id="local-price"
+                            inputmode="decimal"
+                            step="0.01"
+                            value="3.50"
+                            class="w-full pl-8 pr-3 py-3 text-lg font-bold bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none transition-all"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">Far Station</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-slate-400 font-medium">$</span>
+                        <input 
+                            type="number" 
+                            id="far-price"
+                            inputmode="decimal"
+                            step="0.01"
+                            value="3.45"
+                            class="w-full pl-8 pr-3 py-3 text-lg font-bold bg-blue-50 border border-blue-200 text-blue-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none transition-all"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. The Verdict (Instant Value) -->
+        <div id="verdict-card" class="rounded-2xl p-5 border border-slate-200 bg-slate-50 shadow-sm transition-all duration-300">
+            
+            <div id="view-success" class="space-y-4 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p id="success-label" class="text-xs font-bold text-slate-500 uppercase tracking-wide">To break even, buy</p>
+                        <div class="text-4xl font-black text-slate-900 mt-1">
+                            <span id="gallons-needed">0.0</span> <span class="text-xl text-slate-500 font-medium">gal</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Mini Gauge next to the big number -->
+                    <div class="w-24 h-12 relative shrink-0">
+                        <svg viewBox="0 0 100 50" class="w-full h-full overflow-visible">
+                            <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round" />
+                            <text x="0" y="55" text-anchor="middle" class="text-[12px] font-bold fill-slate-400">E</text>
+                            <text x="100" y="55" text-anchor="middle" class="text-[12px] font-bold fill-slate-400">F</text>
+                            <g id="gauge-needle" style="transform-origin: 50px 50px; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);">
+                                <polygon points="47,50 53,50 50,10" class="fill-blue-500" />
+                                <circle cx="50" cy="50" r="4" class="fill-slate-700" />
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div id="verdict-box" class="p-4 rounded-xl flex gap-3 items-start border border-opacity-20 transition-colors duration-300">
+                    <div class="shrink-0 mt-0.5" id="verdict-icon"></div>
+                    <p class="text-sm font-medium leading-relaxed">
+                        <span id="verdict-text"></span>
+                        <span class="opacity-75 font-normal mt-1 block text-xs" id="verdict-subtext"></span>
+                    </p>
+                </div>
+            </div>
+
+            <div id="view-error" class="h-full flex flex-col justify-center items-center text-center text-slate-500 py-6">
+                <i data-lucide="alert-triangle" class="w-10 h-10 mb-3 text-slate-300"></i>
+                <p class="text-sm px-2">The far station must be cheaper to calculate savings.</p>
+            </div>
+        </div>
+
+        <!-- 3. Primary Tweak: Distance & Graph -->
+        <div class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200">
+            <label class="block text-sm font-medium text-slate-700 mb-1 flex justify-between items-end">
+                <span>How much further to the far station?</span>
+                <span class="font-bold text-lg text-blue-600"><span id="distance-label">5</span> <span class="text-sm font-normal text-slate-500">mi one-way</span></span>
+            </label>
+            
+            <div class="slider-container">
+                <input 
+                    type="range" 
+                    id="target-distance"
+                    min="1" 
+                    max="20" 
+                    step="0.5"
+                    value="5"
+                />
+            </div>
+            
+            <!-- Graph -->
+            <div class="w-full relative mt-4" id="graph-container">
+                <svg id="main-svg" class="w-full block bg-white" preserveAspectRatio="xMidYMid meet">
+                    <g id="svg-background"></g>
+                    <path id="graph-path" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <g id="target-highlight" style="display: none;">
+                        <line id="target-line" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" />
+                        <circle id="target-circle" r="6" class="fill-blue-600 stroke-white" stroke-width="2" />
+                    </g>
+                </svg>
+            </div>
+        </div>
+
+        <!-- 4. Advanced Settings (Collapsible) -->
+        <details class="bg-slate-50 rounded-2xl border border-slate-200 group overflow-hidden">
+            <summary class="p-5 font-semibold text-slate-700 cursor-pointer flex justify-between items-center outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="settings-2" class="w-5 h-5 text-slate-400"></i>
+                    Vehicle Settings
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="summary-labels" class="text-xs font-normal text-slate-500 bg-slate-200 px-2 py-1 rounded-md">26 MPG • 17 Gal</span>
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                </div>
+            </summary>
+            
+            <div class="p-5 pt-0 border-t border-slate-200 space-y-6 mt-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1 flex justify-between">
+                        <span>Your Car's Efficiency</span>
+                        <span class="font-bold text-blue-600"><span id="mpg-label">26</span> mpg</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="mpg" min="10" max="60" step="1" value="26"/>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1 flex justify-between">
+                        <span>Fuel Tank Size</span>
+                        <span class="font-bold text-blue-600"><span id="tank-size-label">17</span> gal</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="tank-size" min="10" max="50" step="1" value="17"/>
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+    </div>
+
+    <!-- Hidden templates for verdict icons -->
+    <template id="icon-info">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    </template>
+    <template id="icon-alert">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    </template>
+    <template id="icon-check">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+    </template>
+
+    <script>
+        lucide.createIcons();
+
+        // KEYBOARD MANAGEMENT
+        document.getElementById('main-body').addEventListener('touchstart', function(e) {
+            if (document.activeElement.tagName === 'INPUT' && !e.target.closest('input')) {
+                document.activeElement.blur();
+            }
+        });
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') this.blur();
+            });
+        });
+
+        // STORAGE MANAGEMENT
+        function loadSettings() {
+            const savedLocalPrice = localStorage.getItem('gasCalc_localPrice');
+            if (savedLocalPrice) document.getElementById('local-price').value = savedLocalPrice;
+
+            const savedFarPrice = localStorage.getItem('gasCalc_farPrice');
+            if (savedFarPrice) document.getElementById('far-price').value = savedFarPrice;
+
+            const savedMpg = localStorage.getItem('gasCalc_mpg');
+            if (savedMpg) document.getElementById('mpg').value = savedMpg;
+
+            const savedDistance = localStorage.getItem('gasCalc_distance');
+            if (savedDistance) document.getElementById('target-distance').value = savedDistance;
+
+            const savedTankSize = localStorage.getItem('gasCalc_tankSize');
+            if (savedTankSize) document.getElementById('tank-size').value = savedTankSize;
+        }
+
+        function saveSettings() {
+            localStorage.setItem('gasCalc_localPrice', document.getElementById('local-price').value);
+            localStorage.setItem('gasCalc_farPrice', document.getElementById('far-price').value);
+            localStorage.setItem('gasCalc_mpg', document.getElementById('mpg').value);
+            localStorage.setItem('gasCalc_distance', document.getElementById('target-distance').value);
+            localStorage.setItem('gasCalc_tankSize', document.getElementById('tank-size').value);
+        }
+
+        const MAX_DISTANCE = 20; 
+
+        function drawSvgBackground(tankSize, maxGallons, mapX, mapY, width, height, padding) {
+            const bgContainer = document.getElementById('svg-background');
+            let bgHtml = '';
+
+            const ySteps = maxGallons <= 40 ? [0, 10, 20, 30, 40] : [0, 10, 20, 30, 40, 50].filter(v => v <= maxGallons);
+            if(!ySteps.includes(maxGallons)) ySteps.push(maxGallons);
+
+            ySteps.forEach((val) => {
+                bgHtml += `
+                    <line x1="${padding.left}" y1="${mapY(val)}" x2="${width - padding.right}" y2="${mapY(val)}" 
+                          stroke="#f1f5f9" stroke-width="1" />
+                    <text x="${padding.left - 8}" y="${mapY(val) + 4}" text-anchor="end" 
+                          class="fill-slate-400" font-size="10px">
+                        ${val}
+                    </text>
+                `;
+            });
+
+            const yPos = mapY(tankSize);
+            bgHtml += `
+                <line x1="${padding.left}" y1="${yPos}" x2="${width - padding.right}" y2="${yPos}" 
+                      stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 4" opacity="0.6" />
+                <text x="${width - padding.right - 5}" y="${yPos - 6}" text-anchor="end" class="fill-blue-600 font-medium" font-size="10px">
+                    ${tankSize} Gal Tank limit
+                </text>
+            `;
+
+            [0, 5, 10, 15, 20].forEach((val) => {
+                bgHtml += `
+                    <line x1="${mapX(val)}" y1="${height - padding.bottom}" x2="${mapX(val)}" y2="${height - padding.bottom + 5}" stroke="#cbd5e1" stroke-width="1" />
+                    <text x="${mapX(val)}" y="${height - padding.bottom + 18}" text-anchor="middle" class="fill-slate-400" font-size="10px">${val} mi</text>
+                `;
+            });
+
+            bgHtml += `<line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#cbd5e1" stroke-width="2" />`;
+            bgHtml += `<line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#cbd5e1" stroke-width="2" />`;
+
+            bgContainer.innerHTML = bgHtml;
+        }
+
+        function calculateBreakEvenGallons(p1, p2, vehicleMpg, distance) {
+            if (p1 <= p2 || vehicleMpg <= 0) return null;
+            const tripCost = ((distance * 2) / vehicleMpg) * p2;
+            return tripCost / (p1 - p2);
+        }
+
+        const inputs = ['local-price', 'far-price', 'mpg', 'target-distance', 'tank-size'].map(id => document.getElementById(id));
+        inputs.forEach(input => input.addEventListener('input', updateApp));
+        window.addEventListener('resize', updateApp);
+
+        function setIcon(templateId, colorClass) {
+            const container = document.getElementById('verdict-icon');
+            const template = document.getElementById(templateId).content.cloneNode(true);
+            const svg = template.querySelector('svg');
+            svg.setAttribute('class', `w-6 h-6 ${colorClass}`);
+            container.innerHTML = '';
+            container.appendChild(svg);
+        }
+
+        function updateApp() {
+            // Save state whenever app updates
+            saveSettings();
+
+            const container = document.getElementById('graph-container');
+            const styles = window.getComputedStyle(container);
+            const paddingX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+            const width = Math.max(280, container.clientWidth - paddingX); 
+            const height = 180; 
+            
+            const svgMain = document.getElementById('main-svg');
+            svgMain.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const padding = { top: 20, right: 10, bottom: 25, left: 30 };
+            const graphWidth = width - padding.left - padding.right;
+            const graphHeight = height - padding.top - padding.bottom;
+
+            const localPrice = parseFloat(document.getElementById('local-price').value) || 0;
+            const farPrice = parseFloat(document.getElementById('far-price').value) || 0;
+            const mpg = parseFloat(document.getElementById('mpg').value) || 0;
+            const targetDistance = parseFloat(document.getElementById('target-distance').value) || 0;
+            const tankSize = parseFloat(document.getElementById('tank-size').value) || 17;
+
+            const currentMaxGallons = Math.max(40, Math.ceil(tankSize / 10) * 10);
+            const mapX = (x) => padding.left + (x / MAX_DISTANCE) * graphWidth;
+            const mapY = (y) => padding.top + graphHeight - (Math.min(y, currentMaxGallons) / currentMaxGallons) * graphHeight;
+
+            drawSvgBackground(tankSize, currentMaxGallons, mapX, mapY, width, height, padding);
+
+            document.getElementById('distance-label').innerText = targetDistance;
+            document.getElementById('tank-size-label').innerText = tankSize;
+            document.getElementById('mpg-label').innerText = mpg;
+            document.getElementById('summary-labels').innerText = `${mpg} MPG • ${tankSize} Gal`;
+
+            const isFreeGas = farPrice === 0 && localPrice > 0;
+            const currentGallonsNeeded = calculateBreakEvenGallons(localPrice, farPrice, mpg, targetDistance);
+            const isWorthIt = (currentGallonsNeeded !== null && currentGallonsNeeded > 0) || isFreeGas;
+
+            const viewSuccess = document.getElementById('view-success');
+            const viewError = document.getElementById('view-error');
+            const verdictCard = document.getElementById('verdict-card');
+            const graphPath = document.getElementById('graph-path');
+            const targetHighlight = document.getElementById('target-highlight');
+            
+            const needle = document.getElementById('gauge-needle');
+            const needlePoly = needle.querySelector('polygon');
+
+            if (!isWorthIt) {
+                viewSuccess.classList.add('hidden');
+                viewError.classList.remove('hidden');
+                verdictCard.className = 'rounded-2xl p-5 border border-slate-200 bg-slate-50 shadow-sm transition-colors duration-300 mt-2';
+                graphPath.setAttribute('d', '');
+                targetHighlight.style.display = 'none';
+                needle.style.transform = `rotate(90deg)`;
+                needlePoly.setAttribute('class', 'fill-slate-300');
+                return;
+            }
+
+            viewError.classList.add('hidden');
+            viewSuccess.classList.remove('hidden');
+            verdictCard.className = 'rounded-2xl p-5 border border-blue-100 bg-white shadow-md transition-colors duration-300 mt-2';
+            const verdictBox = document.getElementById('verdict-box');
+            
+            if (isFreeGas) {
+                const oneWayGallons = targetDistance / mpg;
+                const roundTripGallons = (targetDistance * 2) / mpg;
+                const tripCostAtLocal = (roundTripGallons * localPrice).toFixed(2);
+
+                document.getElementById('success-label').innerText = "To reach station, burn";
+                document.getElementById('gallons-needed').innerText = oneWayGallons.toFixed(1);
+
+                verdictBox.className = `p-4 rounded-xl flex gap-3 items-start border border-opacity-20 transition-colors duration-300 bg-green-50 text-green-700`;
+                setIcon('icon-check', 'text-green-500');
+                document.getElementById('verdict-text').innerText = "Gas is free! You just need enough gas to get there.";
+                document.getElementById('verdict-subtext').innerText = `Trip burns ${roundTripGallons.toFixed(1)} gal ($${tripCostAtLocal} locally).`;
+
+                needle.style.transform = `rotate(90deg)`;
+                needlePoly.setAttribute('class', 'fill-blue-500');
+                graphPath.setAttribute('d', '');
+                targetHighlight.style.display = 'none';
+            } else {
+                document.getElementById('success-label').innerText = "To break even, buy";
+                document.getElementById('gallons-needed').innerText = currentGallonsNeeded.toFixed(1);
+
+                let colorClasses = '', bgClasses = '', iconId = '', iconColor = '', text = '';
+
+                if (currentGallonsNeeded > tankSize) {
+                    colorClasses = 'text-red-700'; bgClasses = 'bg-red-50';
+                    iconId = 'icon-alert'; iconColor = 'text-red-500';
+                    text = "Requires more space than your tank holds!";
+                } else if (currentGallonsNeeded > tankSize * 0.75) {
+                    colorClasses = 'text-yellow-700'; bgClasses = 'bg-yellow-50';
+                    iconId = 'icon-info'; iconColor = 'text-yellow-500';
+                    text = "Maybe. Your tank needs to be almost empty.";
+                } else {
+                    colorClasses = 'text-green-700'; bgClasses = 'bg-green-50';
+                    iconId = 'icon-check'; iconColor = 'text-green-500';
+                    text = "Worth it! Fits easily in your tank.";
+                }
+
+                verdictBox.className = `p-3 sm:p-4 rounded-xl flex gap-3 items-start border border-opacity-20 transition-colors duration-300 ${bgClasses} ${colorClasses}`;
+                setIcon(iconId, iconColor);
+                document.getElementById('verdict-text').innerText = text;
+                
+                const tripCost = (targetDistance * 2 / mpg * farPrice).toFixed(2);
+                document.getElementById('verdict-subtext').innerText = `Trip cost: $${tripCost} in gas.`;
+
+                const maxFuelAllowed = tankSize - currentGallonsNeeded;
+                if (maxFuelAllowed < 0) {
+                    needle.style.transform = `rotate(-90deg)`;
+                    needlePoly.setAttribute('class', 'fill-red-500');
+                } else {
+                    const percentageAllowed = maxFuelAllowed / tankSize;
+                    const angle = -90 + (percentageAllowed * 180);
+                    needle.style.transform = `rotate(${angle}deg)`;
+                    needlePoly.setAttribute('class', percentageAllowed < 0.25 ? 'fill-yellow-500' : 'fill-blue-500');
+                }
+
+                const pts = [];
+                for (let d = 0; d <= MAX_DISTANCE; d += 1) {
+                    const g = calculateBreakEvenGallons(localPrice, farPrice, mpg, d);
+                    pts.push({ x: d, y: Math.min(g, currentMaxGallons * 1.5) });
+                }
+                const pathString = pts.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${mapX(pt.x)} ${mapY(pt.y)}`).join(' ');
+                graphPath.setAttribute('d', pathString);
+
+                if (currentGallonsNeeded <= currentMaxGallons * 1.5) {
+                    targetHighlight.style.display = 'block';
+                    const tLine = document.getElementById('target-line');
+                    tLine.setAttribute('x1', mapX(targetDistance));
+                    tLine.setAttribute('y1', padding.top);
+                    tLine.setAttribute('x2', mapX(targetDistance));
+                    tLine.setAttribute('y2', height - padding.bottom);
+
+                    const tCircle = document.getElementById('target-circle');
+                    tCircle.setAttribute('cx', mapX(targetDistance));
+                    tCircle.setAttribute('cy', mapY(currentGallonsNeeded));
+                } else {
+                    targetHighlight.style.display = 'none';
+                }
+            }
+        }
+
+        // INIT
+        loadSettings(); // Read saved values before first draw
+        updateApp();
+        setTimeout(updateApp, 50);
+    </script>
+    <div class="hidden text-red-700 bg-red-50 text-red-500 text-yellow-700 bg-yellow-50 text-yellow-500 text-green-700 bg-green-50 text-green-500 fill-slate-300 fill-red-500 fill-yellow-500 fill-blue-500 border-blue-100"></div>
+</body>
+</html>
