@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuel Fill Estimator</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --prediction: #93c5fd;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .input-card {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        input[type="number"], 
+        input[type="text"] {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* SVG Gauge Styling */
+        .gauge-section {
+            background: #f1f5f9;
+            padding: 20px 20px 10px 20px;
+            border-radius: 12px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .fuel-gauge-svg {
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+            display: block;
+            overflow: visible;
+        }
+
+        .gauge-path {
+            transition: stroke-dashoffset 0.6s ease-out, stroke 0.4s ease;
+            stroke-linecap: round;
+        }
+
+        #gauge-needle {
+            /* Adds a realistic bouncy effect to the needle */
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            margin-top: 20px;
+            accent-color: var(--primary);
+        }
+
+        /* Results Display */
+        .results {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .results p {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .results .highlight {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .tip {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* Settings Accordion */
+        .settings-toggle {
+            margin-top: 24px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+        }
+
+        .settings-toggle button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .settings-content {
+            display: none;
+            padding-top: 16px;
+        }
+
+        .settings-content.open {
+            display: block;
+        }
+
+        .currency-symbol {
+            position: relative;
+        }
+
+        .currency-symbol::before {
+            content: '$';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .currency-symbol input {
+            padding-left: 28px !important;
+        }
+
+        .helper-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        /* Top Toggles */
+        .top-toggles {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+            max-width: 450px;
+            margin-bottom: 12px;
+            z-index: 10;
+            gap: 8px;
+        }
+        .top-toggles button {
+            background: var(--card-bg);
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .top-toggles button:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+    </style>
+</head>
+<body>
+
+<div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+    <div class="top-toggles">
+        <button id="unitBtn" onclick="toggleUnit()">LITERS</button>
+        <button id="langBtn" onclick="toggleLanguage()">ESPAÑOL</button>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1 id="lbl-title">Fuel Fill Estimator</h1>
+        </header>
+
+        <div class="input-card">
+            <div class="field">
+                <label id="lbl-price">Price per Gallon</label>
+                <div class="currency-symbol">
+                    <input type="number" id="gasPrice" value="3.50" step="0.01" min="0">
+                </div>
+            </div>
+
+            <div class="field">
+                <label id="lbl-level">Current Fuel Level</label>
+                <div class="gauge-section">
+                    
+                    <!-- Semi-Circular Dashboard Gauge -->
+                    <svg viewBox="0 0 200 115" class="fuel-gauge-svg">
+                        <!-- Background track -->
+                        <path d="M 20 90 A 80 80 0 0 1 180 90" fill="none" stroke="#cbd5e1" stroke-width="14" pathLength="100" class="gauge-path" />
+                        
+                        <!-- Prediction Track (Shows total after cash is added) -->
+                        <path id="gauge-pred-path" d="M 20 90 A 80 80 0 0 1 180 90" fill="none" stroke="var(--prediction)" stroke-width="14" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" class="gauge-path" />
+                  
+                        <!-- Current Fuel Track -->
+                        <path id="gauge-fill-path" d="M 20 90 A 80 80 0 0 1 180 90" fill="none" stroke="var(--success)" stroke-width="14" pathLength="100" stroke-dasharray="100" stroke-dashoffset="50" class="gauge-path" />
+                  
+                        <!-- Ticks (Rotated around center 100, 90) -->
+                        <!-- E -->
+                        <line x1="100" y1="5" x2="100" y2="25" stroke="#1e293b" stroke-width="3" transform="rotate(-90 100 90)"/>
+                        <!-- 1/8 -->
+                        <line x1="100" y1="12" x2="100" y2="20" stroke="#94a3b8" stroke-width="1.5" transform="rotate(-67.5 100 90)"/>
+                        <!-- 1/4 -->
+                        <line x1="100" y1="10" x2="100" y2="20" stroke="#64748b" stroke-width="2" transform="rotate(-45 100 90)"/>
+                        <!-- 3/8 -->
+                        <line x1="100" y1="12" x2="100" y2="20" stroke="#94a3b8" stroke-width="1.5" transform="rotate(-22.5 100 90)"/>
+                        <!-- 1/2 -->
+                        <line x1="100" y1="5" x2="100" y2="25" stroke="#1e293b" stroke-width="3" transform="rotate(0 100 90)"/>
+                        <!-- 5/8 -->
+                        <line x1="100" y1="12" x2="100" y2="20" stroke="#94a3b8" stroke-width="1.5" transform="rotate(22.5 100 90)"/>
+                        <!-- 3/4 -->
+                        <line x1="100" y1="10" x2="100" y2="20" stroke="#64748b" stroke-width="2" transform="rotate(45 100 90)"/>
+                        <!-- 7/8 -->
+                        <line x1="100" y1="12" x2="100" y2="20" stroke="#94a3b8" stroke-width="1.5" transform="rotate(67.5 100 90)"/>
+                        <!-- F -->
+                        <line x1="100" y1="5" x2="100" y2="25" stroke="#1e293b" stroke-width="3" transform="rotate(90 100 90)"/>
+                  
+                        <!-- Labels -->
+                        <text x="10" y="110" font-family="sans-serif" font-size="14" font-weight="900" fill="var(--danger)" text-anchor="middle">E</text>
+                        <text x="100" y="38" font-family="sans-serif" font-size="12" font-weight="bold" fill="var(--text-muted)" text-anchor="middle">1/2</text>
+                        <text x="190" y="110" font-family="sans-serif" font-size="14" font-weight="900" fill="var(--text-main)" text-anchor="middle">F</text>
+                  
+                        <!-- Needle -->
+                        <g id="gauge-needle" transform="rotate(0 100 90)">
+                          <polygon points="97,90 103,90 100,15" fill="#ef4444" />
+                          <circle cx="100" cy="90" r="8" fill="#1e293b" />
+                          <circle cx="100" cy="90" r="3" fill="#ffffff" />
+                        </g>
+                    </svg>
+
+                <input type="range" id="fuelRange" min="0" max="100" value="50">
+            </div>
+        </div>
+
+        <div class="field">
+            <label id="lbl-spend">How much are you spending?</label>
+            <div class="currency-symbol">
+                <input type="number" id="cashAmount" placeholder="e.g. 20" step="1">
+            </div>
+            <div class="helper-text" id="lbl-helper">Leave empty to calculate 'Fill to Full'</div>
+        </div>
+
+        <div class="results" id="output">
+            <p id="lbl-slide">Slide the gauge to see cost to full.</p>
+        </div>
+
+        <p class="tip" id="lbl-tip">Estimate based on analog gauge; actual capacity may vary by fuel temperature and expansion room.</p>
+
+        <div class="settings-toggle">
+            <button onclick="toggleSettings()">
+                <span id="lbl-settings">⚙️ Vehicle Settings</span>
+            </button>
+            <div id="settingsPanel" class="settings-content">
+                <div class="field">
+                    <label id="lbl-tank">Tank Capacity (Gallons)</label>
+                    <input type="number" id="tankSize" value="15" min="1">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fuelRange = document.getElementById('fuelRange');
+    const gaugeFillPath = document.getElementById('gauge-fill-path');
+    const gaugePredPath = document.getElementById('gauge-pred-path');
+    const gaugeNeedle = document.getElementById('gauge-needle');
+    const gasPriceInput = document.getElementById('gasPrice');
+    const cashInput = document.getElementById('cashAmount');
+    const tankInput = document.getElementById('tankSize');
+    const output = document.getElementById('output');
+    const langBtn = document.getElementById('langBtn');
+
+    const translations = {
+        en: {
+            title: "Fuel Fill Estimator",
+            price_gal: "Price per Gallon",
+            price_L: "Price per Liter",
+            level: "Current Fuel Level",
+            spend: "How much are you spending?",
+            placeholder: "e.g. 20",
+            helper: "Leave empty to calculate 'Fill to Full'",
+            slide: "Slide the gauge to see cost to full.",
+            tip: "Estimate based on analog gauge; actual capacity may vary by fuel temperature and expansion room.",
+            settings: "⚙️ Vehicle Settings",
+            tank_gal: "Tank Capacity (Gallons)",
+            tank_L: "Tank Capacity (Liters)",
+            langBtn: "ESPAÑOL",
+            unitBtn_gal: "SWITCH TO LITERS",
+            unitBtn_L: "SWITCH TO GALLONS",
+            fracFull: "a full tank",
+            frac78: "roughly 7/8ths of a tank",
+            frac34: "roughly 3/4ths of a tank",
+            frac58: "roughly 5/8ths of a tank",
+            frac12: "roughly 1/2 of a tank",
+            frac38: "roughly 3/8ths of a tank",
+            frac14: "roughly 1/4th of a tank",
+            frac18: "roughly 1/8th of a tank",
+            fracSplash: "a small splash",
+            extra1: "This amount will give you an extra",
+            extra2: "Your tank needle should reach the level shown.",
+            fill1: "To fill to <b>Full</b>, you need to put in approx.",
+            unitNeeded_gal: "gallons needed",
+            unitNeeded_L: "liters needed",
+            unitAdded_gal: "gallons added",
+            unitAdded_L: "liters added",
+            overflow: "⚠️ Warning: This amount exceeds your tank capacity!"
+        },
+        es: {
+            title: "Estimador de Combustible",
+            price_gal: "Precio por Galón",
+            price_L: "Precio por Litro",
+            level: "Nivel Actual de Combustible",
+            spend: "¿Cuánto va a gastar?",
+            placeholder: "ej. 20",
+            helper: "Deje en blanco para calcular 'Llenado Total'",
+            slide: "Deslice el indicador para ver el costo para llenar.",
+            tip: "Estimación basada en indicador analógico; la capacidad real puede variar.",
+            settings: "⚙️ Configuración del Vehículo",
+            tank_gal: "Capacidad del Tanque (Galones)",
+            tank_L: "Capacidad del Tanque (Litros)",
+            langBtn: "ENGLISH",
+            unitBtn_gal: "CAMBIAR A LITROS",
+            unitBtn_L: "CAMBIAR A GALONES",
+            fracFull: "un tanque lleno",
+            frac78: "aprox. 7/8 de tanque",
+            frac34: "aprox. 3/4 de tanque",
+            frac58: "aprox. 5/8 de tanque",
+            frac12: "aprox. 1/2 tanque",
+            frac38: "aprox. 3/8 de tanque",
+            frac14: "aprox. 1/4 de tanque",
+            frac18: "aprox. 1/8 de tanque",
+            fracSplash: "un poco de combustible",
+            extra1: "Esta cantidad le dará un extra de",
+            extra2: "La aguja de su tanque debería llegar al nivel mostrado.",
+            fill1: "Para llegar a <b>Lleno</b>, necesita agregar aprox.",
+            unitNeeded_gal: "galones necesarios",
+            unitNeeded_L: "litros necesarios",
+            unitAdded_gal: "galones agregados",
+            unitAdded_L: "litros agregados",
+            overflow: "⚠️ Advertencia: ¡Esta cantidad excede la capacidad de su tanque!"
+        }
+    };
+
+    let currentLang = 'en';
+    let currentUnit = 'gal';
+
+    // Load Persistence
+    window.onload = () => {
+        const savedTank = localStorage.getItem('gas_tank_size');
+        const savedPrice = localStorage.getItem('gas_last_price');
+        const savedLang = localStorage.getItem('gas_lang');
+        const savedUnit = localStorage.getItem('gas_unit');
+        
+        if (savedTank) tankInput.value = savedTank;
+        if (savedPrice) gasPriceInput.value = savedPrice;
+        if (savedLang && translations[savedLang]) currentLang = savedLang;
+        if (savedUnit === 'gal' || savedUnit === 'L') currentUnit = savedUnit;
+        
+        applyTranslations();
+        updateUI();
+    };
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'en' ? 'es' : 'en';
+        localStorage.setItem('gas_lang', currentLang);
+        applyTranslations();
+        updateUI();
+    }
+
+    function toggleUnit() {
+        currentUnit = currentUnit === 'gal' ? 'L' : 'gal';
+        localStorage.setItem('gas_unit', currentUnit);
+        applyTranslations();
+        updateUI();
+    }
+
+    function applyTranslations() {
+        const t = translations[currentLang];
+        document.getElementById('lbl-title').innerText = t.title;
+        document.getElementById('lbl-price').innerText = t[`price_${currentUnit}`];
+        document.getElementById('lbl-level').innerText = t.level;
+        document.getElementById('lbl-spend').innerText = t.spend;
+        document.getElementById('lbl-tip').innerText = t.tip;
+        document.getElementById('lbl-settings').innerText = t.settings;
+        document.getElementById('lbl-tank').innerText = t[`tank_${currentUnit}`];
+        document.getElementById('lbl-helper').innerText = t.helper;
+        cashInput.placeholder = t.placeholder;
+        langBtn.innerText = t.langBtn;
+        document.getElementById('unitBtn').innerText = t[`unitBtn_${currentUnit}`];
+    }
+
+    function toggleSettings() {
+        document.getElementById('settingsPanel').classList.toggle('open');
+    }
+
+    function getFractionText(percentage) {
+        const t = translations[currentLang];
+        if (percentage >= 93) return t.fracFull;
+        if (percentage >= 81) return t.frac78;
+        if (percentage >= 68) return t.frac34;
+        if (percentage >= 56) return t.frac58;
+        if (percentage >= 43) return t.frac12;
+        if (percentage >= 31) return t.frac38;
+        if (percentage >= 18) return t.frac14;
+        if (percentage >= 6) return t.frac18;
+        return t.fracSplash;
+    }
+
+    function updateGaugeColor(percent) {
+        if (percent <= 15) return 'var(--danger)';
+        if (percent <= 30) return 'var(--warning)';
+        return 'var(--success)';
+    }
+
+    function updateUI() {
+        const t = translations[currentLang];
+        const currentPercent = parseFloat(fuelRange.value);
+        const tankSize = parseFloat(tankInput.value) || 1;
+        const price = parseFloat(gasPriceInput.value) || 0;
+        const cash = parseFloat(cashInput.value);
+
+        // Update Base Track Color
+        gaugeFillPath.style.stroke = updateGaugeColor(currentPercent);
+
+        if (!isNaN(cash) && cash > 0) {
+            // "What does $X get me?" Mode
+            const volumeAdded = cash / price;
+            const percentAdded = (volumeAdded / tankSize) * 100;
+            const predictedTotal = currentPercent + percentAdded;
+            const clampedTotal = Math.min(predictedTotal, 100);
+            
+            // Set paths (SVG uses dashoffset where 100 is empty, 0 is full)
+            gaugeFillPath.style.strokeDashoffset = 100 - currentPercent;
+            gaugePredPath.style.strokeDashoffset = 100 - clampedTotal;
+            
+            // Point needle to the predicted end level
+            const needleAngle = (clampedTotal / 100) * 180 - 90;
+            gaugeNeedle.setAttribute('transform', `rotate(${needleAngle} 100 90)`);
+            
+            const fraction = getFractionText(percentAdded);
+            const unitAddedLabel = t[`unitAdded_${currentUnit}`];
+            
+            let overflowHtml = '';
+            if (predictedTotal > 100) {
+                overflowHtml = `<p style="color: var(--danger); font-weight: bold; margin-top: 10px; font-size: 0.95rem;">${t.overflow}</p>`;
+            }
+
+            output.innerHTML = `
+                <p>${t.extra1} <span class="highlight">${fraction}</span>.</p>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 8px;">${t.extra2} <br/>(${volumeAdded.toFixed(2)} ${unitAddedLabel})</p>
+                ${overflowHtml}
+            `;
+        } else {
+            // "How much to fill up?" Mode
+            gaugeFillPath.style.strokeDashoffset = 100 - currentPercent;
+            gaugePredPath.style.strokeDashoffset = 100; // Hide prediction arc entirely
+            
+            // Point needle to the current actual level
+            const needleAngle = (currentPercent / 100) * 180 - 90;
+            gaugeNeedle.setAttribute('transform', `rotate(${needleAngle} 100 90)`);
+
+            const percentNeeded = 100 - currentPercent;
+            const volumeNeeded = (percentNeeded / 100) * tankSize;
+            const cost = volumeNeeded * price;
+            const unitNeededLabel = t[`unitNeeded_${currentUnit}`];
+
+            output.innerHTML = `
+                <p>${t.fill1} <span class="highlight">$${cost.toFixed(2)}</span>.</p>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">(${volumeNeeded.toFixed(2)} ${unitNeededLabel})</p>
+            `;
+        }
+
+        // Save preferences
+        localStorage.setItem('gas_tank_size', tankInput.value);
+        localStorage.setItem('gas_last_price', gasPriceInput.value);
+    }
+
+    // Listeners
+    [fuelRange, gasPriceInput, cashInput, tankInput].forEach(el => {
+        el.addEventListener('input', updateUI);
+    });
+
+</script>
+</body>
+</html>
