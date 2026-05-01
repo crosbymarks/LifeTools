@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Square Dice Roller</title>
     <style>
         :root {
@@ -38,45 +38,45 @@
 
         .screen {
             display: none;
-            height: 100vh;
-            width: 100vw;
-            position: relative;
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         .screen.active {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
         }
 
         /* Setup Screen */
         #setup-screen {
             background-color: var(--bg);
             overflow-y: auto;
-            justify-content: flex-start;
             padding: 20px;
+            padding-bottom: 40px;
         }
 
         .container {
             max-width: 500px;
             width: 100%;
             background: var(--card);
-            padding: 32px;
+            padding: 24px;
             border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             margin: auto;
         }
 
-        h1 { margin: 0 0 24px 0; font-size: 24px; text-align: center; }
-        .section-label { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; }
+        h1 { margin: 0 0 20px 0; font-size: 22px; text-align: center; }
+        .section-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
 
-        .control-row { display: flex; gap: 12px; margin-bottom: 24px; }
+        .control-row { display: flex; gap: 12px; margin-bottom: 20px; }
         .control-item { flex: 1; }
 
         select, input[type="text"], input[type="number"] {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
             border: 1px solid #334155;
             background: #0f172a;
@@ -86,26 +86,27 @@
 
         .player-entry {
             display: grid;
-            grid-template-columns: 1fr 120px;
+            grid-template-columns: 1fr 100px;
             gap: 10px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             background: rgba(15, 23, 42, 0.5);
-            padding: 12px;
-            border-radius: 16px;
+            padding: 10px;
+            border-radius: 12px;
         }
 
         .checkbox-group {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-top: 16px;
+            margin-top: 12px;
             cursor: pointer;
+            font-size: 14px;
         }
 
         .btn-start {
-            margin-top: 32px;
+            margin-top: 24px;
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             border-radius: 16px;
             border: none;
             background: var(--blue);
@@ -115,27 +116,126 @@
             cursor: pointer;
         }
 
-        /* Game Screen */
+        /* Game Screen Layouts */
         #game-screen {
             cursor: pointer;
-            background-color: var(--bg);
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+        }
+
+        /* Portrait Layout (Default) */
+        .game-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Landscape Layout */
+        @media (orientation: landscape) {
+            #game-screen {
+                flex-direction: row;
+            }
+            .game-side-panel {
+                width: 30%;
+                min-width: 250px;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                border-right: 1px solid rgba(255,255,255,0.1);
+                background: rgba(15, 23, 42, 0.3);
+            }
+            .game-main {
+                width: 70%;
+                flex: none;
+                padding: 40px;
+            }
+            .portrait-only { display: none !important; }
+        }
+
+        @media (orientation: portrait) {
+            .landscape-only { display: none !important; }
+            .game-side-panel { display: none; }
+        }
+
+        /* Components */
+        .header-card {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            padding: 14px 28px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            cursor: pointer;
+            width: fit-content;
+            margin: 20px auto;
+        }
+
+        .game-side-panel .header-card {
+            margin: 0;
+            width: 100%;
+        }
+
+        .current-player-name {
+            font-size: 20px;
+            font-weight: 800;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .stats-display {
+            background: rgba(0,0,0,0.3);
+            padding: 12px 20px;
+            border-radius: 16px;
+            font-size: 13px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin: 15px 0;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .side-next-card {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 12px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
         .dice-container {
             display: flex;
-            gap: 20px;
+            gap: 25px;
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
             width: 100%;
-            max-height: 50vh; /* Keep dice within a reasonable height */
-            padding: 10px;
             pointer-events: auto;
         }
 
         .die {
-            /* Responsive sizing based on dice count */
-            width: min(240px, 60vw);
+            width: min(240px, 45vh);
             aspect-ratio: 1 / 1;
             background-color: var(--die-bg);
             display: grid;
@@ -144,30 +244,24 @@
             padding: 12%;
             gap: 8%;
             border-radius: 18%; 
-            box-shadow: 
-                0 10px 0 #cbd5e1, 
-                0 20px 40px -10px rgba(0, 0, 0, 0.7);
-            transition: transform 0.1s ease-out, box-shadow 0.2s ease, border 0.2s ease;
+            box-shadow: 0 10px 0 #cbd5e1, 0 20px 40px rgba(0, 0, 0, 0.6);
             position: relative;
             border: 4px solid transparent;
         }
 
-        /* Two dice specific sizing to prevent footer cutoff */
-        .two-dice .die {
-            width: min(180px, 42vw);
+        @media (orientation: landscape) {
+            .die { width: min(220px, 35vw); }
         }
 
         .die.frozen {
             border: 6px solid var(--frozen-color);
-            box-shadow: 
-                0 10px 0 #cbd5e1,
-                0 0 25px var(--frozen-color);
+            box-shadow: 0 10px 0 #cbd5e1, 0 0 25px var(--frozen-color);
         }
 
         .die.frozen::after {
             content: "FROZEN";
             position: absolute;
-            top: -30px;
+            top: -24px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 10px;
@@ -181,11 +275,9 @@
         }
 
         @keyframes shake {
-            0% { transform: translate(4px, 2px) rotate(0deg); }
-            25% { transform: translate(-2px, -4px) rotate(-1deg); }
-            50% { transform: translate(-4px, 2px) rotate(1deg); }
-            75% { transform: translate(2px, 4px) rotate(-1deg); }
-            100% { transform: translate(0px, 0px) rotate(0deg); }
+            0% { transform: translate(3px, 1px) rotate(0deg); }
+            50% { transform: translate(-2px, -3px) rotate(-1deg); }
+            100% { transform: translate(1px, 2px) rotate(1deg); }
         }
 
         .pip {
@@ -194,69 +286,21 @@
             width: 100%;
             height: 100%;
             opacity: 0;
-            transition: opacity 0.15s;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            transition: opacity 0.1s;
         }
-
         .pip.visible { opacity: 1; }
-
-        /* UI Overlays */
-        .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 20px 40px 20px; /* Adjusted top padding */
-        }
-
-        .header-card {
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(12px);
-            padding: 12px 32px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            pointer-events: auto;
-            cursor: pointer;
-            transition: transform 0.1s;
-            max-width: 90%;
-        }
-
-        .header-card:active {
-            transform: scale(0.95);
-        }
-
-        .current-player-name {
-            font-size: 20px;
-            font-weight: 800;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
 
         .footer-card {
             background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(12px);
             padding: 10px 24px;
             border-radius: 50px;
             font-size: 14px;
             color: var(--text-muted);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            max-width: 90%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 80%;
+            text-align: center;
         }
 
         .exit-btn {
@@ -270,20 +314,19 @@
             color: white;
             z-index: 100;
             cursor: pointer;
-            pointer-events: auto;
             font-weight: bold;
             font-size: 12px;
+            pointer-events: auto;
         }
 
         .roll-hint {
             color: var(--text-muted);
-            font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             letter-spacing: 2px;
             text-transform: uppercase;
-            margin-top: 10px;
-            opacity: 0.6;
+            opacity: 0.5;
             text-align: center;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -292,27 +335,33 @@
     <!-- SETUP SCREEN -->
     <div id="setup-screen" class="screen active">
         <div class="container">
-            <h1>Dice Roller Setup</h1>
-            <div id="setup-error" style="display:none; color: var(--red); text-align: center; margin-bottom: 10px; font-weight: bold;">Please pick unique colors!</div>
+            <h1>Game Setup</h1>
+            <div id="setup-error" style="display:none; color: var(--red); text-align: center; margin-bottom: 12px; font-weight: bold;">Please pick unique colors!</div>
             
-            <div class="section-label">Dice Mode</div>
+            <div class="section-label">Dice & Players</div>
             <div class="control-row">
-                <select id="dice-count">
-                    <option value="1">1 Die</option>
-                    <option value="2">2 Dice</option>
-                </select>
+                <div class="control-item">
+                    <select id="dice-count">
+                        <option value="1">1 Die</option>
+                        <option value="2">2 Dice</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <input type="number" id="player-count" value="2" min="1" max="4">
+                </div>
             </div>
 
-            <div class="section-label">Players (Up to 4)</div>
-            <div class="control-row">
-                <input type="number" id="player-count" value="2" min="1" max="4">
-            </div>
-
+            <div class="section-label">Player Names (Max 15)</div>
             <div id="player-inputs"></div>
 
-            <div class="checkbox-group" onclick="document.getElementById('quick-play').click()">
+            <div class="section-label">Options</div>
+            <div class="checkbox-group" onclick="toggleCheckbox('quick-play')">
                 <input type="checkbox" id="quick-play" checked onclick="event.stopPropagation()">
-                <span>Quick Play (Auto-advance turns)</span>
+                <span>Quick Play (Auto-next)</span>
+            </div>
+            <div class="checkbox-group" onclick="toggleCheckbox('show-stats')">
+                <input type="checkbox" id="show-stats" onclick="event.stopPropagation()">
+                <span>Show Statistics</span>
             </div>
 
             <button class="btn-start" onclick="startGame()">START GAME</button>
@@ -323,14 +372,38 @@
     <div id="game-screen" class="screen" onclick="handleRoll()">
         <button class="exit-btn" onclick="exitGame(event)">EXIT</button>
 
-        <!-- UI Overlay -->
-        <div class="ui-layer">
-            <div id="header" class="header-card" onclick="advanceAndRoll(event)">
-                <div id="header-label" style="font-size: 9px; opacity: 0.7; margin-bottom: 2px; letter-spacing: 0.1em; font-weight: bold;">CURRENT ROLLER</div>
-                <h2 id="current-player-ui" class="current-player-name">Player 1</h2>
+        <!-- Left Side Panel (Landscape only) -->
+        <div class="game-side-panel">
+            <div style="width: 100%;">
+                <div class="header-card" onclick="advanceAndRoll(event)">
+                    <div style="font-size: 9px; opacity: 0.7; margin-bottom: 2px; font-weight: bold;">CURRENT ROLLER</div>
+                    <h2 class="current-player-name player-name-text">Player 1</h2>
+                </div>
+                
+                <div class="stats-display stats-area">
+                    <div class="stats-row"><span>Game Turn:</span> <span class="game-turn-val">1</span></div>
+                    <div class="stats-row manual-only"><span>Rolls this Turn:</span> <span class="roll-count-val">0</span></div>
+                </div>
             </div>
 
-            <!-- Square dice container -->
+            <div style="width: 100%;">
+                <div class="side-next-card">
+                    <div style="font-size: 9px; opacity: 0.7; margin-bottom: 4px; font-weight: bold;">NEXT UP</div>
+                    <div id="side-next-name" style="font-weight: 800; text-transform: uppercase;">Player 2</div>
+                </div>
+                <div class="roll-hint">Tap name to advance</div>
+            </div>
+        </div>
+
+        <!-- Main Dice Area -->
+        <div class="game-main">
+            <!-- Header (Portrait only) -->
+            <div class="header-card portrait-only" onclick="advanceAndRoll(event)">
+                <div class="header-label-txt" style="font-size: 9px; opacity: 0.7; margin-bottom: 2px; font-weight: bold;">CURRENT ROLLER</div>
+                <h2 class="current-player-name player-name-text">Player 1</h2>
+            </div>
+
+            <!-- Dice -->
             <div class="dice-container" id="dice-container">
                 <div class="die" id="die-1" onclick="handleDieClick(event, 1)">
                     <div class="pip" id="d1-p1"></div><div class="pip" id="d1-p2"></div><div class="pip" id="d1-p3"></div>
@@ -344,11 +417,18 @@
                 </div>
             </div>
 
-            <div id="hint-text" class="roll-hint">Tap anywhere to roll</div>
-
-            <div class="footer-card">
-                Next up: <span id="next-player-ui" style="font-weight: 800; color: #fff;">Player 2</span>
+            <!-- Stats (Portrait only) -->
+            <div class="stats-display stats-area portrait-only" style="max-width: 250px; margin: 20px auto;">
+                <div class="stats-row"><span>Game Turn:</span> <span class="game-turn-val">1</span></div>
+                <div class="stats-row manual-only"><span>Current Rolls:</span> <span class="roll-count-val">0</span></div>
             </div>
+
+            <div class="roll-hint portrait-only">Tap background to roll</div>
+        </div>
+
+        <!-- Footer (Portrait only) -->
+        <div class="footer-card portrait-only">
+            Next: <span class="next-player-ui-text" style="font-weight: 800; color: #fff;">Player 2</span>
         </div>
     </div>
 
@@ -376,11 +456,20 @@
         let frozenDieIdx = null; 
         let lastTapTime = 0;
 
+        // Stats tracking
+        let totalTurns = 1;
+        let currentRollCount = 0;
+
         const playerCountInput = document.getElementById('player-count');
         const playerInputs = document.getElementById('player-inputs');
 
         playerCountInput.addEventListener('input', updatePlayerFields);
         
+        function toggleCheckbox(id) {
+            const cb = document.getElementById(id);
+            cb.checked = !cb.checked;
+        }
+
         function updatePlayerFields() {
             let count = Math.min(Math.max(parseInt(playerCountInput.value) || 1, 1), 4);
             playerInputs.innerHTML = '';
@@ -412,7 +501,6 @@
         function handleDieClick(e, idx) {
             e.stopPropagation();
             if (isRolling) return;
-            
             const isQuickPlay = document.getElementById('quick-play').checked;
             if (isQuickPlay || numDice === 1) return;
 
@@ -426,11 +514,7 @@
         }
 
         function toggleFreeze(idx) {
-            if (frozenDieIdx === idx) {
-                frozenDieIdx = null;
-            } else {
-                frozenDieIdx = idx;
-            }
+            frozenDieIdx = (frozenDieIdx === idx) ? null : idx;
             updateDiceStyles();
         }
 
@@ -455,33 +539,32 @@
             }));
 
             numDice = parseInt(document.getElementById('dice-count').value);
-            const container = document.getElementById('dice-container');
-            const die2 = document.getElementById('die-2');
+            document.getElementById('die-2').style.display = numDice === 2 ? 'grid' : 'none';
             
-            die2.style.display = numDice === 2 ? 'grid' : 'none';
-            container.className = numDice === 2 ? 'dice-container two-dice' : 'dice-container';
-            
-            frozenDieIdx = null;
-            updateDiceStyles();
-
+            // Reset state
+            totalTurns = 1;
+            currentRollCount = 0;
             currentPlayerIdx = 0;
+            frozenDieIdx = null;
+            
+            updateDiceStyles();
             updateGameUI();
             setPips(1, 1);
             if(numDice === 2) setPips(2, 1);
 
             document.getElementById('setup-screen').classList.remove('active');
+            document.getElementById('game-screen').style.display = 'flex';
             document.getElementById('game-screen').classList.add('active');
             document.getElementById('setup-error').style.display = 'none';
 
+            // Stats visibility
+            const statsAreas = document.querySelectorAll('.stats-area');
+            const showStats = document.getElementById('show-stats').checked;
+            statsAreas.forEach(a => a.style.display = showStats ? 'block' : 'none');
+            
+            const manualRows = document.querySelectorAll('.manual-only');
             const isQuickPlay = document.getElementById('quick-play').checked;
-            let hint = "Tap background to roll";
-            if (!isQuickPlay) {
-                hint += "<br><span style='font-size:9px; opacity:0.6'>Tap name to advance.</span>";
-                if (numDice === 2) {
-                    hint += "<br><span style='font-size:9px; opacity:0.6'>Double tap a die to freeze.</span>";
-                }
-            }
-            document.getElementById('hint-text').innerHTML = hint;
+            manualRows.forEach(r => r.style.display = isQuickPlay ? 'none' : 'flex');
         }
 
         function handleRoll(e) {
@@ -496,6 +579,9 @@
             const isQuickPlay = document.getElementById('quick-play').checked;
             if (!isQuickPlay) {
                 currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+                // Increment turn only when we return to player 1
+                if (currentPlayerIdx === 0) totalTurns++;
+                currentRollCount = 0; 
                 updateGameUI();
                 triggerRoll();
             }
@@ -503,6 +589,7 @@
 
         function triggerRoll() {
             isRolling = true;
+            currentRollCount++;
 
             const die1 = document.getElementById('die-1');
             const die2 = document.getElementById('die-2');
@@ -510,7 +597,7 @@
             if (frozenDieIdx !== 1) die1.classList.add('rolling');
             if (numDice === 2 && frozenDieIdx !== 2) die2.classList.add('rolling');
 
-            const rollDuration = 650;
+            const rollDuration = 600;
             const interval = 80;
             
             const flipTimer = setInterval(() => {
@@ -526,10 +613,14 @@
                 if (frozenDieIdx !== 1) setPips(1, Math.floor(Math.random() * 6) + 1);
                 if (numDice === 2 && frozenDieIdx !== 2) setPips(2, Math.floor(Math.random() * 6) + 1);
 
+                updateStats();
+
                 const isQuickPlay = document.getElementById('quick-play').checked;
                 if (isQuickPlay) {
                     setTimeout(() => {
                         currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+                        // Increment turn only when we return to player 1
+                        if (currentPlayerIdx === 0) totalTurns++;
                         updateGameUI();
                         isRolling = false;
                     }, 400);
@@ -539,28 +630,45 @@
             }, rollDuration);
         }
 
+        function updateStats() {
+            document.querySelectorAll('.game-turn-val').forEach(el => el.textContent = totalTurns);
+            document.querySelectorAll('.roll-count-val').forEach(el => el.textContent = currentRollCount);
+        }
+
         function updateGameUI() {
             const player = players[currentPlayerIdx];
             const next = players[(currentPlayerIdx + 1) % players.length];
 
-            const header = document.getElementById('header');
-            const nameUI = document.getElementById('current-player-ui');
-            const nextUI = document.getElementById('next-player-ui');
-            const labelUI = document.getElementById('header-label');
+            // Current player updates
+            const headers = document.querySelectorAll('.header-card');
+            const nameLabels = document.querySelectorAll('.player-name-text');
+            headers.forEach(h => h.style.borderTop = `6px solid ${player.color.hex}`);
+            nameLabels.forEach(nl => {
+                nl.textContent = player.name;
+                nl.style.color = player.color.hex;
+            });
 
-            header.style.borderTop = `6px solid ${player.color.hex}`;
-            nameUI.textContent = player.name;
-            nameUI.style.color = player.color.hex;
-            
-            nextUI.textContent = next.name;
-            nextUI.style.color = next.color.hex;
+            // Next player updates (Footer + Side Panel)
+            document.querySelectorAll('.next-player-ui-text').forEach(el => {
+                el.textContent = next.name;
+                el.style.color = next.color.hex;
+            });
+            const sideNextName = document.getElementById('side-next-name');
+            sideNextName.textContent = next.name;
+            sideNextName.style.color = next.color.hex;
 
+            // Label logic
             const isQuickPlay = document.getElementById('quick-play').checked;
-            labelUI.textContent = isQuickPlay ? "CURRENT ROLLER" : "TAP TO ADVANCE TURN";
+            document.querySelectorAll('.header-label-txt').forEach(l => {
+                l.textContent = isQuickPlay ? "CURRENT ROLLER" : "TAP TO ADVANCE TURN";
+            });
+            
+            updateStats();
         }
 
         function exitGame(e) {
             e.stopPropagation();
+            document.getElementById('game-screen').style.display = 'none';
             document.getElementById('game-screen').classList.remove('active');
             document.getElementById('setup-screen').classList.add('active');
         }
