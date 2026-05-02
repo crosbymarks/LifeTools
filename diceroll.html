@@ -143,21 +143,24 @@
                 flex-direction: row;
             }
             .game-side-panel {
-                width: 30%;
-                min-width: 250px;
+                width: 32%;
+                min-width: 260px;
                 height: 100%;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
                 align-items: center;
-                padding: 20px;
+                padding: 30px 20px;
                 border-right: 1px solid rgba(255,255,255,0.1);
-                background: rgba(15, 23, 42, 0.3);
+                background: rgba(15, 23, 42, 0.4);
             }
             .game-main {
-                width: 70%;
+                width: 68%;
                 flex: none;
-                padding: 40px;
+                padding: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
             .portrait-only { display: none !important; }
         }
@@ -179,7 +182,8 @@
             pointer-events: auto;
             cursor: pointer;
             width: fit-content;
-            margin: 20px auto;
+            margin: 10px auto;
+            transition: transform 0.1s;
         }
 
         .game-side-panel .header-card {
@@ -193,7 +197,7 @@
             margin: 0;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            max-width: 180px;
+            max-width: 200px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -218,7 +222,7 @@
         .side-next-card {
             width: 100%;
             background: rgba(15, 23, 42, 0.6);
-            padding: 12px;
+            padding: 15px;
             border-radius: 16px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.05);
@@ -226,7 +230,7 @@
 
         .dice-container {
             display: flex;
-            gap: 25px;
+            gap: 40px;
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
@@ -235,14 +239,17 @@
         }
 
         .die {
-            width: min(240px, 45vh);
+            /* Increased desktop size constraint from 260px to 450px */
+            width: min(450px, 42vh);
             aspect-ratio: 1 / 1;
             background-color: var(--die-bg);
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            padding: 12%;
-            gap: 8%;
+            /* Slightly more padding for better spacing at large sizes */
+            padding: 14%;
+            /* Tighter gap for better proportions */
+            gap: 10%;
             border-radius: 18%; 
             box-shadow: 0 10px 0 #cbd5e1, 0 20px 40px rgba(0, 0, 0, 0.6);
             position: relative;
@@ -250,7 +257,7 @@
         }
 
         @media (orientation: landscape) {
-            .die { width: min(220px, 35vw); }
+            .die { width: min(400px, 50vh); }
         }
 
         .die.frozen {
@@ -285,6 +292,7 @@
             border-radius: 50%;
             width: 100%;
             height: 100%;
+            display: block; 
             opacity: 0;
             transition: opacity 0.1s;
         }
@@ -297,7 +305,7 @@
             font-size: 14px;
             color: var(--text-muted);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 20px auto;
+            margin: 10px auto 20px auto;
             width: fit-content;
             max-width: 80%;
             text-align: center;
@@ -376,12 +384,12 @@
         <div class="game-side-panel">
             <div style="width: 100%;">
                 <div class="header-card" onclick="advanceAndRoll(event)">
-                    <div style="font-size: 9px; opacity: 0.7; margin-bottom: 2px; font-weight: bold;">CURRENT ROLLER</div>
+                    <div class="header-label-txt" style="font-size: 9px; opacity: 0.7; margin-bottom: 2px; font-weight: bold;">CURRENT ROLLER</div>
                     <h2 class="current-player-name player-name-text">Player 1</h2>
                 </div>
                 
                 <div class="stats-display stats-area">
-                    <div class="stats-row"><span>Game Turn:</span> <span class="game-turn-val">1</span></div>
+                    <div class="stats-row"><span>Game Round:</span> <span class="game-turn-val">1</span></div>
                     <div class="stats-row manual-only"><span>Rolls this Turn:</span> <span class="roll-count-val">0</span></div>
                 </div>
             </div>
@@ -419,7 +427,7 @@
 
             <!-- Stats (Portrait only) -->
             <div class="stats-display stats-area portrait-only" style="max-width: 250px; margin: 20px auto;">
-                <div class="stats-row"><span>Game Turn:</span> <span class="game-turn-val">1</span></div>
+                <div class="stats-row"><span>Game Round:</span> <span class="game-turn-val">1</span></div>
                 <div class="stats-row manual-only"><span>Current Rolls:</span> <span class="roll-count-val">0</span></div>
             </div>
 
@@ -456,8 +464,7 @@
         let frozenDieIdx = null; 
         let lastTapTime = 0;
 
-        // Stats tracking
-        let totalTurns = 1;
+        let totalTurns = 1; 
         let currentRollCount = 0;
 
         const playerCountInput = document.getElementById('player-count');
@@ -541,7 +548,6 @@
             numDice = parseInt(document.getElementById('dice-count').value);
             document.getElementById('die-2').style.display = numDice === 2 ? 'grid' : 'none';
             
-            // Reset state
             totalTurns = 1;
             currentRollCount = 0;
             currentPlayerIdx = 0;
@@ -557,7 +563,6 @@
             document.getElementById('game-screen').classList.add('active');
             document.getElementById('setup-error').style.display = 'none';
 
-            // Stats visibility
             const statsAreas = document.querySelectorAll('.stats-area');
             const showStats = document.getElementById('show-stats').checked;
             statsAreas.forEach(a => a.style.display = showStats ? 'block' : 'none');
@@ -579,7 +584,6 @@
             const isQuickPlay = document.getElementById('quick-play').checked;
             if (!isQuickPlay) {
                 currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
-                // Increment turn only when we return to player 1
                 if (currentPlayerIdx === 0) totalTurns++;
                 currentRollCount = 0; 
                 updateGameUI();
@@ -619,7 +623,6 @@
                 if (isQuickPlay) {
                     setTimeout(() => {
                         currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
-                        // Increment turn only when we return to player 1
                         if (currentPlayerIdx === 0) totalTurns++;
                         updateGameUI();
                         isRolling = false;
@@ -639,7 +642,6 @@
             const player = players[currentPlayerIdx];
             const next = players[(currentPlayerIdx + 1) % players.length];
 
-            // Current player updates
             const headers = document.querySelectorAll('.header-card');
             const nameLabels = document.querySelectorAll('.player-name-text');
             headers.forEach(h => h.style.borderTop = `6px solid ${player.color.hex}`);
@@ -648,7 +650,6 @@
                 nl.style.color = player.color.hex;
             });
 
-            // Next player updates (Footer + Side Panel)
             document.querySelectorAll('.next-player-ui-text').forEach(el => {
                 el.textContent = next.name;
                 el.style.color = next.color.hex;
@@ -657,7 +658,6 @@
             sideNextName.textContent = next.name;
             sideNextName.style.color = next.color.hex;
 
-            // Label logic
             const isQuickPlay = document.getElementById('quick-play').checked;
             document.querySelectorAll('.header-label-txt').forEach(l => {
                 l.textContent = isQuickPlay ? "CURRENT ROLLER" : "TAP TO ADVANCE TURN";
