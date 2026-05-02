@@ -144,6 +144,7 @@
             width: 100%;
             gap: 20px;
             padding: 20px;
+            position: relative;
         }
 
         /* Landscape Layout */
@@ -245,20 +246,18 @@
             flex-wrap: wrap;
             width: 100%;
             pointer-events: auto;
+            position: relative;
         }
 
         .die {
-            /* Increased desktop size constraint from 260px to 450px */
             width: min(450px, 42vh);
             aspect-ratio: 1 / 1;
             background-color: var(--die-bg);
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            /* Slightly more padding for better spacing at large sizes */
-            padding: 14%;
-            /* Tighter gap for better proportions */
-            gap: 10%;
+            padding: 10%;
+            gap: 8%;
             border-radius: 18%; 
             box-shadow: 0 10px 0 #cbd5e1, 0 20px 40px rgba(0, 0, 0, 0.6);
             position: relative;
@@ -266,7 +265,7 @@
         }
 
         @media (orientation: landscape) {
-            .die { width: min(400px, 50vh); }
+            .die { width: min(500px, 60vh); }
         }
 
         .die.frozen {
@@ -304,8 +303,33 @@
             display: block; 
             opacity: 0;
             transition: opacity 0.1s;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
         }
         .pip.visible { opacity: 1; }
+
+        /* First Roll Overlay */
+        .first-roll-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--red);
+            color: var(--yellow);
+            padding: 20px 40px;
+            border-radius: 100px; /* Oval shape */
+            font-size: 24px;
+            font-weight: 900;
+            text-transform: uppercase;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 50;
+            cursor: pointer;
+            border: 4px solid var(--yellow);
+            display: none;
+            transition: transform 0.1s;
+        }
+        .first-roll-overlay:active {
+            transform: translate(-50%, -50%) scale(0.9);
+        }
 
         .footer-card {
             background: rgba(15, 23, 42, 0.9);
@@ -383,7 +407,7 @@
 
             <button class="btn-start" onclick="startGame()">START GAME</button>
             
-            <div class="version-tag">1.0.01</div>
+            <div class="version-tag">1.0.03</div>
         </div>
     </div>
 
@@ -424,6 +448,7 @@
 
             <!-- Dice -->
             <div class="dice-container" id="dice-container">
+                <div id="first-roll-btn" class="first-roll-overlay" onclick="handleFirstRoll(event)">First Roll</div>
                 <div class="die" id="die-1" onclick="handleDieClick(event, 1)">
                     <div class="pip" id="d1-p1"></div><div class="pip" id="d1-p2"></div><div class="pip" id="d1-p3"></div>
                     <div class="pip" id="d1-p4"></div><div class="pip" id="d1-p5"></div><div class="pip" id="d1-p6"></div>
@@ -471,6 +496,7 @@
         let players = [];
         let currentPlayerIdx = 0;
         let isRolling = false;
+        let isFirstRollWaiting = false;
         let numDice = 1;
         let frozenDieIdx = null; 
         let lastTapTime = 0;
@@ -518,7 +544,7 @@
 
         function handleDieClick(e, idx) {
             e.stopPropagation();
-            if (isRolling) return;
+            if (isRolling || isFirstRollWaiting) return;
             const isQuickPlay = document.getElementById('quick-play').checked;
             if (isQuickPlay || numDice === 1) return;
 
@@ -563,9 +589,12 @@
             currentRollCount = 0;
             currentPlayerIdx = 0;
             frozenDieIdx = null;
+            isFirstRollWaiting = true;
             
             updateDiceStyles();
             updateGameUI();
+            
+            // Show initial values but don't count them yet
             setPips(1, 1);
             if(numDice === 2) setPips(2, 1);
 
@@ -573,6 +602,9 @@
             document.getElementById('game-screen').style.display = 'flex';
             document.getElementById('game-screen').classList.add('active');
             document.getElementById('setup-error').style.display = 'none';
+            
+            // Show the first roll button
+            document.getElementById('first-roll-btn').style.display = 'block';
 
             const statsAreas = document.querySelectorAll('.stats-area');
             const showStats = document.getElementById('show-stats').checked;
@@ -583,14 +615,21 @@
             manualRows.forEach(r => r.style.display = isQuickPlay ? 'none' : 'flex');
         }
 
+        function handleFirstRoll(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('first-roll-btn').style.display = 'none';
+            isFirstRollWaiting = false;
+            triggerRoll();
+        }
+
         function handleRoll(e) {
-            if (isRolling) return;
+            if (isRolling || isFirstRollWaiting) return;
             triggerRoll();
         }
 
         function advanceAndRoll(e) {
             if (e) e.stopPropagation();
-            if (isRolling) return;
+            if (isRolling || isFirstRollWaiting) return;
 
             const isQuickPlay = document.getElementById('quick-play').checked;
             if (!isQuickPlay) {
@@ -603,6 +642,7 @@
         }
 
         function triggerRoll() {
+            if (isRolling) return;
             isRolling = true;
             currentRollCount++;
 
