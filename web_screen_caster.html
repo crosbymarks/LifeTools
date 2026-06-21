@@ -29,6 +29,12 @@
             <strong>Security Notice:</strong> You are opening this file directly from your hard drive (file://). Most modern browsers block screen sharing unless the file is hosted on a secure server (HTTPS) or a local development server (localhost). If sharing fails, this is why!
         </div>
 
+        <!-- Error Banner -->
+        <div id="error-banner" class="hidden mb-6 bg-red-900/50 border border-red-600 text-red-200 p-4 rounded-xl text-center text-sm shadow-lg flex items-center justify-center gap-3">
+            <svg class="w-6 h-6 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span id="error-text">An error occurred.</span>
+        </div>
+
         <div class="grid md:grid-cols-2 gap-8" id="mode-selection">
             <!-- Broadcaster Section -->
             <div class="glass-panel p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transition hover:shadow-blue-900/20">
@@ -38,7 +44,12 @@
                 <h2 class="text-2xl font-bold mb-3">Broadcaster</h2>
                 <p class="text-gray-400 mb-4 text-sm">Share a specific window, tab, or your entire screen with others.</p>
                 
-                <button id="start-broadcast-btn" class="w-full py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition shadow-lg shadow-blue-600/30">
+                <div class="flex items-center justify-center gap-2 mb-4">
+                    <input type="checkbox" id="audio-toggle" checked class="w-4 h-4 text-blue-500 bg-gray-900 border-gray-700 rounded focus:ring-blue-600">
+                    <label for="audio-toggle" class="text-sm font-medium text-gray-300">Request Audio Stream</label>
+                </div>
+
+                <button id="start-broadcast-btn" class="w-full py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
                     Start Sharing
                 </button>
                 <p class="text-xs text-blue-300 mt-3 flex items-start text-left bg-blue-900/30 p-2 rounded border border-blue-800/50">
@@ -79,8 +90,19 @@
             </div>
         </div>
 
+        <!-- Diagnostic Debug Console -->
+        <div class="w-full mt-8 glass-panel p-4 rounded-xl">
+            <h3 class="text-xs uppercase font-bold text-gray-500 mb-2 tracking-wider flex items-center justify-between">
+                <span>System Diagnostics Log</span>
+                <button id="clear-log-btn" class="hover:text-white transition">Clear</button>
+            </h3>
+            <div id="debug-log" class="bg-gray-950 border border-gray-800 rounded p-3 h-32 overflow-y-auto font-mono text-xs space-y-1">
+                <div class="text-gray-500">> System ready. Waiting for action...</div>
+            </div>
+        </div>
+
         <!-- Video Player Area (Hidden until active) -->
-        <div id="video-container" class="hidden mt-10 glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-gray-800">
+        <div id="video-container" class="hidden mt-10 glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-gray-800 w-full">
             <div class="absolute top-4 left-4 bg-black/60 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md z-10 flex items-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
                 <span id="video-label">Live Stream</span>
@@ -103,11 +125,6 @@
             let localStream = null;
             let activeCall = null;
 
-            // Check if running from file:// protocol (which breaks WebRTC in modern browsers)
-            if (window.location.protocol === 'file:') {
-                document.getElementById('security-warning').classList.remove('hidden');
-            }
-
             // UI Elements
             const startBroadcastBtn = document.getElementById('start-broadcast-btn');
             const joinBroadcastBtn = document.getElementById('join-broadcast-btn');
@@ -121,31 +138,77 @@
             const videoLabel = document.getElementById('video-label');
             const statusText = document.getElementById('status-text');
             const connectionStatus = document.getElementById('connection-status');
+            const audioToggle = document.getElementById('audio-toggle');
+            const errorBanner = document.getElementById('error-banner');
+            const errorText = document.getElementById('error-text');
+            const debugLog = document.getElementById('debug-log');
+            const clearLogBtn = document.getElementById('clear-log-btn');
 
-            // Generate a random 4-character ID for easy typing
+            // Logging function
+            function log(msg, type = 'info') {
+                const time = new Date().toLocaleTimeString([], {hour12: false});
+                const color = type === 'error' ? 'text-red-400 font-bold' : (type === 'success' ? 'text-emerald-400' : 'text-blue-300');
+                debugLog.innerHTML += `<div class="${color}">[${time}] ${msg}</div>`;
+                debugLog.scrollTop = debugLog.scrollHeight;
+                console.log(`[${type.toUpperCase()}] ${msg}`);
+            }
+
+            clearLogBtn.addEventListener('click', () => {
+                debugLog.innerHTML = `<div class="text-gray-500">> Log cleared.</div>`;
+            });
+
+            // Check if running from file:// protocol
+            if (window.location.protocol === 'file:') {
+                document.getElementById('security-warning').classList.remove('hidden');
+                log("WARNING: Running on file:// protocol. WebRTC may be blocked.", "error");
+            } else {
+                log(`Running on ${window.location.protocol} host: ${window.location.host}`);
+            }
+
             const generateShortId = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
             // Setup Broadcaster Mode
             startBroadcastBtn.addEventListener('click', async () => {
+                errorBanner.classList.add('hidden');
+                startBroadcastBtn.disabled = true;
+                startBroadcastBtn.innerText = "Requesting permissions...";
+
                 try {
-                    // Check if the browser supports media devices at all in this context
+                    log("Initiating screen capture request...");
+
                     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                        throw new Error("Your browser is blocking screen capture. This usually happens if you open the HTML file directly instead of hosting it on a secure server (HTTPS or localhost).");
+                        throw new Error("Screen capture API (getDisplayMedia) is not available. This happens on mobile devices or insecure network contexts.");
                     }
+
+                    const requestAudio = audioToggle.checked;
+                    log(`Audio requested: ${requestAudio}`);
 
                     // 1. Request Screen Capture from the user
                     localStream = await navigator.mediaDevices.getDisplayMedia({
                         video: { cursor: "always" },
-                        audio: true // Enabled audio capture
+                        audio: requestAudio
                     });
+
+                    log("Screen capture permission GRANTED.", "success");
+                    startBroadcastBtn.innerText = "Initializing Server...";
+
+                    const audioTracks = localStream.getAudioTracks();
+                    if (audioTracks.length > 0) {
+                        log(`Audio stream attached successfully (${audioTracks[0].label}).`, "success");
+                    } else if (requestAudio) {
+                        log("Warning: Audio was requested, but no audio stream was captured. (Did you check the 'share audio' box in the popup?)", "error");
+                    }
 
                     const shortId = generateShortId();
                     const fullId = PREFIX + shortId;
 
-                    // 2. Initialize PeerJS with the generated ID
+                    log(`Connecting to signaling server with ID: ${fullId}...`);
+                    
+                    // 2. Initialize PeerJS
                     peer = new Peer(fullId, { debug: 2 });
 
                     peer.on('open', (id) => {
+                        log("Connected to signaling server!", "success");
                         // 3. Update UI
                         startBroadcastBtn.classList.add('hidden');
                         broadcastInfo.classList.remove('hidden');
@@ -154,31 +217,46 @@
                         videoContainer.classList.remove('hidden');
                         videoLabel.innerText = "Broadcasting (Your view)";
                         streamVideo.srcObject = localStream;
-                        streamVideo.muted = true; // Don't echo audio back to broadcaster
+                        streamVideo.muted = true; // Don't echo audio back
                     });
 
                     // 4. Listen for incoming viewer calls
                     peer.on('call', (call) => {
-                        console.log("Incoming call from viewer...");
-                        // Answer the call, sending our screen stream
+                        log("Incoming connection request from a viewer...", "success");
                         call.answer(localStream);
                         activeCall = call;
                         
                         statusText.innerText = "Status: Viewer Connected";
                         
                         call.on('close', () => {
+                            log("Viewer disconnected.");
                             statusText.innerText = "Status: Viewer Disconnected";
                         });
                     });
 
-                    // Stop sharing if user clicks the browser's native "Stop Sharing" button
+                    peer.on('error', (err) => {
+                        log(`PeerJS Error: ${err.type} - ${err.message}`, "error");
+                    });
+
+                    // Stop sharing if user clicks native browser stop
                     localStream.getVideoTracks()[0].onended = () => {
+                        log("Native browser 'Stop Sharing' clicked.");
                         disconnectAll();
                     };
 
                 } catch (err) {
-                    console.error("Error starting broadcast:", err);
-                    alert("Could not start broadcast.\n\nReason: " + err.message);
+                    log(`Permission Denied or Failed: ${err.name} - ${err.message}`, "error");
+                    startBroadcastBtn.disabled = false;
+                    startBroadcastBtn.innerText = "Start Sharing";
+                    errorBanner.classList.remove('hidden');
+                    
+                    if (err.name === 'NotAllowedError') {
+                        errorText.innerText = "Permission denied. You must allow screen capture to continue.";
+                    } else if (err.name === 'NotFoundError') {
+                        errorText.innerText = "No screen/audio sources found.";
+                    } else {
+                        errorText.innerText = `Error: ${err.message}`;
+                    }
                 }
             });
 
@@ -190,26 +268,30 @@
                     return;
                 }
 
+                errorBanner.classList.add('hidden');
                 connectionStatus.classList.remove('hidden');
                 connectionStatus.innerText = "Connecting to signaling server...";
+                log(`Attempting to join stream ID: ${targetId}...`);
 
-                // 1. Initialize empty PeerJS client
                 peer = new Peer({ debug: 2 });
 
                 peer.on('open', (id) => {
                     connectionStatus.innerText = "Calling broadcaster...";
+                    log("Connected to signaling server. Initiating WebRTC call...", "success");
                     
-                    // 2. Create a dummy stream (required by some WebRTC implementations to initiate a call)
                     const canvas = document.createElement('canvas');
                     canvas.width = 1; canvas.height = 1;
-                    const dummyStream = canvas.captureStream(1); // 1 fps empty stream
+                    const dummyStream = canvas.captureStream(1); 
 
-                    // 3. Call the broadcaster's ID
                     const fullTargetId = PREFIX + targetId;
                     activeCall = peer.call(fullTargetId, dummyStream);
 
-                    // 4. Handle incoming screen stream from broadcaster
                     activeCall.on('stream', (remoteStream) => {
+                        log("Successfully received remote stream data!", "success");
+                        
+                        const hasAudio = remoteStream.getAudioTracks().length > 0;
+                        log(`Stream contains audio track: ${hasAudio}`);
+
                         connectionStatus.classList.add('hidden');
                         modeSelection.classList.add('hidden');
                         videoContainer.classList.remove('hidden');
@@ -218,37 +300,39 @@
                         statusText.innerText = "Status: Connected to " + targetId;
                         
                         streamVideo.srcObject = remoteStream;
-                        streamVideo.muted = false; // We want to hear the remote stream if there is audio
+                        streamVideo.muted = false; 
                     });
 
                     activeCall.on('close', () => {
+                        log("Broadcaster closed the stream.");
                         alert("Broadcaster ended the stream.");
                         disconnectAll();
                     });
 
                     activeCall.on('error', (err) => {
+                        log(`Call Error: ${err.message}`, "error");
                         connectionStatus.innerText = "Connection failed.";
-                        console.error(err);
                     });
                 });
 
                 peer.on('error', (err) => {
+                    log(`PeerJS Error: ${err.type} - ${err.message}`, "error");
                     connectionStatus.innerText = "Error: " + err.type;
-                    console.error(err);
+                    errorBanner.classList.remove('hidden');
+                    errorText.innerText = `Connection failed: ${err.type}`;
                 });
             });
 
-            // Handle Disconnects
-            stopBtn.addEventListener('click', disconnectAll);
-
             function disconnectAll() {
+                log("Disconnecting and cleaning up...");
                 if (activeCall) activeCall.close();
                 if (peer) peer.destroy();
                 if (localStream) {
                     localStream.getTracks().forEach(track => track.stop());
                 }
 
-                // Reset UI
+                startBroadcastBtn.disabled = false;
+                startBroadcastBtn.innerText = "Start Sharing";
                 streamVideo.srcObject = null;
                 videoContainer.classList.add('hidden');
                 modeSelection.classList.remove('hidden');
@@ -256,6 +340,7 @@
                 broadcastInfo.classList.add('hidden');
                 connectionStatus.classList.add('hidden');
                 broadcastIdDisplay.innerText = "----";
+                log("System reset complete.", "success");
             }
         });
     </script>
