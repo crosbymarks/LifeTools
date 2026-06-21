@@ -117,7 +117,7 @@
                     // 1. Request Screen Capture from the user (they select what to share)
                     localStream = await navigator.mediaDevices.getDisplayMedia({
                         video: { cursor: "always" },
-                        audio: false // Set to true if you want to capture system audio (browser dependent)
+                        audio: true // Enabled audio capture
                     });
 
                     const shortId = generateShortId();
