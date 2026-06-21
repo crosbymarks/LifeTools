@@ -25,6 +25,10 @@
             <p class="text-gray-400">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
 
+        <div id="security-warning" class="hidden mb-6 bg-yellow-900/50 border border-yellow-600 text-yellow-200 p-4 rounded-xl text-center text-sm shadow-lg">
+            <strong>Security Notice:</strong> You are opening this file directly from your hard drive (file://). Most modern browsers block screen sharing unless the file is hosted on a secure server (HTTPS) or a local development server (localhost). If sharing fails, this is why!
+        </div>
+
         <div class="grid md:grid-cols-2 gap-8" id="mode-selection">
             <!-- Broadcaster Section -->
             <div class="glass-panel p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transition hover:shadow-blue-900/20">
@@ -32,10 +36,15 @@
                     <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 </div>
                 <h2 class="text-2xl font-bold mb-3">Broadcaster</h2>
-                <p class="text-gray-400 mb-6 text-sm">Share a specific window, tab, or your entire screen with others.</p>
+                <p class="text-gray-400 mb-4 text-sm">Share a specific window, tab, or your entire screen with others.</p>
+                
                 <button id="start-broadcast-btn" class="w-full py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition shadow-lg shadow-blue-600/30">
                     Start Sharing
                 </button>
+                <p class="text-xs text-blue-300 mt-3 flex items-start text-left bg-blue-900/30 p-2 rounded border border-blue-800/50">
+                    <svg class="w-4 h-4 mr-1 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Tip: To share audio, you MUST check the "Share system audio" or "Also share tab audio" toggle inside the browser's popup window.
+                </p>
 
                 <div id="broadcast-info" class="hidden w-full mt-6">
                     <div class="p-4 bg-gray-900 rounded-xl border border-gray-800">
@@ -94,6 +103,11 @@
             let localStream = null;
             let activeCall = null;
 
+            // Check if running from file:// protocol (which breaks WebRTC in modern browsers)
+            if (window.location.protocol === 'file:') {
+                document.getElementById('security-warning').classList.remove('hidden');
+            }
+
             // UI Elements
             const startBroadcastBtn = document.getElementById('start-broadcast-btn');
             const joinBroadcastBtn = document.getElementById('join-broadcast-btn');
@@ -114,7 +128,12 @@
             // Setup Broadcaster Mode
             startBroadcastBtn.addEventListener('click', async () => {
                 try {
-                    // 1. Request Screen Capture from the user (they select what to share)
+                    // Check if the browser supports media devices at all in this context
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                        throw new Error("Your browser is blocking screen capture. This usually happens if you open the HTML file directly instead of hosting it on a secure server (HTTPS or localhost).");
+                    }
+
+                    // 1. Request Screen Capture from the user
                     localStream = await navigator.mediaDevices.getDisplayMedia({
                         video: { cursor: "always" },
                         audio: true // Enabled audio capture
@@ -159,7 +178,7 @@
 
                 } catch (err) {
                     console.error("Error starting broadcast:", err);
-                    alert("Could not start screen capture. Please ensure you granted permissions.");
+                    alert("Could not start broadcast.\n\nReason: " + err.message);
                 }
             });
 
