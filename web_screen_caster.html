@@ -196,7 +196,7 @@
                     if (audioTracks.length > 0) {
                         log(`Audio stream attached successfully (${audioTracks[0].label}).`, "success");
                     } else if (requestAudio) {
-                        log("Warning: Audio was requested, but no audio stream was captured. (Did you check the 'share audio' box in the popup?)", "error");
+                        log("Warning: Audio was requested, but no audio stream was captured. (Did you check the 'share audio' box in the browser's screen-select popup?)", "error");
                     }
 
                     const shortId = generateShortId();
@@ -279,9 +279,21 @@
                     connectionStatus.innerText = "Calling broadcaster...";
                     log("Connected to signaling server. Initiating WebRTC call...", "success");
                     
+                    // 1. Create a dummy video stream (blank canvas)
                     const canvas = document.createElement('canvas');
                     canvas.width = 1; canvas.height = 1;
                     const dummyStream = canvas.captureStream(1); 
+
+                    // 2. IMPORTANT FIX: Create a dummy audio track using Web Audio API
+                    // This forces the WebRTC SDP offer to explicitly include an audio channel.
+                    try {
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        const dest = audioCtx.createMediaStreamDestination();
+                        dummyStream.addTrack(dest.stream.getAudioTracks()[0]);
+                        log("Created dummy audio channel for connection.", "info");
+                    } catch (e) {
+                        log("Warning: Could not create dummy audio track. Receiving audio may fail.", "error");
+                    }
 
                     const fullTargetId = PREFIX + targetId;
                     activeCall = peer.call(fullTargetId, dummyStream);
@@ -291,6 +303,10 @@
                         
                         const hasAudio = remoteStream.getAudioTracks().length > 0;
                         log(`Stream contains audio track: ${hasAudio}`);
+                        
+                        if (!hasAudio) {
+                            log("NOTE: Broadcaster's stream did not include audio. (They may have forgotten to check the 'share audio' box!)", "error");
+                        }
 
                         connectionStatus.classList.add('hidden');
                         modeSelection.classList.add('hidden');
