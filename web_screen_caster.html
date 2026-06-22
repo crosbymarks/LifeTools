@@ -398,10 +398,13 @@
                     });
 
                     // Stop sharing if user clicks native browser stop
-                    localStream.getVideoTracks()[0].onended = () => {
-                        log("Native browser 'Stop Sharing' clicked.");
-                        disconnectAll();
-                    };
+                    const videoTracks = localStream.getVideoTracks();
+                    if (videoTracks.length > 0) {
+                        videoTracks[0].onended = () => {
+                            log("Native browser 'Stop Sharing' clicked.");
+                            disconnectAll();
+                        };
+                    }
 
                 } catch (err) {
                     log(`Permission Denied or Failed: ${err.name} - ${err.message}`, "error");
@@ -480,7 +483,8 @@
 
                     activeCall.on('close', () => {
                         log("Broadcaster closed the stream.");
-                        alert("Broadcaster ended the stream.");
+                        errorBanner.classList.remove('hidden');
+                        errorText.innerText = "Broadcaster ended the stream.";
                         disconnectAll();
                     });
 
@@ -500,21 +504,53 @@
 
             function disconnectAll() {
                 log("Disconnecting and cleaning up...");
-                if (activeCall) activeCall.close();
-                if (peer) peer.destroy();
-                if (localStream) {
-                    localStream.getTracks().forEach(track => track.stop());
+                
+                // 1. Exit fullscreen if active
+                try {
+                    if (document.fullscreenElement || document.webkitFullscreenElement) {
+                        if (document.exitFullscreen) document.exitFullscreen();
+                        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                    }
+                    if (screen.orientation && screen.orientation.unlock) {
+                        screen.orientation.unlock();
+                    }
+                } catch (e) {
+                    log(`Fullscreen exit error: ${e.message}`, "error");
                 }
 
+                // 2. Safely close connections
+                if (activeCall) {
+                    try { activeCall.close(); } catch(e) {}
+                    activeCall = null;
+                }
+                if (peer) {
+                    try { peer.destroy(); } catch(e) {}
+                    peer = null;
+                }
+                if (localStream) {
+                    try { localStream.getTracks().forEach(track => track.stop()); } catch(e) {}
+                    localStream = null;
+                }
+
+                // 3. Reset UI Elements
                 startBroadcastBtn.disabled = false;
                 startBroadcastBtn.innerText = "Start Sharing";
-                streamVideo.srcObject = null;
+                
+                if (streamVideo) {
+                    streamVideo.pause();
+                    streamVideo.removeAttribute('src');
+                    streamVideo.load();
+                    streamVideo.srcObject = null;
+                }
+
                 videoContainer.classList.add('hidden');
                 modeSelection.classList.remove('hidden');
                 startBroadcastBtn.classList.remove('hidden');
                 broadcastInfo.classList.add('hidden');
                 connectionStatus.classList.add('hidden');
                 broadcastIdDisplay.innerText = "----";
+                viewerInputId.value = ""; 
+                
                 log("System reset complete.", "success");
             }
         });
