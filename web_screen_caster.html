@@ -27,82 +27,8 @@
             from { opacity: 1; transform: scale(1); }
             to { opacity: 0; transform: scale(0.95); }
         }
-    </style>
-</head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center py-10 px-4 relative">
 
-    <!-- Settings Icon & Menu -->
-    <div class="absolute top-4 right-4 z-50">
-        <button id="settings-btn" class="p-2 bg-gray-800/50 hover:bg-gray-700 rounded-full text-gray-400 hover:text-white transition backdrop-blur">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        </button>
-        <div id="settings-menu" class="hidden absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
-            <div class="px-4 py-3 border-b border-gray-800 bg-gray-800/50">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Settings</span>
-            </div>
-            <div class="p-4">
-                <label class="flex items-center justify-between cursor-pointer mb-3">
-                    <span class="text-sm font-medium text-gray-300">Show Diagnostics</span>
-                    <div class="relative">
-                        <input type="checkbox" id="toggle-diagnostics" class="sr-only">
-                        <div class="block bg-gray-700 w-10 h-6 rounded-full transition toggle-bg"></div>
-                        <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
-                    </div>
-                </label>
-                <label class="flex items-center justify-between cursor-pointer">
-                    <span class="text-sm font-medium text-gray-300">Show Stream Stats</span>
-                    <div class="relative">
-                        <input type="checkbox" id="toggle-stats" class="sr-only">
-                        <div class="block bg-gray-700 w-10 h-6 rounded-full transition toggle-bg"></div>
-                        <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
-                    </div>
-                </label>
-                <div class="mt-4 pt-4 border-t border-gray-800">
-                    <label class="flex items-center justify-between mb-3">
-                        <span class="text-sm font-medium text-gray-300">Max Connections</span>
-                        <input type="number" id="max-connections" value="3" min="1" max="20" class="w-16 bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-center focus:outline-none focus:border-blue-500">
-                    </label>
-                    <label class="flex flex-col gap-1">
-                        <span class="text-sm font-medium text-gray-300">Max Stream Quality</span>
-                        <select id="stream-quality" class="bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 w-full">
-                            <option value="source">Source (Uncapped)</option>
-                            <option value="high">High (Max 2.5 Mbps)</option>
-                            <option value="medium">Medium (Max 1.0 Mbps)</option>
-                            <option value="low">Low (Max 500 Kbps)</option>
-                        </select>
-                    </label>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- EULA Modal -->
-    <div id="eula-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div id="eula-content" class="bg-gray-900 border border-gray-700 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl">
-            <div class="p-6 border-b border-gray-800 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-white">End User License Agreement & Terms</h2>
-                <button id="close-eula-btn" class="text-gray-400 hover:text-white transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="p-6 overflow-y-auto text-sm text-gray-300 space-y-5 leading-relaxed font-sans">
-                <p><strong>1. Acceptance of Terms:</strong> By accessing and using this WebRTC Screen Broadcaster application ("Software"), you accept and agree to be bound by the terms and provision of this agreement.</p>
-                
-                <p><strong>2. "As Is" Provision:</strong> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.</p>
-                
-                <p><strong>3. Limitation of Liability:</strong> IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
-                
-                <p><strong>4. Indemnification:</strong> You agree to indemnify, defend, and hold harmless the creator, developers, and copyright holders of this Software from and against any and all claims, liabilities, damages, losses, costs, expenses, or fees (including reasonable attorneys' fees) that such parties may incur as a result of or arising from your (or anyone using your connection) use of the Software, violation of these Terms, or transmission of any copyrighted, illegal, or sensitive material over the connection.</p>
-                
-                <p><strong>5. Third-Party Services & Privacy:</strong> This software utilizes the public PeerJS signaling server infrastructure to broker peer-to-peer connections. While the video and audio streams are end-to-end encrypted directly between peers, we make no guarantees regarding the uptime, availability, or reliability of the signaling server.</p>
-            </div>
-            <div class="p-6 border-t border-gray-800 bg-gray-900/80 flex justify-end">
-                <button id="accept-eula-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition shadow-lg shadow-blue-600/30">Close & Accept</button>
-            </div>
-        </div>
-    </div>
-
-    <style>
+        /* Toggle switches */
         input:checked ~ .toggle-bg { background-color: #3b82f6; }
         input:checked ~ .dot { transform: translateX(100%); }
         
@@ -144,132 +70,223 @@
             border-radius: 0 !important;
         }
     </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center py-10 px-4 relative">
 
-    <div class="max-w-4xl w-full flex-grow flex flex-col items-center">
-        <div class="text-center mb-10 mt-6">
+    <!-- Top Right Controls (Language & Settings) -->
+    <div class="absolute top-4 right-4 z-50 flex items-center gap-3">
+        <!-- Language Toggle -->
+        <div class="flex bg-gray-800/50 rounded-full p-1 backdrop-blur border border-gray-700 shadow-lg">
+            <button id="lang-en" class="px-3 py-1 rounded-full text-xs font-bold bg-blue-600 text-white transition">EN</button>
+            <button id="lang-es" class="px-3 py-1 rounded-full text-xs font-bold text-gray-400 hover:text-white transition">ES</button>
+        </div>
+
+        <!-- Settings Menu -->
+        <div class="relative">
+            <button id="settings-btn" class="p-2 bg-gray-800/50 hover:bg-gray-700 rounded-full text-gray-400 hover:text-white transition backdrop-blur border border-gray-700 shadow-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+            <div id="settings-menu" class="hidden absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-800 bg-gray-800/50">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider" data-i18n="settings">Settings</span>
+                </div>
+                <div class="p-4">
+                    <label class="flex items-center justify-between cursor-pointer mb-3">
+                        <span class="text-sm font-medium text-gray-300" data-i18n="showDiag">Show Diagnostics</span>
+                        <div class="relative">
+                            <input type="checkbox" id="toggle-diagnostics" class="sr-only">
+                            <div class="block bg-gray-700 w-10 h-6 rounded-full transition toggle-bg"></div>
+                            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+                        </div>
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-sm font-medium text-gray-300" data-i18n="showStats">Show Stream Stats</span>
+                        <div class="relative">
+                            <input type="checkbox" id="toggle-stats" class="sr-only">
+                            <div class="block bg-gray-700 w-10 h-6 rounded-full transition toggle-bg"></div>
+                            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+                        </div>
+                    </label>
+                    <div class="mt-4 pt-4 border-t border-gray-800">
+                        <label class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-medium text-gray-300" data-i18n="maxConn">Max Connections</span>
+                            <input type="number" id="max-connections" value="3" min="1" max="20" class="w-16 bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-center focus:outline-none focus:border-blue-500">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                            <span class="text-sm font-medium text-gray-300" data-i18n="maxQual">Max Stream Quality</span>
+                            <select id="stream-quality" class="bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 w-full">
+                                <option value="source" data-i18n="qSource">Source (Uncapped)</option>
+                                <option value="high" data-i18n="qHigh">High (Max 2.5 Mbps)</option>
+                                <option value="medium" data-i18n="qMed">Medium (Max 1.0 Mbps)</option>
+                                <option value="low" data-i18n="qLow">Low (Max 500 Kbps)</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EULA Modal -->
+    <div id="eula-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div id="eula-content" class="bg-gray-900 border border-gray-700 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="p-6 border-b border-gray-800 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-white" data-i18n="eulaTitle">End User License Agreement & Terms</h2>
+                <button id="close-eula-btn" class="text-gray-400 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto text-sm text-gray-300 space-y-5 leading-relaxed font-sans" id="eula-text-container">
+                <!-- EULA content replaced via JS based on language -->
+            </div>
+            <div class="p-6 border-t border-gray-800 bg-gray-900/80 flex justify-end">
+                <button id="accept-eula-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition shadow-lg shadow-blue-600/30" data-i18n="eulaBtn">Close & Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-3xl w-full flex-grow flex flex-col items-center">
+        <!-- Header -->
+        <div class="text-center mb-8 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
-                Live Screen Caster
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.14</span>
+                <span data-i18n="appTitle">Live Screen Caster</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.16</span>
             </h1>
-            <p class="text-gray-400">Broadcast your screen peer-to-peer directly from your browser.</p>
+            <p class="text-gray-400" data-i18n="appDesc">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
 
-        <div id="security-warning" class="hidden mb-6 bg-yellow-900/50 border border-yellow-600 text-yellow-200 p-4 rounded-xl text-center text-sm shadow-lg">
-            <strong>Security Notice:</strong> You are opening this file directly from your hard drive (file://). Most modern browsers block screen sharing unless the file is hosted on a secure server (HTTPS) or a local development server (localhost). If sharing fails, this is why!
+        <!-- Mode Switcher Tabs -->
+        <div class="flex bg-gray-900/80 backdrop-blur border border-gray-800 rounded-2xl p-1.5 mb-8 shadow-lg" id="mode-tabs">
+            <button id="tab-viewer" class="px-8 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2 bg-blue-600 text-white transition shadow-md shadow-blue-900/50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                <span data-i18n="tabViewer">Viewer</span>
+            </button>
+            <button id="tab-broadcast" class="px-8 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2 text-gray-400 hover:text-white transition bg-transparent">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                <span data-i18n="tabBroadcaster">Broadcaster</span>
+            </button>
         </div>
 
-        <!-- Error Banner -->
+        <div id="security-warning" class="hidden mb-6 w-full bg-yellow-900/50 border border-yellow-600 text-yellow-200 p-4 rounded-xl text-center text-sm shadow-lg">
+            <strong>Security Notice:</strong> You are opening this file directly from your hard drive (file://). Most modern browsers block screen sharing unless the file is hosted on a secure server (HTTPS) or a local development server (localhost).
+        </div>
+
         <div id="error-banner" class="hidden mb-6 w-full bg-red-900/50 border border-red-600 text-red-200 p-4 rounded-xl text-center text-sm shadow-lg flex items-center justify-center gap-3">
             <svg class="w-6 h-6 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span id="error-text">An error occurred.</span>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-8 w-full" id="mode-selection">
+        <div class="w-full relative" id="main-panels">
             <!-- Broadcaster Section -->
-            <div class="glass-panel p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transition hover:shadow-blue-900/20">
+            <div id="panel-broadcast" class="hidden glass-panel p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transition hover:shadow-blue-900/20 w-full">
                 <div class="bg-blue-500/20 p-4 rounded-full mb-6">
-                    <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 </div>
-                <h2 class="text-2xl font-bold mb-3">Broadcaster</h2>
-                <p class="text-gray-400 mb-4 text-sm">Share a specific window, tab, or your entire screen with others.</p>
+                <h2 class="text-2xl font-bold mb-3" data-i18n="tabBroadcaster">Broadcaster</h2>
+                <p class="text-gray-400 mb-6 text-sm" data-i18n="broadcasterDesc">Share a specific window, tab, or your entire screen with others.</p>
                 
-                <div class="w-full mb-4">
-                    <input type="text" id="broadcaster-passcode" placeholder="Passcode (Optional)" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-2 px-4 text-center focus:outline-none focus:border-blue-500 transition">
+                <div class="w-full max-w-sm mb-4">
+                    <input type="text" id="broadcaster-passcode" placeholder="Passcode (Optional)" data-i18n-ph="passcodePlaceholder" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-3 px-4 text-center focus:outline-none focus:border-blue-500 transition">
                 </div>
 
-                <div class="flex items-center justify-center gap-2 mb-4">
+                <div class="flex items-center justify-center gap-2 mb-6">
                     <input type="checkbox" id="audio-toggle" checked class="w-4 h-4 text-blue-500 bg-gray-900 border-gray-700 rounded focus:ring-blue-600">
-                    <label for="audio-toggle" class="text-sm font-medium text-gray-300">Request Audio Stream</label>
+                    <label for="audio-toggle" class="text-sm font-medium text-gray-300 cursor-pointer" data-i18n="reqAudio">Request Audio Stream</label>
                 </div>
 
-                <button id="start-broadcast-btn" class="w-full py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Start Sharing
+                <button id="start-broadcast-btn" class="w-full max-w-sm py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span data-i18n="startSharing">Start Sharing</span>
                 </button>
-                <p class="text-xs text-blue-300 mt-3 flex items-start text-left bg-blue-900/30 p-2 rounded border border-blue-800/50">
-                    <svg class="w-4 h-4 mr-1 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Tip: To share audio, you MUST check the "Share system audio" or "Also share tab audio" toggle inside the browser's popup window.
+                <p class="text-xs text-blue-300 mt-4 max-w-md flex items-start text-left bg-blue-900/30 p-3 rounded-lg border border-blue-800/50">
+                    <svg class="w-4 h-4 mr-2 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span data-i18n="audioTip">Tip: To share audio, you MUST check the "Share system audio" or "Also share tab audio" toggle inside the browser's popup window.</span>
                 </p>
 
-                <div id="broadcast-info" class="hidden w-full mt-6">
-                    <div class="p-4 bg-gray-900 rounded-xl border border-gray-800">
-                        <p class="text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Share this ID with viewers</p>
-                        <div class="text-3xl font-mono text-emerald-400 tracking-widest" id="broadcast-id-display">----</div>
-                        <div id="broadcast-passcode-display-container" class="hidden mt-2 text-sm text-gray-400 border-t border-gray-800 pt-2">
-                            Passcode: <span id="broadcast-passcode-display" class="font-mono text-white"></span>
+                <div id="broadcast-info" class="hidden w-full max-w-sm mt-8">
+                    <div class="p-5 bg-gray-900 rounded-xl border border-gray-800 shadow-inner">
+                        <p class="text-xs text-gray-500 mb-2 uppercase font-bold tracking-wider" data-i18n="shareId">Share this ID with viewers</p>
+                        <div class="text-4xl font-mono text-emerald-400 tracking-widest font-bold" id="broadcast-id-display">----</div>
+                        <div id="broadcast-passcode-display-container" class="hidden mt-3 text-sm text-gray-400 border-t border-gray-800 pt-3">
+                            <span data-i18n="passcodeLabel">Passcode:</span> <span id="broadcast-passcode-display" class="font-mono text-white"></span>
                         </div>
                     </div>
-                    <div class="mt-4 text-left">
-                        <span class="text-sm text-gray-400 flex items-center">
+                    <div class="mt-4 text-center flex justify-center">
+                        <span class="text-sm text-gray-400 flex items-center bg-gray-900/50 px-4 py-2 rounded-full border border-gray-800">
                             <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                            Broadcasting Live
+                            <span data-i18n="broadcastingLive">Broadcasting Live</span>
                         </span>
                     </div>
                 </div>
             </div>
 
             <!-- Viewer Section -->
-            <div class="glass-panel p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transition hover:shadow-purple-900/20">
+            <div id="panel-viewer" class="glass-panel p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transition hover:shadow-purple-900/20 w-full">
                 <div class="bg-purple-500/20 p-4 rounded-full mb-6">
-                    <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                 </div>
-                <h2 class="text-2xl font-bold mb-3">Viewer</h2>
-                <p class="text-gray-400 mb-6 text-sm">Enter a Broadcaster ID to watch someone else's screen.</p>
+                <h2 class="text-2xl font-bold mb-3" data-i18n="tabViewer">Viewer</h2>
+                <p class="text-gray-400 mb-6 text-sm" data-i18n="viewerDesc">Enter a Broadcaster ID to watch someone else's screen.</p>
                 
-                <div class="w-full flex flex-col gap-3">
-                    <input type="text" id="viewer-input-id" placeholder="Enter Broadcaster ID" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-3 px-4 text-center font-mono text-lg uppercase focus:outline-none focus:border-purple-500 transition">
-                    <input type="text" id="viewer-passcode" placeholder="Passcode (if needed)" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-3 px-4 text-center text-lg focus:outline-none focus:border-purple-500 transition">
-                    <button id="join-broadcast-btn" class="w-full py-3 px-6 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold transition shadow-lg shadow-purple-600/30">
-                        Connect & Watch
+                <div class="w-full max-w-sm flex flex-col gap-4">
+                    <input type="text" id="viewer-input-id" placeholder="Enter Broadcaster ID" data-i18n-ph="inputId" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-3 px-4 text-center font-mono text-lg uppercase focus:outline-none focus:border-purple-500 transition shadow-inner">
+                    <input type="text" id="viewer-passcode" placeholder="Passcode (if needed)" data-i18n-ph="inputPasscode" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-3 px-4 text-center text-lg focus:outline-none focus:border-purple-500 transition shadow-inner">
+                    <button id="join-broadcast-btn" class="w-full mt-2 py-3 px-6 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold transition shadow-lg shadow-purple-600/30">
+                        <span data-i18n="connectWatch">Connect & Watch</span>
                     </button>
                 </div>
                 
-                <div id="connection-status" class="hidden mt-4 text-sm text-yellow-400">Connecting...</div>
+                <div id="connection-status" class="hidden mt-6 text-sm text-yellow-400 bg-yellow-900/20 px-4 py-2 rounded-lg border border-yellow-800/50">Connecting...</div>
             </div>
         </div>
 
         <!-- Diagnostic Debug Console -->
         <div id="diagnostic-panel" class="hidden w-full mt-8 glass-panel p-4 rounded-xl transition-all duration-300">
             <h3 class="text-xs uppercase font-bold text-gray-500 mb-2 tracking-wider flex items-center justify-between">
-                <span>System Diagnostics Log</span>
-                <button id="clear-log-btn" class="hover:text-white transition">Clear</button>
+                <span data-i18n="sysDiag">System Diagnostics Log</span>
+                <button id="clear-log-btn" class="hover:text-white transition" data-i18n="clear">Clear</button>
             </h3>
             <div id="debug-log" class="bg-gray-950 border border-gray-800 rounded p-3 h-32 overflow-y-auto font-mono text-xs space-y-1">
-                <div class="text-gray-500">> System ready. Waiting for action...</div>
+                <div class="text-gray-500" data-i18n="logReady">> System ready. Waiting for action...</div>
             </div>
         </div>
 
         <!-- Video Player Area (Hidden until active) -->
-        <div id="video-container" class="hidden mt-10 glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-gray-800 w-full flex-col bg-black">
+        <div id="video-container" class="hidden mt-8 glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-gray-800 w-full flex-col bg-black">
             
             <!-- Floating Stats Overlay -->
             <div id="stats-overlay" class="hidden absolute top-4 left-4 bg-black/80 border border-gray-700 text-gray-300 p-3 rounded-lg text-xs font-mono backdrop-blur-md z-30 flex flex-col gap-1 pointer-events-none shadow-xl">
-                <div class="font-bold text-white mb-1 border-b border-gray-700 pb-1 uppercase tracking-wider">Stream Stats</div>
-                <div>Role: <span id="stat-role" class="text-blue-400">N/A</span></div>
-                <div>Res: <span id="stat-res" class="text-blue-400">0x0</span></div>
-                <div>FPS: <span id="stat-fps" class="text-blue-400">0</span></div>
-                <div>Bitrate: <span id="stat-bitrate" class="text-emerald-400">0 kbps</span></div>
-                <div>Ping: <span id="stat-ping" class="text-yellow-400">0 ms</span></div>
+                <div class="font-bold text-white mb-1 border-b border-gray-700 pb-1 uppercase tracking-wider" data-i18n="streamStatsTitle">Stream Stats</div>
+                <div><span data-i18n="statRole">Role:</span> <span id="stat-role" class="text-blue-400">N/A</span></div>
+                <div><span data-i18n="statRes">Res:</span> <span id="stat-res" class="text-blue-400">0x0</span></div>
+                <div><span data-i18n="statFps">FPS:</span> <span id="stat-fps" class="text-blue-400">0</span></div>
+                <div><span data-i18n="statBitrate">Bitrate:</span> <span id="stat-bitrate" class="text-emerald-400">0 kbps</span></div>
+                <div><span data-i18n="statPing">Ping:</span> <span id="stat-ping" class="text-yellow-400">0 ms</span></div>
             </div>
 
             <video id="stream-video" autoplay playsinline muted class="w-full h-auto max-h-[70vh] object-contain flex-grow"></video>
             
             <!-- Unified Persistent Bottom Control Bar -->
-            <div id="video-controls" class="p-4 bg-gray-900 border-t border-gray-800 flex justify-between items-center w-full z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
-                <div class="flex items-center gap-4">
-                    <div class="bg-gray-800 border border-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2">
+            <div id="video-controls" class="p-3 sm:p-4 bg-gray-900 border-t border-gray-800 flex justify-between items-center w-full z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <div class="bg-gray-800 border border-gray-700 px-2 sm:px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2">
                         <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        <span id="video-label" class="text-gray-200">Live Stream</span>
+                        <span id="video-label" class="text-gray-200" data-i18n="liveStream">Live Stream</span>
                     </div>
-                    <p id="status-text" class="text-sm text-gray-400 hidden sm:block">Status: Active</p>
+                    <p id="status-text" class="text-xs sm:text-sm text-gray-400 hidden md:block">Status: Active</p>
                 </div>
                 
                 <div class="flex gap-2">
-                    <button id="fullscreen-btn" class="px-3 py-2 bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                        <span class="hidden sm:inline">Fullscreen</span>
+                    <!-- Viewer Dedicated Stats Button -->
+                    <button id="player-stats-btn" class="px-2 sm:px-3 py-2 bg-gray-700/50 text-gray-300 hover:bg-gray-600 hover:text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <span class="hidden sm:inline" data-i18n="btnStats">Stats</span>
                     </button>
-                    <button id="stop-btn" class="px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
-                        Disconnect
+                    <button id="fullscreen-btn" class="px-2 sm:px-3 py-2 bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                        <span class="hidden sm:inline" data-i18n="btnFullscreen">Fullscreen</span>
+                    </button>
+                    <button id="stop-btn" class="px-3 sm:px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                        <span data-i18n="btnDisconnect">Disconnect</span>
                     </button>
                 </div>
             </div>
@@ -277,8 +294,8 @@
 
         <!-- Copyright & Legal Footer -->
         <footer class="mt-auto pt-16 pb-4 w-full text-center text-gray-500 text-xs">
-            <p>&copy; 2026. All rights reserved.</p>
-            <button id="open-eula-btn" class="mt-2 hover:text-gray-300 transition underline decoration-gray-700 underline-offset-4 cursor-pointer">EULA & Legal Information</button>
+            <p data-i18n="footerRights">&copy; 2026. All rights reserved.</p>
+            <button id="open-eula-btn" class="mt-2 hover:text-gray-300 transition underline decoration-gray-700 underline-offset-4 cursor-pointer" data-i18n="footerEula">EULA & Legal Information</button>
         </footer>
     </div>
 
@@ -308,7 +325,14 @@
             const broadcastPasscodeDisplay = document.getElementById('broadcast-passcode-display');
             const videoContainer = document.getElementById('video-container');
             const streamVideo = document.getElementById('stream-video');
-            const modeSelection = document.getElementById('mode-selection');
+            
+            // Panel & Tab Elements
+            const tabBroadcast = document.getElementById('tab-broadcast');
+            const tabViewer = document.getElementById('tab-viewer');
+            const panelBroadcast = document.getElementById('panel-broadcast');
+            const panelViewer = document.getElementById('panel-viewer');
+            const modeTabs = document.getElementById('mode-tabs');
+
             const videoLabel = document.getElementById('video-label');
             const statusText = document.getElementById('status-text');
             const connectionStatus = document.getElementById('connection-status');
@@ -323,6 +347,7 @@
             const settingsMenu = document.getElementById('settings-menu');
             const toggleDiagnostics = document.getElementById('toggle-diagnostics');
             const toggleStats = document.getElementById('toggle-stats');
+            const playerStatsBtn = document.getElementById('player-stats-btn');
             const diagnosticPanel = document.getElementById('diagnostic-panel');
             const statsOverlay = document.getElementById('stats-overlay');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
@@ -334,8 +359,254 @@
             const openEulaBtn = document.getElementById('open-eula-btn');
             const closeEulaBtn = document.getElementById('close-eula-btn');
             const acceptEulaBtn = document.getElementById('accept-eula-btn');
+            const eulaTextContainer = document.getElementById('eula-text-container');
 
-            // EULA Modal Logic
+            // ==========================================
+            // i18n TRANSLATION SYSTEM
+            // ==========================================
+            let currentLang = 'en';
+            const langEnBtn = document.getElementById('lang-en');
+            const langEsBtn = document.getElementById('lang-es');
+
+            const translations = {
+                en: {
+                    appTitle: "Live Screen Caster",
+                    appDesc: "Broadcast your screen peer-to-peer directly from your browser.",
+                    tabBroadcaster: "Broadcaster",
+                    tabViewer: "Viewer",
+                    broadcasterDesc: "Share a specific window, tab, or your entire screen with others.",
+                    passcodePlaceholder: "Passcode (Optional)",
+                    reqAudio: "Request Audio Stream",
+                    startSharing: "Start Sharing",
+                    audioTip: "Tip: To share audio, you MUST check the 'Share system audio' or 'Also share tab audio' toggle inside the browser's popup window.",
+                    shareId: "Share this ID with viewers",
+                    passcodeLabel: "Passcode:",
+                    broadcastingLive: "Broadcasting Live",
+                    viewerDesc: "Enter a Broadcaster ID to watch someone else's screen.",
+                    inputId: "Enter Broadcaster ID",
+                    inputPasscode: "Passcode (if needed)",
+                    connectWatch: "Connect & Watch",
+                    sysDiag: "System Diagnostics Log",
+                    clear: "Clear",
+                    logReady: "> System ready. Waiting for action...",
+                    streamStatsTitle: "Stream Stats",
+                    statRole: "Role:",
+                    statRes: "Res:",
+                    statFps: "FPS:",
+                    statBitrate: "Bitrate:",
+                    statPing: "Ping:",
+                    liveStream: "Live Stream",
+                    btnStats: "Stats",
+                    btnFullscreen: "Fullscreen",
+                    btnExitFullscreen: "Exit Fullscreen",
+                    btnDisconnect: "Disconnect",
+                    settings: "Settings",
+                    showDiag: "Show Diagnostics",
+                    showStats: "Show Stream Stats",
+                    maxConn: "Max Connections",
+                    maxQual: "Max Stream Quality",
+                    qSource: "Source (Uncapped)",
+                    qHigh: "High (Max 2.5 Mbps)",
+                    qMed: "Medium (Max 1.0 Mbps)",
+                    qLow: "Low (Max 500 Kbps)",
+                    eulaTitle: "End User License Agreement & Terms",
+                    eulaBtn: "Close & Accept",
+                    footerRights: "© 2026. All rights reserved.",
+                    footerEula: "EULA & Legal Information",
+                    dynStatusActive: "Status: Active",
+                    dynBroadcasting: "Broadcasting (Your view)",
+                    dynWatching: "Watching Live Stream",
+                    dynConnecting: "Connecting...",
+                    dynBroadcastingZero: "Status: Broadcasting (0 Viewers)",
+                    eulaContentHtml: `
+                        <p><strong>1. Acceptance of Terms:</strong> By accessing and using this WebRTC Screen Broadcaster application ("Software"), you accept and agree to be bound by the terms and provision of this agreement.</p>
+                        <p><strong>2. "As Is" Provision:</strong> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY.</p>
+                        <p><strong>3. Limitation of Liability:</strong> IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE.</p>
+                        <p><strong>4. Indemnification:</strong> You agree to indemnify, defend, and hold harmless the creator of this Software from and against any claims, damages, or losses arising from your use of the Software.</p>
+                        <p><strong>5. Third-Party Services & Privacy:</strong> This software utilizes public PeerJS infrastructure. While streams are encrypted directly between peers, we make no guarantees regarding signaling server uptime.</p>
+                    `
+                },
+                es: {
+                    appTitle: "Transmisor de Pantalla en Vivo",
+                    appDesc: "Transmite tu pantalla de igual a igual (P2P) directamente desde tu navegador.",
+                    tabBroadcaster: "Transmisor",
+                    tabViewer: "Espectador",
+                    broadcasterDesc: "Comparte una ventana, pestaña o tu pantalla completa con otros.",
+                    passcodePlaceholder: "Código de acceso (Opcional)",
+                    reqAudio: "Solicitar audio del sistema",
+                    startSharing: "Comenzar a compartir",
+                    audioTip: "Nota: Para compartir audio, DEBES marcar la casilla 'Compartir audio del sistema' en la ventana emergente de selección del navegador.",
+                    shareId: "Comparte esta ID con los espectadores",
+                    passcodeLabel: "Código:",
+                    broadcastingLive: "Transmitiendo en vivo",
+                    viewerDesc: "Ingresa la ID del Transmisor para ver su pantalla en vivo.",
+                    inputId: "ID del Transmisor",
+                    inputPasscode: "Código (si es necesario)",
+                    connectWatch: "Conectar y Ver",
+                    sysDiag: "Registro de Diagnósticos del Sistema",
+                    clear: "Limpiar",
+                    logReady: "> Sistema listo. Esperando acción...",
+                    streamStatsTitle: "Estadísticas",
+                    statRole: "Rol:",
+                    statRes: "Res:",
+                    statFps: "FPS:",
+                    statBitrate: "Tasa:",
+                    statPing: "Ping:",
+                    liveStream: "En Directo",
+                    btnStats: "Estadísticas",
+                    btnFullscreen: "Pantalla completa",
+                    btnExitFullscreen: "Salir de Pantalla Completa",
+                    btnDisconnect: "Desconectar",
+                    settings: "Configuración",
+                    showDiag: "Mostrar diagnósticos",
+                    showStats: "Mostrar estadísticas",
+                    maxConn: "Conexiones máximas",
+                    maxQual: "Calidad máxima del stream",
+                    qSource: "Original (Sin límite)",
+                    qHigh: "Alta (Max 2.5 Mbps)",
+                    qMed: "Media (Max 1.0 Mbps)",
+                    qLow: "Baja (Max 500 Kbps)",
+                    eulaTitle: "Acuerdo de Licencia y Términos",
+                    eulaBtn: "Cerrar y Aceptar",
+                    footerRights: "© 2026. Todos los derechos reservados.",
+                    footerEula: "EULA e Información Legal",
+                    dynStatusActive: "Estado: Activo",
+                    dynBroadcasting: "Transmitiendo (Tu vista)",
+                    dynWatching: "Viendo transmisión",
+                    dynConnecting: "Conectando...",
+                    dynBroadcastingZero: "Estado: Transmitiendo (0 Espectadores)",
+                    eulaContentHtml: `
+                        <p><strong>1. Aceptación de los Términos:</strong> Al acceder y utilizar esta aplicación ("Software"), usted acepta estar sujeto a los términos de este acuerdo.</p>
+                        <p><strong>2. Disposición "Tal cual":</strong> EL SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA O IMPLÍCITA, INCLUIDAS PERO NO LIMITADAS A LAS GARANTÍAS DE COMERCIABILIDAD.</p>
+                        <p><strong>3. Limitación de Responsabilidad:</strong> EN NINGÚN CASO LOS AUTORES SERÁN RESPONSABLES DE RECLAMACIONES, DAÑOS U OTRA RESPONSABILIDAD DERIVADA DEL USO DEL SOFTWARE.</p>
+                        <p><strong>4. Indemnización:</strong> Usted acepta indemnizar y eximir de responsabilidad al creador de este Software de cualquier reclamo o daño que surja de su uso de la conexión.</p>
+                        <p><strong>5. Privacidad y Terceros:</strong> Este software utiliza la infraestructura pública de PeerJS. Aunque el video está encriptado entre pares, no garantizamos el tiempo de actividad del servidor inicial.</p>
+                    `
+                }
+            };
+
+            const applyLanguage = (lang) => {
+                currentLang = lang;
+                const dict = translations[lang];
+
+                // Update text nodes
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (dict[key]) el.innerHTML = dict[key];
+                });
+
+                // Update placeholders
+                document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                    const key = el.getAttribute('data-i18n-ph');
+                    if (dict[key]) el.placeholder = dict[key];
+                });
+
+                // Update EULA content
+                eulaTextContainer.innerHTML = dict.eulaContentHtml;
+
+                // Toggle Active Button Styles
+                if (lang === 'en') {
+                    langEnBtn.classList.replace('text-gray-400', 'text-white');
+                    langEnBtn.classList.replace('bg-transparent', 'bg-blue-600');
+                    langEsBtn.classList.replace('text-white', 'text-gray-400');
+                    langEsBtn.classList.replace('bg-blue-600', 'bg-transparent');
+                } else {
+                    langEsBtn.classList.replace('text-gray-400', 'text-white');
+                    langEsBtn.classList.replace('bg-transparent', 'bg-blue-600');
+                    langEnBtn.classList.replace('text-white', 'text-gray-400');
+                    langEnBtn.classList.replace('bg-blue-600', 'bg-transparent');
+                }
+
+                // Update Fullscreen button state label
+                handleFullscreenChange();
+                
+                // Keep dynamic UI fresh if currently active
+                if (activeCalls.length > 0 || localStream) {
+                    if (document.getElementById('video-label').innerText.includes("View") || document.getElementById('video-label').innerText.includes("Transm")) {
+                        videoLabel.innerText = dict.dynBroadcasting;
+                        updateConnectionCount();
+                    } else {
+                        videoLabel.innerText = dict.dynWatching;
+                        statusText.innerText = `${lang === 'en' ? 'Status: Connected to' : 'Estado: Conectado a'} ${viewerInputId.value.trim().toUpperCase()}`;
+                    }
+                }
+            };
+
+            langEnBtn.addEventListener('click', () => applyLanguage('en'));
+            langEsBtn.addEventListener('click', () => applyLanguage('es'));
+            
+            // Initialize Default Lang
+            eulaTextContainer.innerHTML = translations['en'].eulaContentHtml;
+
+            // ==========================================
+            // TAB MODE SWITCHING LOGIC
+            // ==========================================
+            const switchMode = (mode) => {
+                if (mode === 'broadcast') {
+                    tabBroadcast.classList.replace('text-gray-400', 'text-white');
+                    tabBroadcast.classList.replace('bg-transparent', 'bg-blue-600');
+                    tabBroadcast.classList.add('shadow-md', 'shadow-blue-900/50');
+                    
+                    tabViewer.classList.replace('text-white', 'text-gray-400');
+                    tabViewer.classList.replace('bg-blue-600', 'bg-transparent');
+                    tabViewer.classList.remove('shadow-md', 'shadow-blue-900/50');
+                    
+                    panelBroadcast.classList.remove('hidden');
+                    panelViewer.classList.add('hidden');
+                } else {
+                    tabViewer.classList.replace('text-gray-400', 'text-white');
+                    tabViewer.classList.replace('bg-transparent', 'bg-blue-600');
+                    tabViewer.classList.add('shadow-md', 'shadow-blue-900/50');
+                    
+                    tabBroadcast.classList.replace('text-white', 'text-gray-400');
+                    tabBroadcast.classList.replace('bg-blue-600', 'bg-transparent');
+                    tabBroadcast.classList.remove('shadow-md', 'shadow-blue-900/50');
+                    
+                    panelViewer.classList.remove('hidden');
+                    panelBroadcast.classList.add('hidden');
+                }
+            };
+
+            tabBroadcast.addEventListener('click', () => switchMode('broadcast'));
+            tabViewer.addEventListener('click', () => switchMode('viewer'));
+
+
+            // ==========================================
+            // MODAL & SETTINGS LOGIC
+            // ==========================================
+            settingsBtn.addEventListener('click', () => {
+                settingsMenu.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!settingsBtn.contains(e.target) && !settingsMenu.contains(e.target)) {
+                    settingsMenu.classList.add('hidden');
+                }
+            });
+
+            toggleDiagnostics.addEventListener('change', (e) => {
+                if (e.target.checked) diagnosticPanel.classList.remove('hidden');
+                else diagnosticPanel.classList.add('hidden');
+            });
+
+            // Master stats toggle function
+            const toggleStatsVisibility = (forceState = null) => {
+                const isChecked = forceState !== null ? forceState : !toggleStats.checked;
+                toggleStats.checked = isChecked;
+                if (isChecked) {
+                    statsOverlay.classList.remove('hidden');
+                    playerStatsBtn.classList.replace('bg-gray-700/50', 'bg-blue-600/20');
+                    playerStatsBtn.classList.replace('text-gray-300', 'text-blue-400');
+                } else {
+                    statsOverlay.classList.add('hidden');
+                    playerStatsBtn.classList.replace('bg-blue-600/20', 'bg-gray-700/50');
+                    playerStatsBtn.classList.replace('text-blue-400', 'text-gray-300');
+                }
+            };
+
+            toggleStats.addEventListener('change', (e) => toggleStatsVisibility(e.target.checked));
+            playerStatsBtn.addEventListener('click', () => toggleStatsVisibility());
+
             const openEula = () => {
                 eulaModal.classList.remove('hidden');
                 eulaContent.classList.remove('modal-exit');
@@ -344,7 +615,7 @@
             const closeEula = () => {
                 eulaContent.classList.remove('modal-enter');
                 eulaContent.classList.add('modal-exit');
-                setTimeout(() => eulaModal.classList.add('hidden'), 200); // match animation duration
+                setTimeout(() => eulaModal.classList.add('hidden'), 200); 
             };
             openEulaBtn.addEventListener('click', openEula);
             closeEulaBtn.addEventListener('click', closeEula);
@@ -353,7 +624,9 @@
                 if (e.target === eulaModal) closeEula();
             });
 
-            // --- Stats Polling System ---
+            // ==========================================
+            // STATS POLLING SYSTEM
+            // ==========================================
             const startStatsPolling = (peerConnection, role) => {
                 if (statsInterval) clearInterval(statsInterval);
                 document.getElementById('stat-role').innerText = role;
@@ -370,7 +643,6 @@
                         let res = "0x0";
 
                         stats.forEach(report => {
-                            // Check Video Tracks for bandwidth and fps
                             if ((role === 'Broadcaster' && report.type === 'outbound-rtp' && report.kind === 'video') || 
                                 (role === 'Viewer' && report.type === 'inbound-rtp' && report.kind === 'video')) {
                                 
@@ -378,7 +650,6 @@
                                 const now = report.timestamp;
                                 
                                 if (lastBytes && lastTime) {
-                                    // Calculate kbps
                                     const bitrateKbps = (8 * (bytes - lastBytes)) / (now - lastTime);
                                     bitrate = Math.round(bitrateKbps);
                                 }
@@ -389,7 +660,6 @@
                                 res = `${report.frameWidth || 0}x${report.frameHeight || 0}`;
                             }
                             
-                            // Check ICE Candidate Pair for Latency (Ping)
                             if (report.type === 'candidate-pair' && report.state === 'succeeded') {
                                 ping = Math.round(report.currentRoundTripTime * 1000) || 0;
                             }
@@ -400,9 +670,7 @@
                         document.getElementById('stat-res').innerText = res;
                         if (ping > 0) document.getElementById('stat-ping').innerText = `${ping} ms`;
 
-                    } catch(e) {
-                        // Ignore periodic polling errors
-                    }
+                    } catch(e) {}
                 }, 1000);
             };
 
@@ -415,7 +683,9 @@
                 document.getElementById('stat-ping').innerText = "0 ms";
             };
 
-            // --- Quality Control System ---
+            // ==========================================
+            // QUALITY CONTROL SYSTEM
+            // ==========================================
             const applyQualitySettings = async (call) => {
                 if (!call || !call.peerConnection) return;
                 
@@ -427,21 +697,20 @@
                     const params = videoSender.getParameters();
                     if (!params.encodings) params.encodings = [{}];
                     
-                    // Reset to source initially
                     params.encodings[0].maxBitrate = undefined;
                     params.encodings[0].scaleResolutionDownBy = undefined;
                     params.encodings[0].maxFramerate = undefined;
 
                     if (quality === 'high') {
-                        params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
+                        params.encodings[0].maxBitrate = 2500000; 
                         params.encodings[0].maxFramerate = 30;
                     } else if (quality === 'medium') {
-                        params.encodings[0].maxBitrate = 1000000; // 1 Mbps
-                        params.encodings[0].scaleResolutionDownBy = 2; // Half resolution
+                        params.encodings[0].maxBitrate = 1000000; 
+                        params.encodings[0].scaleResolutionDownBy = 2; 
                         params.encodings[0].maxFramerate = 24;
                     } else if (quality === 'low') {
-                        params.encodings[0].maxBitrate = 500000; // 500 kbps
-                        params.encodings[0].scaleResolutionDownBy = 4; // Quarter resolution
+                        params.encodings[0].maxBitrate = 500000; 
+                        params.encodings[0].scaleResolutionDownBy = 4; 
                         params.encodings[0].maxFramerate = 15;
                     }
                     
@@ -454,7 +723,6 @@
                 }
             };
 
-            // Re-apply quality to all calls if setting changes during broadcast
             streamQualitySelect.addEventListener('change', () => {
                 if (activeCalls.length > 0) {
                     log(`Adjusting stream quality for ${activeCalls.length} viewer(s)...`, "info");
@@ -462,39 +730,22 @@
                 }
             });
 
-            // Connection count updater
             const updateConnectionCount = () => {
+                const dict = translations[currentLang];
                 if (activeCalls.length > 0) {
-                    statusText.innerText = `Status: ${activeCalls.length} Viewer(s) Connected`;
+                    statusText.innerText = currentLang === 'en' 
+                        ? `Status: ${activeCalls.length} Viewer(s) Connected` 
+                        : `Estado: ${activeCalls.length} Espectador(es) Conectados`;
                 } else {
-                    statusText.innerText = "Status: Broadcasting (0 Viewers)";
+                    statusText.innerText = dict.dynBroadcastingZero;
                 }
             };
 
-            // Settings Menu Logic
-            settingsBtn.addEventListener('click', () => {
-                settingsMenu.classList.toggle('hidden');
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!settingsBtn.contains(e.target) && !settingsMenu.contains(e.target)) {
-                    settingsMenu.classList.add('hidden');
-                }
-            });
-
-            toggleDiagnostics.addEventListener('change', (e) => {
-                if (e.target.checked) diagnosticPanel.classList.remove('hidden');
-                else diagnosticPanel.classList.add('hidden');
-            });
-
-            toggleStats.addEventListener('change', (e) => {
-                if (e.target.checked) statsOverlay.classList.remove('hidden');
-                else statsOverlay.classList.add('hidden');
-            });
-
             stopBtn.addEventListener('click', disconnectAll);
 
-            // Fullscreen & Orientation Lock Logic
+            // ==========================================
+            // FULLSCREEN & UI LOGIC
+            // ==========================================
             fullscreenBtn.addEventListener('click', async () => {
                 const isPseudoFullscreen = videoContainer.classList.contains('pseudo-fullscreen');
                 
@@ -508,7 +759,6 @@
                         if (screen.orientation && screen.orientation.lock) {
                             try {
                                 await screen.orientation.lock('landscape');
-                                log("Mobile orientation locked to landscape.", "info");
                             } catch (e) {}
                         }
                     } catch (err) {
@@ -535,10 +785,12 @@
 
             const handleFullscreenChange = () => {
                 const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || videoContainer.classList.contains('pseudo-fullscreen');
+                const dict = translations[currentLang];
+                
                 if (isFullscreen) {
-                    fullscreenBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14h4v4m0-4l-5 5m11-5h4v4m-4-4l5 5M4 10h4V6m0 4l-5-5m11 5h4V6m-4 4l5-5"></path></svg> <span class="hidden sm:inline">Exit Fullscreen</span>`;
+                    fullscreenBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14h4v4m0-4l-5 5m11-5h4v4m-4-4l5 5M4 10h4V6m0 4l-5-5m11 5h4V6m-4 4l5-5"></path></svg> <span class="hidden sm:inline">${dict.btnExitFullscreen}</span>`;
                 } else {
-                    fullscreenBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg> <span class="hidden sm:inline">Fullscreen</span>`;
+                    fullscreenBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg> <span class="hidden sm:inline">${dict.btnFullscreen}</span>`;
                 }
             };
             
@@ -554,14 +806,12 @@
             }
 
             clearLogBtn.addEventListener('click', () => {
-                debugLog.innerHTML = `<div class="text-gray-500">> Log cleared.</div>`;
+                debugLog.innerHTML = `<div class="text-gray-500">> ${translations[currentLang].logReady}</div>`;
             });
 
             if (window.location.protocol === 'file:') {
                 document.getElementById('security-warning').classList.remove('hidden');
                 log("WARNING: Running on file:// protocol. WebRTC may be blocked.", "error");
-            } else {
-                log(`Running on ${window.location.protocol} host: ${window.location.host}`);
             }
 
             const generateShortId = () => Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -572,7 +822,6 @@
             startBroadcastBtn.addEventListener('click', async () => {
                 errorBanner.classList.add('hidden');
                 startBroadcastBtn.disabled = true;
-                startBroadcastBtn.innerText = "Requesting permissions...";
 
                 try {
                     log("Initiating screen capture request...");
@@ -589,7 +838,6 @@
                     });
 
                     log("Screen capture permission GRANTED.", "success");
-                    startBroadcastBtn.innerText = "Initializing Server...";
 
                     const shortId = generateShortId();
                     const fullId = PREFIX + shortId;
@@ -612,8 +860,10 @@
                         
                         videoContainer.classList.remove('hidden');
                         videoContainer.classList.add('flex'); 
-                        videoLabel.innerText = "Broadcasting (Your view)";
-                        statusText.innerText = "Status: Broadcasting (0 Viewers)";
+                        modeTabs.classList.add('hidden'); // Hide tabs during active session
+                        
+                        videoLabel.innerText = translations[currentLang].dynBroadcasting;
+                        statusText.innerText = translations[currentLang].dynBroadcastingZero;
                         streamVideo.srcObject = localStream;
                         streamVideo.muted = true; 
                     });
@@ -637,12 +887,10 @@
                             return;
                         }
 
-                        // Answer the call with the stream
                         call.answer(localStream);
                         activeCalls.push(call);
                         updateConnectionCount();
 
-                        // Apply quality restrictions (if any) and start polling stats
                         await applyQualitySettings(call);
                         startStatsPolling(call.peerConnection, 'Broadcaster');
                         
@@ -651,7 +899,6 @@
                             activeCalls = activeCalls.filter(c => c !== call);
                             updateConnectionCount();
                             
-                            // If no viewers left, clear stats. If viewers exist, track the last one.
                             if (activeCalls.length === 0) stopStatsPolling();
                             else startStatsPolling(activeCalls[activeCalls.length - 1].peerConnection, 'Broadcaster');
                         });
@@ -672,7 +919,6 @@
                 } catch (err) {
                     log(`Permission Denied or Failed: ${err.name} - ${err.message}`, "error");
                     startBroadcastBtn.disabled = false;
-                    startBroadcastBtn.innerText = "Start Sharing";
                     errorBanner.classList.remove('hidden');
                     errorText.innerText = err.name === 'NotAllowedError' ? "Permission denied." : `Error: ${err.message}`;
                 }
@@ -684,18 +930,19 @@
             joinBroadcastBtn.addEventListener('click', () => {
                 const targetId = viewerInputId.value.trim().toUpperCase();
                 const vPasscode = viewerPasscode.value.trim();
+                const dict = translations[currentLang];
                 
                 if (!targetId || targetId.length !== 4) return alert("Please enter a valid 4-character ID.");
 
                 errorBanner.classList.add('hidden');
                 connectionStatus.classList.remove('hidden');
-                connectionStatus.innerText = "Connecting to signaling server...";
+                connectionStatus.innerText = dict.dynConnecting;
                 log(`Attempting to join stream ID: ${targetId}...`);
 
                 peer = new Peer({ debug: 2 });
 
                 peer.on('open', (id) => {
-                    connectionStatus.innerText = "Calling broadcaster...";
+                    log("Connected to signaling server. Initiating WebRTC call...", "success");
                     
                     const canvas = document.createElement('canvas');
                     canvas.width = 1; canvas.height = 1;
@@ -730,16 +977,16 @@
                         if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                         log("Successfully received remote stream data!", "success");
                         
-                        // Start polling connection stats
                         startStatsPolling(activeCall.peerConnection, 'Viewer');
 
                         connectionStatus.classList.add('hidden');
-                        modeSelection.classList.add('hidden');
+                        panelViewer.classList.add('hidden');
+                        modeTabs.classList.add('hidden'); // Hide tabs during session
                         videoContainer.classList.remove('hidden');
                         videoContainer.classList.add('flex'); 
                         
-                        videoLabel.innerText = "Watching Live Stream";
-                        statusText.innerText = "Status: Connected to " + targetId;
+                        videoLabel.innerText = dict.dynWatching;
+                        statusText.innerText = `${currentLang === 'en' ? 'Status: Connected to' : 'Estado: Conectado a'} ${targetId}`;
                         
                         streamVideo.srcObject = remoteStream;
                         streamVideo.muted = false; 
@@ -813,7 +1060,6 @@
                 }
 
                 startBroadcastBtn.disabled = false;
-                startBroadcastBtn.innerText = "Start Sharing";
                 
                 if (streamVideo) {
                     streamVideo.pause();
@@ -824,8 +1070,16 @@
 
                 videoContainer.classList.add('hidden');
                 videoContainer.classList.remove('flex'); 
-                modeSelection.classList.remove('hidden');
-                startBroadcastBtn.classList.remove('hidden');
+                
+                // Show tabs again and restore the correct panel based on active tab
+                modeTabs.classList.remove('hidden');
+                if (tabBroadcast.classList.contains('bg-blue-600')) {
+                    panelBroadcast.classList.remove('hidden');
+                    startBroadcastBtn.classList.remove('hidden');
+                } else {
+                    panelViewer.classList.remove('hidden');
+                }
+                
                 broadcastInfo.classList.add('hidden');
                 connectionStatus.classList.add('hidden');
                 broadcastIdDisplay.innerText = "----";
