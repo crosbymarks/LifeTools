@@ -15,6 +15,18 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        
+        /* Modal Animation */
+        .modal-enter { animation: modalFadeIn 0.3s ease-out forwards; }
+        .modal-exit { animation: modalFadeOut 0.2s ease-in forwards; }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes modalFadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.95); }
+        }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center py-10 px-4 relative">
@@ -64,6 +76,32 @@
         </div>
     </div>
 
+    <!-- EULA Modal -->
+    <div id="eula-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div id="eula-content" class="bg-gray-900 border border-gray-700 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="p-6 border-b border-gray-800 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-white">End User License Agreement & Terms</h2>
+                <button id="close-eula-btn" class="text-gray-400 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto text-sm text-gray-300 space-y-5 leading-relaxed font-sans">
+                <p><strong>1. Acceptance of Terms:</strong> By accessing and using this WebRTC Screen Broadcaster application ("Software"), you accept and agree to be bound by the terms and provision of this agreement.</p>
+                
+                <p><strong>2. "As Is" Provision:</strong> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.</p>
+                
+                <p><strong>3. Limitation of Liability:</strong> IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+                
+                <p><strong>4. Indemnification:</strong> You agree to indemnify, defend, and hold harmless the creator, developers, and copyright holders of this Software from and against any and all claims, liabilities, damages, losses, costs, expenses, or fees (including reasonable attorneys' fees) that such parties may incur as a result of or arising from your (or anyone using your connection) use of the Software, violation of these Terms, or transmission of any copyrighted, illegal, or sensitive material over the connection.</p>
+                
+                <p><strong>5. Third-Party Services & Privacy:</strong> This software utilizes the public PeerJS signaling server infrastructure to broker peer-to-peer connections. While the video and audio streams are end-to-end encrypted directly between peers, we make no guarantees regarding the uptime, availability, or reliability of the signaling server.</p>
+            </div>
+            <div class="p-6 border-t border-gray-800 bg-gray-900/80 flex justify-end">
+                <button id="accept-eula-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition shadow-lg shadow-blue-600/30">Close & Accept</button>
+            </div>
+        </div>
+    </div>
+
     <style>
         input:checked ~ .toggle-bg { background-color: #3b82f6; }
         input:checked ~ .dot { transform: translateX(100%); }
@@ -107,11 +145,11 @@
         }
     </style>
 
-    <div class="max-w-4xl w-full">
+    <div class="max-w-4xl w-full flex-grow flex flex-col items-center">
         <div class="text-center mb-10 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 Live Screen Caster
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.13</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.14</span>
             </h1>
             <p class="text-gray-400">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -121,12 +159,12 @@
         </div>
 
         <!-- Error Banner -->
-        <div id="error-banner" class="hidden mb-6 bg-red-900/50 border border-red-600 text-red-200 p-4 rounded-xl text-center text-sm shadow-lg flex items-center justify-center gap-3">
+        <div id="error-banner" class="hidden mb-6 w-full bg-red-900/50 border border-red-600 text-red-200 p-4 rounded-xl text-center text-sm shadow-lg flex items-center justify-center gap-3">
             <svg class="w-6 h-6 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span id="error-text">An error occurred.</span>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-8" id="mode-selection">
+        <div class="grid md:grid-cols-2 gap-8 w-full" id="mode-selection">
             <!-- Broadcaster Section -->
             <div class="glass-panel p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transition hover:shadow-blue-900/20">
                 <div class="bg-blue-500/20 p-4 rounded-full mb-6">
@@ -236,6 +274,12 @@
                 </div>
             </div>
         </div>
+
+        <!-- Copyright & Legal Footer -->
+        <footer class="mt-auto pt-16 pb-4 w-full text-center text-gray-500 text-xs">
+            <p>&copy; 2026. All rights reserved.</p>
+            <button id="open-eula-btn" class="mt-2 hover:text-gray-300 transition underline decoration-gray-700 underline-offset-4 cursor-pointer">EULA & Legal Information</button>
+        </footer>
     </div>
 
     <script>
@@ -274,7 +318,7 @@
             const debugLog = document.getElementById('debug-log');
             const clearLogBtn = document.getElementById('clear-log-btn');
 
-            // Settings UI
+            // Settings & EULA UI
             const settingsBtn = document.getElementById('settings-btn');
             const settingsMenu = document.getElementById('settings-menu');
             const toggleDiagnostics = document.getElementById('toggle-diagnostics');
@@ -284,6 +328,30 @@
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             const maxConnectionsInput = document.getElementById('max-connections');
             const streamQualitySelect = document.getElementById('stream-quality');
+            
+            const eulaModal = document.getElementById('eula-modal');
+            const eulaContent = document.getElementById('eula-content');
+            const openEulaBtn = document.getElementById('open-eula-btn');
+            const closeEulaBtn = document.getElementById('close-eula-btn');
+            const acceptEulaBtn = document.getElementById('accept-eula-btn');
+
+            // EULA Modal Logic
+            const openEula = () => {
+                eulaModal.classList.remove('hidden');
+                eulaContent.classList.remove('modal-exit');
+                eulaContent.classList.add('modal-enter');
+            };
+            const closeEula = () => {
+                eulaContent.classList.remove('modal-enter');
+                eulaContent.classList.add('modal-exit');
+                setTimeout(() => eulaModal.classList.add('hidden'), 200); // match animation duration
+            };
+            openEulaBtn.addEventListener('click', openEula);
+            closeEulaBtn.addEventListener('click', closeEula);
+            acceptEulaBtn.addEventListener('click', closeEula);
+            eulaModal.addEventListener('click', (e) => {
+                if (e.target === eulaModal) closeEula();
+            });
 
             // --- Stats Polling System ---
             const startStatsPolling = (peerConnection, role) => {
