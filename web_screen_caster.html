@@ -37,6 +37,12 @@
                         <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
                     </div>
                 </label>
+                <div class="mt-4 pt-4 border-t border-gray-800">
+                    <label class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-300">Max Connections</span>
+                        <input type="number" id="max-connections" value="3" min="1" max="20" class="w-16 bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-center focus:outline-none focus:border-blue-500">
+                    </label>
+                </div>
             </div>
         </div>
     </div>
@@ -88,7 +94,7 @@
         <div class="text-center mb-10 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 Live Screen Caster
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.11</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.12</span>
             </h1>
             <p class="text-gray-400">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -210,7 +216,7 @@
             const PREFIX = 'cast-';
             let peer = null;
             let localStream = null;
-            let activeCall = null;
+            let activeCalls = [];
             let viewerConnectionTimeout = null; // Added to handle silent rejections
 
             // UI Elements
@@ -242,6 +248,16 @@
             const toggleDiagnostics = document.getElementById('toggle-diagnostics');
             const diagnosticPanel = document.getElementById('diagnostic-panel');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const maxConnectionsInput = document.getElementById('max-connections');
+
+            // Connection count updater
+            const updateConnectionCount = () => {
+                if (activeCalls.length > 0) {
+                    statusText.innerText = `Status: ${activeCalls.length} Viewer(s) Connected`;
+                } else {
+                    statusText.innerText = "Status: Broadcasting (0 Viewers)";
+                }
+            };
 
             // Settings Menu Logic
             settingsBtn.addEventListener('click', () => {
@@ -416,6 +432,7 @@
                         videoContainer.classList.remove('hidden');
                         videoContainer.classList.add('flex'); // Enable flexbox layout
                         videoLabel.innerText = "Broadcasting (Your view)";
+                        statusText.innerText = "Status: Broadcasting (0 Viewers)";
                         streamVideo.srcObject = localStream;
                         streamVideo.muted = true; // Don't echo audio back
                     });
@@ -423,6 +440,13 @@
                     // 4. Listen for incoming viewer calls
                     peer.on('call', (call) => {
                         log("Incoming connection request from a viewer...", "success");
+
+                        const maxConns = parseInt(maxConnectionsInput.value, 10) || 1;
+                        if (activeCalls.length >= maxConns) {
+                            log(`Rejected viewer: Connection limit reached (${maxConns}).`, "error");
+                            setTimeout(() => call.close(), 200);
+                            return;
+                        }
 
                         const requiredPasscode = broadcasterPasscode.value.trim();
                         const providedPasscode = call.metadata ? call.metadata.passcode : "";
@@ -434,13 +458,13 @@
                         }
 
                         call.answer(localStream);
-                        activeCall = call;
-                        
-                        statusText.innerText = "Status: Viewer Connected";
+                        activeCalls.push(call);
+                        updateConnectionCount();
                         
                         call.on('close', () => {
                             log("Viewer disconnected.");
-                            statusText.innerText = "Status: Viewer Disconnected";
+                            activeCalls = activeCalls.filter(c => c !== call);
+                            updateConnectionCount();
                         });
                     });
 
@@ -513,9 +537,11 @@
                     const fullTargetId = PREFIX + targetId;
                     
                     // Include the passcode securely within the WebRTC call metadata handshake
-                    activeCall = peer.call(fullTargetId, dummyStream, {
+                    const activeCall = peer.call(fullTargetId, dummyStream, {
                         metadata: { passcode: vPasscode }
                     });
+                    
+                    activeCalls.push(activeCall);
 
                     let streamReceived = false;
 
@@ -611,10 +637,11 @@
                 }
 
                 // 2. Safely close connections
-                if (activeCall) {
-                    try { activeCall.close(); } catch(e) {}
-                    activeCall = null;
-                }
+                activeCalls.forEach(call => {
+                    try { call.close(); } catch(e) {}
+                });
+                activeCalls = [];
+
                 if (peer) {
                     try { peer.destroy(); } catch(e) {}
                     peer = null;
