@@ -946,11 +946,23 @@
                     
                     const canvas = document.createElement('canvas');
                     canvas.width = 1; canvas.height = 1;
+                    
+                    // FIX 1: We MUST draw a pixel to the canvas, otherwise the browser 
+                    // emits 0 frames and the WebRTC video channel fails to open!
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillRect(0, 0, 1, 1);
+                    
                     const dummyStream = canvas.captureStream(1); 
 
                     try {
                         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                         const dest = audioCtx.createMediaStreamDestination();
+                        
+                        // FIX 2: Create a silent oscillator so the audio track is active
+                        const osc = audioCtx.createOscillator();
+                        osc.connect(dest);
+                        osc.start();
+                        
                         dummyStream.addTrack(dest.stream.getAudioTracks()[0]);
                     } catch (e) {}
 
@@ -988,8 +1000,20 @@
                         videoLabel.innerText = dict.dynWatching;
                         statusText.innerText = `${currentLang === 'en' ? 'Status: Connected to' : 'Estado: Conectado a'} ${targetId}`;
                         
+                        // FIX 3: Re-bind to catch late-arriving video tracks (A known PeerJS quirk)
+                        remoteStream.onaddtrack = () => {
+                            streamVideo.srcObject = remoteStream;
+                        };
+
                         streamVideo.srcObject = remoteStream;
                         streamVideo.muted = false; 
+                        
+                        // FIX 4: Bypass browser autoplay blockers that freeze unmuted video
+                        streamVideo.play().catch(e => {
+                            log("Unmuted autoplay blocked. Muting to force video playback...", "error");
+                            streamVideo.muted = true;
+                            streamVideo.play();
+                        });
                     });
 
                     activeCall.on('close', () => {
