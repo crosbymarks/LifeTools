@@ -88,7 +88,7 @@
         <div class="text-center mb-10 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 Live Screen Caster
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.10</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.11</span>
             </h1>
             <p class="text-gray-400">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -211,6 +211,7 @@
             let peer = null;
             let localStream = null;
             let activeCall = null;
+            let viewerConnectionTimeout = null; // Added to handle silent rejections
 
             // UI Elements
             const startBroadcastBtn = document.getElementById('start-broadcast-btn');
@@ -428,7 +429,7 @@
 
                         if (requiredPasscode && requiredPasscode !== providedPasscode) {
                             log(`Rejected viewer: Incorrect passcode provided.`, "error");
-                            setTimeout(() => call.close(), 200); // Wait briefly to let PeerJS handshake fail, then close
+                            call.close(); // Instantly close. Viewer timeout will handle their UI.
                             return;
                         }
 
@@ -518,8 +519,19 @@
 
                     let streamReceived = false;
 
+                    // Set timeout to handle silent rejections (like wrong passcode) or hung connections
+                    viewerConnectionTimeout = setTimeout(() => {
+                        if (!streamReceived) {
+                            log("Connection timed out. Incorrect passcode or broadcaster unavailable.", "error");
+                            errorBanner.classList.remove('hidden');
+                            errorText.innerText = "Connection failed. Did you enter the correct passcode?";
+                            disconnectAll();
+                        }
+                    }, 8000); // 8 second timeout threshold
+
                     activeCall.on('stream', (remoteStream) => {
                         streamReceived = true;
+                        if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                         log("Successfully received remote stream data!", "success");
                         
                         const hasAudio = remoteStream.getAudioTracks().length > 0;
@@ -542,6 +554,7 @@
                     });
 
                     activeCall.on('close', () => {
+                        if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                         if (!streamReceived) {
                             log("Connection rejected by Broadcaster. Incorrect passcode?", "error");
                             errorBanner.classList.remove('hidden');
@@ -555,12 +568,14 @@
                     });
 
                     activeCall.on('error', (err) => {
+                        if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                         log(`Call Error: ${err.message}`, "error");
                         connectionStatus.innerText = "Connection failed.";
                     });
                 });
 
                 peer.on('error', (err) => {
+                    if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                     log(`PeerJS Error: ${err.type} - ${err.message}`, "error");
                     connectionStatus.innerText = "Error: " + err.type;
                     errorBanner.classList.remove('hidden');
@@ -570,6 +585,12 @@
 
             function disconnectAll() {
                 log("Disconnecting and cleaning up...");
+
+                // Clear any pending timeouts
+                if (viewerConnectionTimeout) {
+                    clearTimeout(viewerConnectionTimeout);
+                    viewerConnectionTimeout = null;
+                }
                 
                 // 1. Exit fullscreen and pseudo-fullscreen if active
                 try {
