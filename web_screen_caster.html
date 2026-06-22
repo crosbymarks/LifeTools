@@ -88,7 +88,7 @@
         <div class="text-center mb-10 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 Live Screen Caster
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.09</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.10</span>
             </h1>
             <p class="text-gray-400">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -112,6 +112,10 @@
                 <h2 class="text-2xl font-bold mb-3">Broadcaster</h2>
                 <p class="text-gray-400 mb-4 text-sm">Share a specific window, tab, or your entire screen with others.</p>
                 
+                <div class="w-full mb-4">
+                    <input type="text" id="broadcaster-passcode" placeholder="Passcode (Optional)" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-2 px-4 text-center focus:outline-none focus:border-blue-500 transition">
+                </div>
+
                 <div class="flex items-center justify-center gap-2 mb-4">
                     <input type="checkbox" id="audio-toggle" checked class="w-4 h-4 text-blue-500 bg-gray-900 border-gray-700 rounded focus:ring-blue-600">
                     <label for="audio-toggle" class="text-sm font-medium text-gray-300">Request Audio Stream</label>
@@ -129,6 +133,9 @@
                     <div class="p-4 bg-gray-900 rounded-xl border border-gray-800">
                         <p class="text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Share this ID with viewers</p>
                         <div class="text-3xl font-mono text-emerald-400 tracking-widest" id="broadcast-id-display">----</div>
+                        <div id="broadcast-passcode-display-container" class="hidden mt-2 text-sm text-gray-400 border-t border-gray-800 pt-2">
+                            Passcode: <span id="broadcast-passcode-display" class="font-mono text-white"></span>
+                        </div>
                     </div>
                     <div class="mt-4 text-left">
                         <span class="text-sm text-gray-400 flex items-center">
@@ -149,6 +156,7 @@
                 
                 <div class="w-full flex flex-col gap-3">
                     <input type="text" id="viewer-input-id" placeholder="Enter Broadcaster ID" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-3 px-4 text-center font-mono text-lg uppercase focus:outline-none focus:border-purple-500 transition">
+                    <input type="text" id="viewer-passcode" placeholder="Passcode (if needed)" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl py-3 px-4 text-center text-lg focus:outline-none focus:border-purple-500 transition">
                     <button id="join-broadcast-btn" class="w-full py-3 px-6 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold transition shadow-lg shadow-purple-600/30">
                         Connect & Watch
                     </button>
@@ -209,8 +217,12 @@
             const joinBroadcastBtn = document.getElementById('join-broadcast-btn');
             const stopBtn = document.getElementById('stop-btn');
             const viewerInputId = document.getElementById('viewer-input-id');
+            const broadcasterPasscode = document.getElementById('broadcaster-passcode');
+            const viewerPasscode = document.getElementById('viewer-passcode');
             const broadcastInfo = document.getElementById('broadcast-info');
             const broadcastIdDisplay = document.getElementById('broadcast-id-display');
+            const broadcastPasscodeDisplayContainer = document.getElementById('broadcast-passcode-display-container');
+            const broadcastPasscodeDisplay = document.getElementById('broadcast-passcode-display');
             const videoContainer = document.getElementById('video-container');
             const streamVideo = document.getElementById('stream-video');
             const modeSelection = document.getElementById('mode-selection');
@@ -391,6 +403,14 @@
                         startBroadcastBtn.classList.add('hidden');
                         broadcastInfo.classList.remove('hidden');
                         broadcastIdDisplay.innerText = shortId;
+
+                        const pass = broadcasterPasscode.value.trim();
+                        if (pass) {
+                            broadcastPasscodeDisplayContainer.classList.remove('hidden');
+                            broadcastPasscodeDisplay.innerText = pass;
+                        } else {
+                            broadcastPasscodeDisplayContainer.classList.add('hidden');
+                        }
                         
                         videoContainer.classList.remove('hidden');
                         videoContainer.classList.add('flex'); // Enable flexbox layout
@@ -402,6 +422,16 @@
                     // 4. Listen for incoming viewer calls
                     peer.on('call', (call) => {
                         log("Incoming connection request from a viewer...", "success");
+
+                        const requiredPasscode = broadcasterPasscode.value.trim();
+                        const providedPasscode = call.metadata ? call.metadata.passcode : "";
+
+                        if (requiredPasscode && requiredPasscode !== providedPasscode) {
+                            log(`Rejected viewer: Incorrect passcode provided.`, "error");
+                            setTimeout(() => call.close(), 200); // Wait briefly to let PeerJS handshake fail, then close
+                            return;
+                        }
+
                         call.answer(localStream);
                         activeCall = call;
                         
@@ -445,6 +475,8 @@
             // Setup Viewer Mode
             joinBroadcastBtn.addEventListener('click', () => {
                 const targetId = viewerInputId.value.trim().toUpperCase();
+                const vPasscode = viewerPasscode.value.trim();
+                
                 if (!targetId || targetId.length !== 4) {
                     alert("Please enter a valid 4-character Broadcaster ID.");
                     return;
@@ -478,9 +510,16 @@
                     }
 
                     const fullTargetId = PREFIX + targetId;
-                    activeCall = peer.call(fullTargetId, dummyStream);
+                    
+                    // Include the passcode securely within the WebRTC call metadata handshake
+                    activeCall = peer.call(fullTargetId, dummyStream, {
+                        metadata: { passcode: vPasscode }
+                    });
+
+                    let streamReceived = false;
 
                     activeCall.on('stream', (remoteStream) => {
+                        streamReceived = true;
                         log("Successfully received remote stream data!", "success");
                         
                         const hasAudio = remoteStream.getAudioTracks().length > 0;
@@ -503,9 +542,15 @@
                     });
 
                     activeCall.on('close', () => {
-                        log("Broadcaster closed the stream.");
-                        errorBanner.classList.remove('hidden');
-                        errorText.innerText = "Broadcaster ended the stream.";
+                        if (!streamReceived) {
+                            log("Connection rejected by Broadcaster. Incorrect passcode?", "error");
+                            errorBanner.classList.remove('hidden');
+                            errorText.innerText = "Connection rejected. Did you enter the correct passcode?";
+                        } else {
+                            log("Broadcaster closed the stream.");
+                            errorBanner.classList.remove('hidden');
+                            errorText.innerText = "Broadcaster ended the stream.";
+                        }
                         disconnectAll();
                     });
 
@@ -576,7 +621,10 @@
                 broadcastInfo.classList.add('hidden');
                 connectionStatus.classList.add('hidden');
                 broadcastIdDisplay.innerText = "----";
+                
+                // Clear the viewer's inputs if desired, keeping broadcaster's so they can restart easily
                 viewerInputId.value = ""; 
+                viewerPasscode.value = "";
                 
                 log("System reset complete.", "success");
             }
