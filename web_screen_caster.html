@@ -24,12 +24,12 @@
         <button id="settings-btn" class="p-2 bg-gray-800/50 hover:bg-gray-700 rounded-full text-gray-400 hover:text-white transition backdrop-blur">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         </button>
-        <div id="settings-menu" class="hidden absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
+        <div id="settings-menu" class="hidden absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
             <div class="px-4 py-3 border-b border-gray-800 bg-gray-800/50">
                 <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Settings</span>
             </div>
             <div class="p-4">
-                <label class="flex items-center justify-between cursor-pointer">
+                <label class="flex items-center justify-between cursor-pointer mb-3">
                     <span class="text-sm font-medium text-gray-300">Show Diagnostics</span>
                     <div class="relative">
                         <input type="checkbox" id="toggle-diagnostics" class="sr-only">
@@ -37,10 +37,27 @@
                         <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
                     </div>
                 </label>
+                <label class="flex items-center justify-between cursor-pointer">
+                    <span class="text-sm font-medium text-gray-300">Show Stream Stats</span>
+                    <div class="relative">
+                        <input type="checkbox" id="toggle-stats" class="sr-only">
+                        <div class="block bg-gray-700 w-10 h-6 rounded-full transition toggle-bg"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+                    </div>
+                </label>
                 <div class="mt-4 pt-4 border-t border-gray-800">
-                    <label class="flex items-center justify-between">
+                    <label class="flex items-center justify-between mb-3">
                         <span class="text-sm font-medium text-gray-300">Max Connections</span>
                         <input type="number" id="max-connections" value="3" min="1" max="20" class="w-16 bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-center focus:outline-none focus:border-blue-500">
+                    </label>
+                    <label class="flex flex-col gap-1">
+                        <span class="text-sm font-medium text-gray-300">Max Stream Quality</span>
+                        <select id="stream-quality" class="bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 w-full">
+                            <option value="source">Source (Uncapped)</option>
+                            <option value="high">High (Max 2.5 Mbps)</option>
+                            <option value="medium">Medium (Max 1.0 Mbps)</option>
+                            <option value="low">Low (Max 500 Kbps)</option>
+                        </select>
                     </label>
                 </div>
             </div>
@@ -94,7 +111,7 @@
         <div class="text-center mb-10 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 Live Screen Caster
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.12</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.13</span>
             </h1>
             <p class="text-gray-400">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -186,6 +203,16 @@
         <!-- Video Player Area (Hidden until active) -->
         <div id="video-container" class="hidden mt-10 glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-gray-800 w-full flex-col bg-black">
             
+            <!-- Floating Stats Overlay -->
+            <div id="stats-overlay" class="hidden absolute top-4 left-4 bg-black/80 border border-gray-700 text-gray-300 p-3 rounded-lg text-xs font-mono backdrop-blur-md z-30 flex flex-col gap-1 pointer-events-none shadow-xl">
+                <div class="font-bold text-white mb-1 border-b border-gray-700 pb-1 uppercase tracking-wider">Stream Stats</div>
+                <div>Role: <span id="stat-role" class="text-blue-400">N/A</span></div>
+                <div>Res: <span id="stat-res" class="text-blue-400">0x0</span></div>
+                <div>FPS: <span id="stat-fps" class="text-blue-400">0</span></div>
+                <div>Bitrate: <span id="stat-bitrate" class="text-emerald-400">0 kbps</span></div>
+                <div>Ping: <span id="stat-ping" class="text-yellow-400">0 ms</span></div>
+            </div>
+
             <video id="stream-video" autoplay playsinline muted class="w-full h-auto max-h-[70vh] object-contain flex-grow"></video>
             
             <!-- Unified Persistent Bottom Control Bar -->
@@ -217,7 +244,12 @@
             let peer = null;
             let localStream = null;
             let activeCalls = [];
-            let viewerConnectionTimeout = null; // Added to handle silent rejections
+            let viewerConnectionTimeout = null;
+            
+            // Stats tracking variables
+            let statsInterval = null;
+            let lastBytes = 0;
+            let lastTime = 0;
 
             // UI Elements
             const startBroadcastBtn = document.getElementById('start-broadcast-btn');
@@ -242,13 +274,125 @@
             const debugLog = document.getElementById('debug-log');
             const clearLogBtn = document.getElementById('clear-log-btn');
 
-            // New UI Elements for v1.05/1.06
+            // Settings UI
             const settingsBtn = document.getElementById('settings-btn');
             const settingsMenu = document.getElementById('settings-menu');
             const toggleDiagnostics = document.getElementById('toggle-diagnostics');
+            const toggleStats = document.getElementById('toggle-stats');
             const diagnosticPanel = document.getElementById('diagnostic-panel');
+            const statsOverlay = document.getElementById('stats-overlay');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             const maxConnectionsInput = document.getElementById('max-connections');
+            const streamQualitySelect = document.getElementById('stream-quality');
+
+            // --- Stats Polling System ---
+            const startStatsPolling = (peerConnection, role) => {
+                if (statsInterval) clearInterval(statsInterval);
+                document.getElementById('stat-role').innerText = role;
+                lastBytes = 0;
+                lastTime = 0;
+                
+                statsInterval = setInterval(async () => {
+                    if (!peerConnection) return;
+                    try {
+                        const stats = await peerConnection.getStats();
+                        let bitrate = 0;
+                        let ping = 0;
+                        let fps = 0;
+                        let res = "0x0";
+
+                        stats.forEach(report => {
+                            // Check Video Tracks for bandwidth and fps
+                            if ((role === 'Broadcaster' && report.type === 'outbound-rtp' && report.kind === 'video') || 
+                                (role === 'Viewer' && report.type === 'inbound-rtp' && report.kind === 'video')) {
+                                
+                                const bytes = role === 'Broadcaster' ? report.bytesSent : report.bytesReceived;
+                                const now = report.timestamp;
+                                
+                                if (lastBytes && lastTime) {
+                                    // Calculate kbps
+                                    const bitrateKbps = (8 * (bytes - lastBytes)) / (now - lastTime);
+                                    bitrate = Math.round(bitrateKbps);
+                                }
+                                lastBytes = bytes;
+                                lastTime = now;
+
+                                fps = report.framesPerSecond || report.framesDecoded || report.framesEncoded || 0;
+                                res = `${report.frameWidth || 0}x${report.frameHeight || 0}`;
+                            }
+                            
+                            // Check ICE Candidate Pair for Latency (Ping)
+                            if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+                                ping = Math.round(report.currentRoundTripTime * 1000) || 0;
+                            }
+                        });
+
+                        document.getElementById('stat-bitrate').innerText = `${bitrate} kbps`;
+                        document.getElementById('stat-fps').innerText = Math.round(fps);
+                        document.getElementById('stat-res').innerText = res;
+                        if (ping > 0) document.getElementById('stat-ping').innerText = `${ping} ms`;
+
+                    } catch(e) {
+                        // Ignore periodic polling errors
+                    }
+                }, 1000);
+            };
+
+            const stopStatsPolling = () => {
+                if (statsInterval) clearInterval(statsInterval);
+                statsInterval = null;
+                document.getElementById('stat-bitrate').innerText = "0 kbps";
+                document.getElementById('stat-fps').innerText = "0";
+                document.getElementById('stat-res').innerText = "0x0";
+                document.getElementById('stat-ping').innerText = "0 ms";
+            };
+
+            // --- Quality Control System ---
+            const applyQualitySettings = async (call) => {
+                if (!call || !call.peerConnection) return;
+                
+                const quality = streamQualitySelect.value;
+                const senders = call.peerConnection.getSenders();
+                const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+                
+                if (videoSender) {
+                    const params = videoSender.getParameters();
+                    if (!params.encodings) params.encodings = [{}];
+                    
+                    // Reset to source initially
+                    params.encodings[0].maxBitrate = undefined;
+                    params.encodings[0].scaleResolutionDownBy = undefined;
+                    params.encodings[0].maxFramerate = undefined;
+
+                    if (quality === 'high') {
+                        params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
+                        params.encodings[0].maxFramerate = 30;
+                    } else if (quality === 'medium') {
+                        params.encodings[0].maxBitrate = 1000000; // 1 Mbps
+                        params.encodings[0].scaleResolutionDownBy = 2; // Half resolution
+                        params.encodings[0].maxFramerate = 24;
+                    } else if (quality === 'low') {
+                        params.encodings[0].maxBitrate = 500000; // 500 kbps
+                        params.encodings[0].scaleResolutionDownBy = 4; // Quarter resolution
+                        params.encodings[0].maxFramerate = 15;
+                    }
+                    
+                    try {
+                        await videoSender.setParameters(params);
+                        log(`Applied '${quality}' stream quality limitations to connection.`);
+                    } catch (e) {
+                        log(`Failed to apply quality settings: ${e.message}`, "error");
+                    }
+                }
+            };
+
+            // Re-apply quality to all calls if setting changes during broadcast
+            streamQualitySelect.addEventListener('change', () => {
+                if (activeCalls.length > 0) {
+                    log(`Adjusting stream quality for ${activeCalls.length} viewer(s)...`, "info");
+                    activeCalls.forEach(call => applyQualitySettings(call));
+                }
+            });
 
             // Connection count updater
             const updateConnectionCount = () => {
@@ -264,81 +408,63 @@
                 settingsMenu.classList.toggle('hidden');
             });
 
-            // Close settings menu when clicking outside of it
             document.addEventListener('click', (e) => {
                 if (!settingsBtn.contains(e.target) && !settingsMenu.contains(e.target)) {
                     settingsMenu.classList.add('hidden');
                 }
             });
 
-            // Toggle Diagnostics Visibility
             toggleDiagnostics.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    diagnosticPanel.classList.remove('hidden');
-                } else {
-                    diagnosticPanel.classList.add('hidden');
-                }
+                if (e.target.checked) diagnosticPanel.classList.remove('hidden');
+                else diagnosticPanel.classList.add('hidden');
+            });
+
+            toggleStats.addEventListener('change', (e) => {
+                if (e.target.checked) statsOverlay.classList.remove('hidden');
+                else statsOverlay.classList.add('hidden');
             });
 
             stopBtn.addEventListener('click', disconnectAll);
 
-            // Fullscreen & Orientation Lock Logic (With Pseudo-Fullscreen Fallback)
+            // Fullscreen & Orientation Lock Logic
             fullscreenBtn.addEventListener('click', async () => {
                 const isPseudoFullscreen = videoContainer.classList.contains('pseudo-fullscreen');
                 
                 if (!document.fullscreenElement && !document.webkitFullscreenElement && !isPseudoFullscreen) {
-                    // Enter Fullscreen
                     const elem = videoContainer;
                     try {
-                        if (elem.requestFullscreen) {
-                            await elem.requestFullscreen();
-                        } else if (elem.webkitRequestFullscreen) { /* Safari support */
-                            await elem.webkitRequestFullscreen();
-                        } else {
-                            throw new Error("Native fullscreen API not supported or blocked.");
-                        }
+                        if (elem.requestFullscreen) await elem.requestFullscreen();
+                        else if (elem.webkitRequestFullscreen) await elem.webkitRequestFullscreen();
+                        else throw new Error("Native fullscreen API not supported or blocked.");
                         
-                        // Attempt to force landscape orientation on mobile devices
                         if (screen.orientation && screen.orientation.lock) {
                             try {
                                 await screen.orientation.lock('landscape');
                                 log("Mobile orientation locked to landscape.", "info");
-                            } catch (e) {
-                                log(`Note: Screen orientation lock ignored by device`, "info");
-                            }
+                            } catch (e) {}
                         }
                     } catch (err) {
                         log(`Native fullscreen blocked. Activating window-fill fallback.`, "info");
-                        // Fallback: Expand to fill the browser window
                         videoContainer.classList.add('pseudo-fullscreen');
-                        document.body.style.overflow = 'hidden'; // Stop page scrolling behind the video
-                        handleFullscreenChange(); // Trigger icon update manually
+                        document.body.style.overflow = 'hidden'; 
+                        handleFullscreenChange(); 
                     }
                 } else {
-                    // Exit Fullscreen
                     if (document.fullscreenElement || document.webkitFullscreenElement) {
-                        if (document.exitFullscreen) {
-                            document.exitFullscreen();
-                        } else if (document.webkitExitFullscreen) {
-                            document.webkitExitFullscreen();
-                        }
+                        if (document.exitFullscreen) document.exitFullscreen();
+                        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
                     }
-                    
-                    // Exit Pseudo-Fullscreen
                     if (isPseudoFullscreen) {
                         videoContainer.classList.remove('pseudo-fullscreen');
                         document.body.style.overflow = '';
-                        handleFullscreenChange(); // Trigger icon update manually
+                        handleFullscreenChange();
                     }
-                    
-                    // Unlock device orientation
                     if (screen.orientation && screen.orientation.unlock) {
                         screen.orientation.unlock();
                     }
                 }
             });
 
-            // Update Fullscreen button icon based on state
             const handleFullscreenChange = () => {
                 const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || videoContainer.classList.contains('pseudo-fullscreen');
                 if (isFullscreen) {
@@ -349,9 +475,8 @@
             };
             
             document.addEventListener('fullscreenchange', handleFullscreenChange);
-            document.addEventListener('webkitfullscreenchange', handleFullscreenChange); // Safari listener
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange); 
 
-            // Logging function
             function log(msg, type = 'info') {
                 const time = new Date().toLocaleTimeString([], {hour12: false});
                 const color = type === 'error' ? 'text-red-400 font-bold' : (type === 'success' ? 'text-emerald-400' : 'text-blue-300');
@@ -364,7 +489,6 @@
                 debugLog.innerHTML = `<div class="text-gray-500">> Log cleared.</div>`;
             });
 
-            // Check if running from file:// protocol
             if (window.location.protocol === 'file:') {
                 document.getElementById('security-warning').classList.remove('hidden');
                 log("WARNING: Running on file:// protocol. WebRTC may be blocked.", "error");
@@ -374,7 +498,9 @@
 
             const generateShortId = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
-            // Setup Broadcaster Mode
+            // ==========================================
+            // BROADCASTER MODE
+            // ==========================================
             startBroadcastBtn.addEventListener('click', async () => {
                 errorBanner.classList.add('hidden');
                 startBroadcastBtn.disabled = true;
@@ -384,13 +510,11 @@
                     log("Initiating screen capture request...");
 
                     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                        throw new Error("Screen capture API (getDisplayMedia) is not available. This happens on mobile devices or insecure network contexts.");
+                        throw new Error("Screen capture API (getDisplayMedia) is not available.");
                     }
 
                     const requestAudio = audioToggle.checked;
-                    log(`Audio requested: ${requestAudio}`);
-
-                    // 1. Request Screen Capture from the user
+                    
                     localStream = await navigator.mediaDevices.getDisplayMedia({
                         video: { cursor: "always" },
                         audio: requestAudio
@@ -399,24 +523,13 @@
                     log("Screen capture permission GRANTED.", "success");
                     startBroadcastBtn.innerText = "Initializing Server...";
 
-                    const audioTracks = localStream.getAudioTracks();
-                    if (audioTracks.length > 0) {
-                        log(`Audio stream attached successfully (${audioTracks[0].label}).`, "success");
-                    } else if (requestAudio) {
-                        log("Warning: Audio was requested, but no audio stream was captured. (Did you check the 'share audio' box in the browser's screen-select popup?)", "error");
-                    }
-
                     const shortId = generateShortId();
                     const fullId = PREFIX + shortId;
-
-                    log(`Connecting to signaling server with ID: ${fullId}...`);
                     
-                    // 2. Initialize PeerJS
                     peer = new Peer(fullId, { debug: 2 });
 
                     peer.on('open', (id) => {
                         log("Connected to signaling server!", "success");
-                        // 3. Update UI
                         startBroadcastBtn.classList.add('hidden');
                         broadcastInfo.classList.remove('hidden');
                         broadcastIdDisplay.innerText = shortId;
@@ -430,20 +543,19 @@
                         }
                         
                         videoContainer.classList.remove('hidden');
-                        videoContainer.classList.add('flex'); // Enable flexbox layout
+                        videoContainer.classList.add('flex'); 
                         videoLabel.innerText = "Broadcasting (Your view)";
                         statusText.innerText = "Status: Broadcasting (0 Viewers)";
                         streamVideo.srcObject = localStream;
-                        streamVideo.muted = true; // Don't echo audio back
+                        streamVideo.muted = true; 
                     });
 
-                    // 4. Listen for incoming viewer calls
-                    peer.on('call', (call) => {
+                    peer.on('call', async (call) => {
                         log("Incoming connection request from a viewer...", "success");
 
                         const maxConns = parseInt(maxConnectionsInput.value, 10) || 1;
                         if (activeCalls.length >= maxConns) {
-                            log(`Rejected viewer: Connection limit reached (${maxConns}).`, "error");
+                            log(`Rejected viewer: Connection limit reached.`, "error");
                             setTimeout(() => call.close(), 200);
                             return;
                         }
@@ -453,18 +565,27 @@
 
                         if (requiredPasscode && requiredPasscode !== providedPasscode) {
                             log(`Rejected viewer: Incorrect passcode provided.`, "error");
-                            call.close(); // Instantly close. Viewer timeout will handle their UI.
+                            call.close();
                             return;
                         }
 
+                        // Answer the call with the stream
                         call.answer(localStream);
                         activeCalls.push(call);
                         updateConnectionCount();
+
+                        // Apply quality restrictions (if any) and start polling stats
+                        await applyQualitySettings(call);
+                        startStatsPolling(call.peerConnection, 'Broadcaster');
                         
                         call.on('close', () => {
                             log("Viewer disconnected.");
                             activeCalls = activeCalls.filter(c => c !== call);
                             updateConnectionCount();
+                            
+                            // If no viewers left, clear stats. If viewers exist, track the last one.
+                            if (activeCalls.length === 0) stopStatsPolling();
+                            else startStatsPolling(activeCalls[activeCalls.length - 1].peerConnection, 'Broadcaster');
                         });
                     });
 
@@ -472,7 +593,6 @@
                         log(`PeerJS Error: ${err.type} - ${err.message}`, "error");
                     });
 
-                    // Stop sharing if user clicks native browser stop
                     const videoTracks = localStream.getVideoTracks();
                     if (videoTracks.length > 0) {
                         videoTracks[0].onended = () => {
@@ -486,26 +606,18 @@
                     startBroadcastBtn.disabled = false;
                     startBroadcastBtn.innerText = "Start Sharing";
                     errorBanner.classList.remove('hidden');
-                    
-                    if (err.name === 'NotAllowedError') {
-                        errorText.innerText = "Permission denied. You must allow screen capture to continue.";
-                    } else if (err.name === 'NotFoundError') {
-                        errorText.innerText = "No screen/audio sources found.";
-                    } else {
-                        errorText.innerText = `Error: ${err.message}`;
-                    }
+                    errorText.innerText = err.name === 'NotAllowedError' ? "Permission denied." : `Error: ${err.message}`;
                 }
             });
 
-            // Setup Viewer Mode
+            // ==========================================
+            // VIEWER MODE
+            // ==========================================
             joinBroadcastBtn.addEventListener('click', () => {
                 const targetId = viewerInputId.value.trim().toUpperCase();
                 const vPasscode = viewerPasscode.value.trim();
                 
-                if (!targetId || targetId.length !== 4) {
-                    alert("Please enter a valid 4-character Broadcaster ID.");
-                    return;
-                }
+                if (!targetId || targetId.length !== 4) return alert("Please enter a valid 4-character ID.");
 
                 errorBanner.classList.add('hidden');
                 connectionStatus.classList.remove('hidden');
@@ -516,36 +628,26 @@
 
                 peer.on('open', (id) => {
                     connectionStatus.innerText = "Calling broadcaster...";
-                    log("Connected to signaling server. Initiating WebRTC call...", "success");
                     
-                    // 1. Create a dummy video stream (blank canvas)
                     const canvas = document.createElement('canvas');
                     canvas.width = 1; canvas.height = 1;
                     const dummyStream = canvas.captureStream(1); 
 
-                    // 2. IMPORTANT FIX: Create a dummy audio track using Web Audio API
-                    // This forces the WebRTC SDP offer to explicitly include an audio channel.
                     try {
                         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                         const dest = audioCtx.createMediaStreamDestination();
                         dummyStream.addTrack(dest.stream.getAudioTracks()[0]);
-                        log("Created dummy audio channel for connection.", "info");
-                    } catch (e) {
-                        log("Warning: Could not create dummy audio track. Receiving audio may fail.", "error");
-                    }
+                    } catch (e) {}
 
                     const fullTargetId = PREFIX + targetId;
                     
-                    // Include the passcode securely within the WebRTC call metadata handshake
                     const activeCall = peer.call(fullTargetId, dummyStream, {
                         metadata: { passcode: vPasscode }
                     });
                     
                     activeCalls.push(activeCall);
-
                     let streamReceived = false;
 
-                    // Set timeout to handle silent rejections (like wrong passcode) or hung connections
                     viewerConnectionTimeout = setTimeout(() => {
                         if (!streamReceived) {
                             log("Connection timed out. Incorrect passcode or broadcaster unavailable.", "error");
@@ -553,24 +655,20 @@
                             errorText.innerText = "Connection failed. Did you enter the correct passcode?";
                             disconnectAll();
                         }
-                    }, 8000); // 8 second timeout threshold
+                    }, 8000);
 
                     activeCall.on('stream', (remoteStream) => {
                         streamReceived = true;
                         if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                         log("Successfully received remote stream data!", "success");
                         
-                        const hasAudio = remoteStream.getAudioTracks().length > 0;
-                        log(`Stream contains audio track: ${hasAudio}`);
-                        
-                        if (!hasAudio) {
-                            log("NOTE: Broadcaster's stream did not include audio. (They may have forgotten to check the 'share audio' box!)", "error");
-                        }
+                        // Start polling connection stats
+                        startStatsPolling(activeCall.peerConnection, 'Viewer');
 
                         connectionStatus.classList.add('hidden');
                         modeSelection.classList.add('hidden');
                         videoContainer.classList.remove('hidden');
-                        videoContainer.classList.add('flex'); // Enable flexbox layout
+                        videoContainer.classList.add('flex'); 
                         
                         videoLabel.innerText = "Watching Live Stream";
                         statusText.innerText = "Status: Connected to " + targetId;
@@ -582,11 +680,9 @@
                     activeCall.on('close', () => {
                         if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                         if (!streamReceived) {
-                            log("Connection rejected by Broadcaster. Incorrect passcode?", "error");
                             errorBanner.classList.remove('hidden');
                             errorText.innerText = "Connection rejected. Did you enter the correct passcode?";
                         } else {
-                            log("Broadcaster closed the stream.");
                             errorBanner.classList.remove('hidden');
                             errorText.innerText = "Broadcaster ended the stream.";
                         }
@@ -595,30 +691,30 @@
 
                     activeCall.on('error', (err) => {
                         if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
-                        log(`Call Error: ${err.message}`, "error");
                         connectionStatus.innerText = "Connection failed.";
                     });
                 });
 
                 peer.on('error', (err) => {
                     if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
-                    log(`PeerJS Error: ${err.type} - ${err.message}`, "error");
                     connectionStatus.innerText = "Error: " + err.type;
                     errorBanner.classList.remove('hidden');
                     errorText.innerText = `Connection failed: ${err.type}`;
                 });
             });
 
+            // ==========================================
+            // DISCONNECT / CLEANUP
+            // ==========================================
             function disconnectAll() {
                 log("Disconnecting and cleaning up...");
+                stopStatsPolling();
 
-                // Clear any pending timeouts
                 if (viewerConnectionTimeout) {
                     clearTimeout(viewerConnectionTimeout);
                     viewerConnectionTimeout = null;
                 }
                 
-                // 1. Exit fullscreen and pseudo-fullscreen if active
                 try {
                     if (document.fullscreenElement || document.webkitFullscreenElement) {
                         if (document.exitFullscreen) document.exitFullscreen();
@@ -632,11 +728,8 @@
                     if (screen.orientation && screen.orientation.unlock) {
                         screen.orientation.unlock();
                     }
-                } catch (e) {
-                    log(`Fullscreen exit error: ${e.message}`, "error");
-                }
+                } catch (e) {}
 
-                // 2. Safely close connections
                 activeCalls.forEach(call => {
                     try { call.close(); } catch(e) {}
                 });
@@ -651,7 +744,6 @@
                     localStream = null;
                 }
 
-                // 3. Reset UI Elements
                 startBroadcastBtn.disabled = false;
                 startBroadcastBtn.innerText = "Start Sharing";
                 
@@ -663,14 +755,13 @@
                 }
 
                 videoContainer.classList.add('hidden');
-                videoContainer.classList.remove('flex'); // Reset flexbox
+                videoContainer.classList.remove('flex'); 
                 modeSelection.classList.remove('hidden');
                 startBroadcastBtn.classList.remove('hidden');
                 broadcastInfo.classList.add('hidden');
                 connectionStatus.classList.add('hidden');
                 broadcastIdDisplay.innerText = "----";
                 
-                // Clear the viewer's inputs if desired, keeping broadcaster's so they can restart easily
                 viewerInputId.value = ""; 
                 viewerPasscode.value = "";
                 
