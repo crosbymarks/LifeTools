@@ -150,7 +150,7 @@
         <div class="text-center mb-8 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 <span data-i18n="appTitle">Live Screen Caster</span>
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.19</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.20</span>
             </h1>
             <p class="text-gray-400" data-i18n="appDesc">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -968,6 +968,11 @@
                 
                 if (!targetId || targetId.length !== 4) return alert("Please enter a valid 4-character ID.");
 
+                // FIX 1: Pre-warm the video player using the explicit user click gesture!
+                // This permanently bypasses the browser's autoplay block for this session.
+                streamVideo.muted = true;
+                streamVideo.play().catch(e => {});
+
                 errorBanner.classList.add('hidden');
                 connectionStatus.classList.remove('hidden');
                 connectionStatus.innerText = dict.dynConnecting;
@@ -978,18 +983,23 @@
                 peer.on('open', (id) => {
                     log("Connected to signaling server. Initiating WebRTC call...", "success");
                     
-                    // FIXED: Restored dummy stream but physically drew a pixel on it to guarantee frame emission
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 1; canvas.height = 1;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillRect(0, 0, 1, 1); // CRITICAL: Forces video encoder to stay alive
-                    const dummyStream = canvas.captureStream(1); 
-
+                    // FIX 2: Replaced Canvas Hack with Silent Audio Hack
+                    // Video canvas hacks frequently cause hardware decoder crashes resulting in black screens.
+                    let dummyStream;
                     try {
                         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioCtx.createOscillator();
                         const dest = audioCtx.createMediaStreamDestination();
-                        dummyStream.addTrack(dest.stream.getAudioTracks()[0]);
-                    } catch (e) {}
+                        oscillator.connect(dest);
+                        oscillator.start();
+                        dummyStream = dest.stream;
+                        log("Created silent audio track for handshake.", "info");
+                    } catch (e) {
+                        // Ultimate fallback if audio context is blocked
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 1; canvas.height = 1;
+                        dummyStream = canvas.captureStream(1);
+                    }
 
                     const fullTargetId = PREFIX + targetId;
                     
@@ -1026,9 +1036,9 @@
                         statusText.innerText = `${currentLang === 'en' ? 'Status: Connected to' : 'Estado: Conectado a'} ${targetId}`;
                         
                         streamVideo.srcObject = remoteStream;
-                        streamVideo.muted = true; // Start muted to bypass browser policies
+                        streamVideo.muted = true; // Start muted to guarantee playback
                         
-                        // Force playback visually, then attempt to open the audio channel safely
+                        // Because we pre-warmed the player on click, this should now safely execute
                         streamVideo.play().then(() => {
                             log("Video rendering successfully. Attempting to unmute...", "info");
                             streamVideo.muted = false;
