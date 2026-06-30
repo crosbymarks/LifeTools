@@ -150,7 +150,7 @@
         <div class="text-center mb-8 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 <span data-i18n="appTitle">Live Screen Caster</span>
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.21</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.22</span>
             </h1>
             <p class="text-gray-400" data-i18n="appDesc">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -257,6 +257,7 @@
             <div id="stats-overlay" class="hidden absolute top-4 left-4 bg-black/80 border border-gray-700 text-gray-300 p-3 rounded-lg text-xs font-mono backdrop-blur-md z-30 flex flex-col gap-1 pointer-events-none shadow-xl">
                 <div class="font-bold text-white mb-1 border-b border-gray-700 pb-1 uppercase tracking-wider" data-i18n="streamStatsTitle">Stream Stats</div>
                 <div><span data-i18n="statRole">Role:</span> <span id="stat-role" class="text-blue-400">N/A</span></div>
+                <div><span data-i18n="statViewers">Viewers:</span> <span id="stat-viewers" class="text-purple-400">0</span></div>
                 <div><span data-i18n="statRes">Res:</span> <span id="stat-res" class="text-blue-400">0x0</span></div>
                 <div><span data-i18n="statFps">FPS:</span> <span id="stat-fps" class="text-blue-400">0</span></div>
                 <div><span data-i18n="statBitrate">Bitrate:</span> <span id="stat-bitrate" class="text-emerald-400">0 kbps</span></div>
@@ -306,7 +307,9 @@
             let peer = null;
             let localStream = null;
             let activeCalls = [];
+            let activeDataConns = []; // Tracks parallel data channels
             let viewerConnectionTimeout = null;
+            let isDisconnecting = false; // Flag to prevent erroneous error banners
             
             // Stats tracking variables
             let statsInterval = null;
@@ -392,6 +395,7 @@
                     logReady: "> System ready. Waiting for action...",
                     streamStatsTitle: "Stream Stats",
                     statRole: "Role:",
+                    statViewers: "Viewers:",
                     statRes: "Res:",
                     statFps: "FPS:",
                     statBitrate: "Bitrate:",
@@ -449,6 +453,7 @@
                     logReady: "> Sistema listo. Esperando acción...",
                     streamStatsTitle: "Estadísticas",
                     statRole: "Rol:",
+                    statViewers: "Espectadores:",
                     statRes: "Res:",
                     statFps: "FPS:",
                     statBitrate: "Tasa:",
@@ -682,10 +687,11 @@
                 document.getElementById('stat-fps').innerText = "0";
                 document.getElementById('stat-res').innerText = "0x0";
                 document.getElementById('stat-ping').innerText = "0 ms";
+                document.getElementById('stat-viewers').innerText = "0";
             };
 
             // ==========================================
-            // QUALITY CONTROL SYSTEM
+            // QUALITY & DATA SYNC CONTROL SYSTEM
             // ==========================================
             const applyQualitySettings = async (call) => {
                 if (!call || !call.peerConnection) return;
@@ -733,13 +739,25 @@
 
             const updateConnectionCount = () => {
                 const dict = translations[currentLang];
-                if (activeCalls.length > 0) {
+                const count = activeCalls.length;
+                
+                // Update local UI
+                document.getElementById('stat-viewers').innerText = count;
+                
+                if (count > 0) {
                     statusText.innerText = currentLang === 'en' 
-                        ? `Status: ${activeCalls.length} Viewer(s) Connected` 
-                        : `Estado: ${activeCalls.length} Espectador(es) Conectados`;
+                        ? `Status: ${count} Viewer(s) Connected` 
+                        : `Estado: ${count} Espectador(es) Conectados`;
                 } else {
                     statusText.innerText = dict.dynBroadcastingZero;
                 }
+
+                // Broadcast live count down the data channels to all active viewers
+                activeDataConns.forEach(conn => {
+                    if (conn.open) {
+                        conn.send({ type: 'VIEWER_COUNT', count: count });
+                    }
+                });
             };
 
             stopBtn.addEventListener('click', disconnectAll);
@@ -828,7 +846,6 @@
                         { urls: 'stun:stun1.l.google.com:19302' },
                         { urls: 'stun:stun.peerjs.com' },
                         {
-                            // Free community TURN server via Metered.ca (OpenRelay)
                             urls: 'turn:openrelay.metered.ca:80',
                             username: 'openrelayproject',
                             credential: 'openrelayproject'
@@ -839,7 +856,6 @@
                             credential: 'openrelayproject'
                         },
                         {
-                            // TCP fallback for extremely strict corporate firewalls
                             urls: 'turn:openrelay.metered.ca:443?transport=tcp',
                             username: 'openrelayproject',
                             credential: 'openrelayproject'
@@ -892,16 +908,39 @@
                         
                         videoContainer.classList.remove('hidden');
                         videoContainer.classList.add('flex'); 
-                        modeTabs.classList.add('hidden'); // Hide tabs during active session
+                        modeTabs.classList.add('hidden'); 
                         
                         videoLabel.innerText = translations[currentLang].dynBroadcasting;
                         statusText.innerText = translations[currentLang].dynBroadcastingZero;
                         
                         streamVideo.srcObject = localStream;
-                        streamVideo.muted = true; // Broadcaster always previews muted
+                        streamVideo.muted = true; 
                         streamVideo.play().catch(e => log("Broadcaster preview warning: " + e.message, "error"));
                     });
 
+                    // Manage Data Channels for viewer count syncing
+                    peer.on('connection', (conn) => {
+                        const requiredPasscode = broadcasterPasscode.value.trim();
+                        const providedPasscode = conn.metadata ? conn.metadata.passcode : "";
+
+                        // Reject data connections with bad passcodes
+                        if (requiredPasscode && requiredPasscode !== providedPasscode) {
+                            conn.close();
+                            return;
+                        }
+
+                        activeDataConns.push(conn);
+                        
+                        conn.on('open', () => {
+                            conn.send({ type: 'VIEWER_COUNT', count: activeCalls.length });
+                        });
+                        
+                        conn.on('close', () => {
+                            activeDataConns = activeDataConns.filter(c => c !== conn);
+                        });
+                    });
+
+                    // Manage Media Connections
                     peer.on('call', async (call) => {
                         log("Incoming connection request from a viewer...", "success");
 
@@ -928,13 +967,27 @@
                         await applyQualitySettings(call);
                         startStatsPolling(call.peerConnection, 'Broadcaster');
                         
-                        call.on('close', () => {
+                        // Unified disconnect handler for graceful closures
+                        const handleViewerLeave = () => {
+                            if (!activeCalls.includes(call)) return; // Prevent double-firing
                             log("Viewer disconnected.");
                             activeCalls = activeCalls.filter(c => c !== call);
                             updateConnectionCount();
                             
                             if (activeCalls.length === 0) stopStatsPolling();
                             else startStatsPolling(activeCalls[activeCalls.length - 1].peerConnection, 'Broadcaster');
+                        };
+
+                        call.on('close', handleViewerLeave);
+
+                        // FIX 1: Listen directly to ICE state to catch abrupt browser tab closures!
+                        call.peerConnection.addEventListener('iceconnectionstatechange', () => {
+                            const state = call.peerConnection.iceConnectionState;
+                            if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+                                log(`Viewer connection lost abruptly (ICE state: ${state}).`, "error");
+                                handleViewerLeave();
+                                try { call.close(); } catch(e) {}
+                            }
                         });
                     });
 
@@ -968,7 +1021,6 @@
                 
                 if (!targetId || targetId.length !== 4) return alert("Please enter a valid 4-character ID.");
 
-                // FIX: Pre-warm the video player using the explicit user click gesture!
                 streamVideo.muted = true;
                 streamVideo.play().catch(e => {});
 
@@ -982,8 +1034,6 @@
                 peer.on('open', (id) => {
                     log("Connected to signaling server. Initiating WebRTC call...", "success");
                     
-                    // FIX: Re-introduced the 1x1 dummy video canvas combined with dummy audio.
-                    // This forces WebRTC to open BOTH a video and audio channel, preventing the handshake timeout.
                     const canvas = document.createElement('canvas');
                     canvas.width = 1; canvas.height = 1;
                     const ctx = canvas.getContext('2d');
@@ -997,13 +1047,23 @@
                         oscillator.connect(dest);
                         oscillator.start();
                         dummyStream.addTrack(dest.stream.getAudioTracks()[0]);
-                        log("Created silent audio and video track for handshake.", "info");
-                    } catch (e) {
-                        log("Warning: Could not create dummy audio track.", "error");
-                    }
+                    } catch (e) {}
 
                     const fullTargetId = PREFIX + targetId;
                     
+                    // FIX 3: Start parallel data connection to sync viewer counts
+                    const dataConn = peer.connect(fullTargetId, {
+                        metadata: { passcode: vPasscode }
+                    });
+                    activeDataConns.push(dataConn);
+
+                    dataConn.on('data', (data) => {
+                        if (data && data.type === 'VIEWER_COUNT') {
+                            document.getElementById('stat-viewers').innerText = data.count;
+                        }
+                    });
+
+                    // Start Media connection
                     const activeCall = peer.call(fullTargetId, dummyStream, {
                         metadata: { passcode: vPasscode }
                     });
@@ -1029,7 +1089,7 @@
 
                         connectionStatus.classList.add('hidden');
                         panelViewer.classList.add('hidden');
-                        modeTabs.classList.add('hidden'); // Hide tabs during session
+                        modeTabs.classList.add('hidden'); 
                         videoContainer.classList.remove('hidden');
                         videoContainer.classList.add('flex'); 
                         
@@ -1037,7 +1097,7 @@
                         statusText.innerText = `${currentLang === 'en' ? 'Status: Connected to' : 'Estado: Conectado a'} ${targetId}`;
                         
                         streamVideo.srcObject = remoteStream;
-                        streamVideo.muted = true; // Start muted to guarantee playback
+                        streamVideo.muted = true; 
                         
                         streamVideo.play().then(() => {
                             log("Video rendering successfully. Attempting to unmute...", "info");
@@ -1050,6 +1110,8 @@
                     });
 
                     activeCall.on('close', () => {
+                        if (isDisconnecting) return; // FIX 2: Ignore manual local disconnects!
+                        
                         if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                         if (!streamReceived) {
                             errorBanner.classList.remove('hidden');
@@ -1079,6 +1141,9 @@
             // DISCONNECT / CLEANUP
             // ==========================================
             function disconnectAll() {
+                if (isDisconnecting) return; // Prevent double-firing
+                isDisconnecting = true;
+                
                 log("Disconnecting and cleaning up...");
                 stopStatsPolling();
 
@@ -1101,6 +1166,12 @@
                         screen.orientation.unlock();
                     }
                 } catch (e) {}
+
+                // Terminate parallel data channels
+                activeDataConns.forEach(conn => {
+                    try { conn.close(); } catch(e) {}
+                });
+                activeDataConns = [];
 
                 activeCalls.forEach(call => {
                     try { call.close(); } catch(e) {}
@@ -1128,7 +1199,6 @@
                 videoContainer.classList.add('hidden');
                 videoContainer.classList.remove('flex'); 
                 
-                // Show tabs again and restore the correct panel based on active tab
                 modeTabs.classList.remove('hidden');
                 if (tabBroadcast.classList.contains('bg-blue-600')) {
                     panelBroadcast.classList.remove('hidden');
@@ -1145,6 +1215,9 @@
                 viewerPasscode.value = "";
                 
                 log("System reset complete.", "success");
+                
+                // Allow a brief moment for events to flush before releasing the disconnect lock
+                setTimeout(() => { isDisconnecting = false; }, 500);
             }
         });
     </script>
