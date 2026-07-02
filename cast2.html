@@ -157,7 +157,7 @@
         <div class="text-center mb-8 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 <span data-i18n="appTitle">Live Screen Caster</span>
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.24</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.25</span>
             </h1>
             <p class="text-gray-400" data-i18n="appDesc">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -902,6 +902,14 @@
             // ==========================================
             // QUALITY & DATA SYNC CONTROL SYSTEM
             // ==========================================
+            // Helper function to resolve the strictest quality setting
+            const resolveEffectiveQuality = (broadcasterQuality, viewerQuality) => {
+                const ranks = { 'low': 1, 'medium': 2, 'high': 3, 'source': 4 };
+                const bRank = ranks[broadcasterQuality] || 4;
+                const vRank = ranks[viewerQuality] || 4;
+                return bRank < vRank ? broadcasterQuality : viewerQuality;
+            };
+
             const applyQualitySettings = async (call, quality) => {
                 if (!call || !call.peerConnection) return;
                 
@@ -943,10 +951,13 @@
                 const isBroadcaster = localStream !== null;
                 
                 if (isBroadcaster) {
-                    // Apply to everyone as a global default
+                    // Re-evaluate quality for everyone based on the new broadcaster default ceiling
                     if (activeCalls.length > 0) {
-                        log(`Adjusting default stream quality for ${activeCalls.length} viewer(s)...`, "info");
-                        activeCalls.forEach(call => applyQualitySettings(call, quality));
+                        log(`Adjusting default stream ceiling. Re-evaluating ${activeCalls.length} viewer(s)...`, "info");
+                        activeCalls.forEach(call => {
+                            const effectiveQ = resolveEffectiveQuality(quality, call.requestedQuality || 'source');
+                            applyQualitySettings(call, effectiveQ);
+                        });
                     }
                 } else {
                     // Viewers send request to broadcaster to adjust just their stream
@@ -1155,7 +1166,14 @@
                                 log(`Viewer ${conn.peer} requested '${data.quality}' quality.`, "info");
                                 const targetCall = activeCalls.find(c => c.peer === conn.peer);
                                 if (targetCall) {
-                                    await applyQualitySettings(targetCall, data.quality);
+                                    targetCall.requestedQuality = data.quality;
+                                    const globalQ = streamQualitySelect.value;
+                                    const effectiveQ = resolveEffectiveQuality(globalQ, data.quality);
+                                    await applyQualitySettings(targetCall, effectiveQ);
+                                    
+                                    if (effectiveQ !== data.quality) {
+                                        log(`Server ceiling '${globalQ}' overrode viewer request. Applied '${effectiveQ}'.`, "info");
+                                    }
                                 }
                             }
                         });
@@ -1186,10 +1204,16 @@
                         }
 
                         call.answer(localStream);
+                        
+                        // Set default quality state for new calls
+                        call.requestedQuality = 'source';
                         activeCalls.push(call);
                         updateConnectionCount();
 
-                        await applyQualitySettings(call, streamQualitySelect.value);
+                        const globalQ = streamQualitySelect.value;
+                        const effectiveQ = resolveEffectiveQuality(globalQ, call.requestedQuality);
+                        await applyQualitySettings(call, effectiveQ);
+                        
                         startStatsPolling(call.peerConnection, 'Broadcaster');
                         
                         const handleViewerLeave = () => {
