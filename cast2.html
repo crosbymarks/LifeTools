@@ -113,12 +113,14 @@
                         </div>
                     </label>
                     <div class="mt-4 pt-4 border-t border-gray-800">
-                        <label class="flex items-center justify-between mb-3">
-                            <span class="text-sm font-medium text-gray-300" data-i18n="maxConn">Max Connections</span>
-                            <input type="number" id="max-connections" value="3" min="1" max="20" class="w-16 bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-center focus:outline-none focus:border-blue-500">
-                        </label>
+                        <div id="setting-max-connections-wrap">
+                            <label class="flex items-center justify-between mb-3">
+                                <span class="text-sm font-medium text-gray-300" data-i18n="maxConn">Max Connections</span>
+                                <input type="number" id="max-connections" value="3" min="1" max="20" class="w-16 bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-center focus:outline-none focus:border-blue-500">
+                            </label>
+                        </div>
                         <label class="flex flex-col gap-1">
-                            <span class="text-sm font-medium text-gray-300" data-i18n="maxQual">Max Stream Quality</span>
+                            <span class="text-sm font-medium text-gray-300" id="quality-label-text" data-i18n="reqQual">Request Quality</span>
                             <select id="stream-quality" class="bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 w-full">
                                 <option value="source" data-i18n="qSource">Source (Uncapped)</option>
                                 <option value="high" data-i18n="qHigh">High (Max 2.5 Mbps)</option>
@@ -155,7 +157,7 @@
         <div class="text-center mb-8 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 <span data-i18n="appTitle">Live Screen Caster</span>
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.23</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.24</span>
             </h1>
             <p class="text-gray-400" data-i18n="appDesc">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -216,7 +218,6 @@
                         </div>
                     </div>
                     
-                    <!-- NEW: Detailed Track Info Card -->
                     <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-left text-sm flex flex-col gap-2 relative overflow-hidden">
                         <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full -mr-8 -mt-8"></div>
                         <div class="flex justify-between items-start">
@@ -231,13 +232,6 @@
                             <span class="text-gray-400 font-medium" data-i18n="audioLabel">Audio Stream:</span>
                             <span id="info-audio" class="text-gray-200 text-xs">--</span>
                         </div>
-                    </div>
-
-                    <div class="mt-4 text-center flex justify-center">
-                        <span class="text-sm text-gray-400 flex items-center bg-gray-900/50 px-4 py-2 rounded-full border border-gray-800">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                            <span data-i18n="broadcastingLive">Broadcasting Live</span>
-                        </span>
                     </div>
                 </div>
             </div>
@@ -300,13 +294,17 @@
             <!-- Unified Persistent Bottom Control Bar -->
             <div id="video-controls" class="p-3 sm:p-4 bg-gray-900 border-t border-gray-800 flex justify-between items-center w-full z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
                 
-                <!-- Left: Status -->
-                <div class="flex items-center gap-3 sm:gap-4 shrink-0">
+                <!-- Left: Status (Cleaned Up) -->
+                <div class="flex items-center gap-2 shrink-0">
                     <div class="bg-gray-800 border border-gray-700 px-2 sm:px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2">
                         <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        <span id="video-label" class="text-gray-200" data-i18n="liveStream">Live Stream</span>
+                        <span id="video-label" class="text-gray-200" data-i18n="watching">Live Stream</span>
                     </div>
-                    <p id="status-text" class="text-xs sm:text-sm text-gray-400 hidden md:block truncate max-w-[120px]">Status: Active</p>
+                    <!-- Exclusive Viewer Count Pill for Broadcaster -->
+                    <div id="viewer-count-pill" class="hidden bg-gray-800 border border-gray-700 px-2 sm:px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 text-blue-400">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <span id="viewer-count-text">0</span>
+                    </div>
                 </div>
                 
                 <!-- Middle: Broadcaster Controls (Hidden for Viewers) -->
@@ -364,9 +362,9 @@
             let peer = null;
             let localStream = null;
             let activeCalls = [];
-            let activeDataConns = []; // Tracks parallel data channels
+            let activeDataConns = []; 
             let viewerConnectionTimeout = null;
-            let isDisconnecting = false; // Flag to prevent erroneous error banners
+            let isDisconnecting = false; 
             
             // Broadcaster States
             let isPreviewHidden = false;
@@ -401,7 +399,6 @@
             const modeTabs = document.getElementById('mode-tabs');
 
             const videoLabel = document.getElementById('video-label');
-            const statusText = document.getElementById('status-text');
             const connectionStatus = document.getElementById('connection-status');
             const audioToggle = document.getElementById('audio-toggle');
             const errorBanner = document.getElementById('error-banner');
@@ -415,6 +412,8 @@
             const bcMuteVideo = document.getElementById('bc-mute-video');
             const bcChangeSrc = document.getElementById('bc-change-src');
             const bcTogglePreview = document.getElementById('bc-toggle-preview');
+            const viewerCountPill = document.getElementById('viewer-count-pill');
+            const viewerCountText = document.getElementById('viewer-count-text');
 
             // Settings & EULA UI
             const settingsBtn = document.getElementById('settings-btn');
@@ -425,8 +424,10 @@
             const diagnosticPanel = document.getElementById('diagnostic-panel');
             const statsOverlay = document.getElementById('stats-overlay');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const maxConnectionsWrap = document.getElementById('setting-max-connections-wrap');
             const maxConnectionsInput = document.getElementById('max-connections');
             const streamQualitySelect = document.getElementById('stream-quality');
+            const qualityLabelText = document.getElementById('quality-label-text');
             
             const eulaModal = document.getElementById('eula-modal');
             const eulaContent = document.getElementById('eula-content');
@@ -479,7 +480,8 @@
                     showDiag: "Show Diagnostics",
                     showStats: "Show Stream Stats",
                     maxConn: "Max Connections",
-                    maxQual: "Max Stream Quality",
+                    maxQualAll: "Default Max Quality",
+                    reqQual: "Request Quality",
                     qSource: "Source (Uncapped)",
                     qHigh: "High (Max 2.5 Mbps)",
                     qMed: "Medium (Max 1.0 Mbps)",
@@ -488,11 +490,8 @@
                     eulaBtn: "Close & Accept",
                     footerRights: "© 2026. All rights reserved.",
                     footerEula: "EULA & Legal Information",
-                    dynStatusActive: "Status: Active",
-                    dynBroadcasting: "Broadcasting (Your view)",
-                    dynWatching: "Watching Live Stream",
-                    dynConnecting: "Connecting...",
-                    dynBroadcastingZero: "Status: Broadcasting (0 Viewers)",
+                    broadcasting: "Broadcasting",
+                    watching: "Watching",
                     sourceLabel: "Source:",
                     titleLabel: "Title:",
                     audioLabel: "Audio Stream:",
@@ -548,7 +547,8 @@
                     showDiag: "Mostrar diagnósticos",
                     showStats: "Mostrar estadísticas",
                     maxConn: "Conexiones máximas",
-                    maxQual: "Calidad máxima del stream",
+                    maxQualAll: "Calidad Máx Predeterminada",
+                    reqQual: "Solicitar Calidad",
                     qSource: "Original (Sin límite)",
                     qHigh: "Alta (Max 2.5 Mbps)",
                     qMed: "Media (Max 1.0 Mbps)",
@@ -557,11 +557,8 @@
                     eulaBtn: "Cerrar y Aceptar",
                     footerRights: "© 2026. Todos los derechos reservados.",
                     footerEula: "EULA e Información Legal",
-                    dynStatusActive: "Estado: Activo",
-                    dynBroadcasting: "Transmitiendo (Tu vista)",
-                    dynWatching: "Viendo transmisión",
-                    dynConnecting: "Conectando...",
-                    dynBroadcastingZero: "Estado: Transmitiendo (0 Espectadores)",
+                    broadcasting: "Transmitiendo",
+                    watching: "Viendo",
                     sourceLabel: "Fuente:",
                     titleLabel: "Título:",
                     audioLabel: "Audio:",
@@ -587,22 +584,18 @@
                 currentLang = lang;
                 const dict = translations[lang];
 
-                // Update text nodes
                 document.querySelectorAll('[data-i18n]').forEach(el => {
                     const key = el.getAttribute('data-i18n');
                     if (dict[key]) el.innerHTML = dict[key];
                 });
 
-                // Update placeholders
                 document.querySelectorAll('[data-i18n-ph]').forEach(el => {
                     const key = el.getAttribute('data-i18n-ph');
                     if (dict[key]) el.placeholder = dict[key];
                 });
 
-                // Update EULA content
                 eulaTextContainer.innerHTML = dict.eulaContentHtml;
 
-                // Toggle Active Button Styles
                 if (lang === 'en') {
                     langEnBtn.classList.replace('text-gray-400', 'text-white');
                     langEnBtn.classList.replace('bg-transparent', 'bg-blue-600');
@@ -615,18 +608,16 @@
                     langEnBtn.classList.replace('bg-blue-600', 'bg-transparent');
                 }
 
-                // Update dynamic UI state labels
                 handleFullscreenChange();
                 updateTrackInfoUI();
                 
-                // Keep dynamic status text fresh
+                // Update dynamic UI state labels if active
                 if (activeCalls.length > 0 || localStream) {
-                    if (document.getElementById('video-label').innerText.includes("View") || document.getElementById('video-label').innerText.includes("Transm")) {
-                        videoLabel.innerText = dict.dynBroadcasting;
+                    if (localStream) {
+                        videoLabel.innerText = dict.broadcasting;
                         updateConnectionCount();
                     } else {
-                        videoLabel.innerText = dict.dynWatching;
-                        statusText.innerText = `${lang === 'en' ? 'Status: Connected to' : 'Estado: Conectado a'} ${viewerInputId.value.trim().toUpperCase()}`;
+                        videoLabel.innerText = dict.watching;
                     }
                 }
             };
@@ -654,10 +645,9 @@
 
                     document.getElementById('info-surface').innerText = surfaceText;
                     
-                    // Fallback to "Unknown" if browser doesn't expose window title
                     let title = vTrack.label || "Unknown";
                     document.getElementById('info-title').innerText = title;
-                    document.getElementById('info-title').title = title; // Hover tooltip
+                    document.getElementById('info-title').title = title; 
                 }
                 
                 document.getElementById('info-audio').innerText = aTracks.length > 0 
@@ -685,7 +675,7 @@
                 const aTrack = localStream.getAudioTracks()[0];
                 if (aTrack) {
                     isAudioMuted = !isAudioMuted;
-                    aTrack.enabled = !isAudioMuted; // Disables mic/audio stream
+                    aTrack.enabled = !isAudioMuted;
                     bcMuteAudio.classList.toggle('muted', isAudioMuted);
                 } else {
                     log("No audio track detected to mute.", "error");
@@ -697,7 +687,7 @@
                 const vTrack = localStream.getVideoTracks()[0];
                 if (vTrack) {
                     isVideoMuted = !isVideoMuted;
-                    vTrack.enabled = !isVideoMuted; // Disables video (sends black frames)
+                    vTrack.enabled = !isVideoMuted; 
                     bcMuteVideo.classList.toggle('muted', isVideoMuted);
                 }
             });
@@ -734,11 +724,9 @@
                     localStream = newStream;
                     streamVideo.srcObject = localStream;
                     
-                    // Maintain mute states if they were toggled
                     if (newVideoTrack) newVideoTrack.enabled = !isVideoMuted;
                     if (newAudioTrack) newAudioTrack.enabled = !isAudioMuted;
 
-                    // Re-apply native browser "Stop Sharing" listener
                     if (newVideoTrack) {
                         newVideoTrack.onended = () => {
                             log("Native browser 'Stop Sharing' clicked.");
@@ -759,6 +747,8 @@
             // TAB MODE SWITCHING LOGIC
             // ==========================================
             const switchMode = (mode) => {
+                const dict = translations[currentLang];
+                
                 if (mode === 'broadcast') {
                     tabBroadcast.classList.replace('text-gray-400', 'text-white');
                     tabBroadcast.classList.replace('bg-transparent', 'bg-blue-600');
@@ -770,6 +760,11 @@
                     
                     panelBroadcast.classList.remove('hidden');
                     panelViewer.classList.add('hidden');
+                    
+                    // UI Settings Adjustments
+                    maxConnectionsWrap.classList.remove('hidden');
+                    qualityLabelText.innerText = dict.maxQualAll;
+                    
                 } else {
                     tabViewer.classList.replace('text-gray-400', 'text-white');
                     tabViewer.classList.replace('bg-transparent', 'bg-blue-600');
@@ -781,6 +776,10 @@
                     
                     panelViewer.classList.remove('hidden');
                     panelBroadcast.classList.add('hidden');
+                    
+                    // UI Settings Adjustments
+                    maxConnectionsWrap.classList.add('hidden');
+                    qualityLabelText.innerText = dict.reqQual;
                 }
             };
 
@@ -903,10 +902,9 @@
             // ==========================================
             // QUALITY & DATA SYNC CONTROL SYSTEM
             // ==========================================
-            const applyQualitySettings = async (call) => {
+            const applyQualitySettings = async (call, quality) => {
                 if (!call || !call.peerConnection) return;
                 
-                const quality = streamQualitySelect.value;
                 const senders = call.peerConnection.getSenders();
                 const videoSender = senders.find(s => s.track && s.track.kind === 'video');
                 
@@ -940,26 +938,30 @@
                 }
             };
 
-            streamQualitySelect.addEventListener('change', () => {
-                if (activeCalls.length > 0) {
-                    log(`Adjusting stream quality for ${activeCalls.length} viewer(s)...`, "info");
-                    activeCalls.forEach(call => applyQualitySettings(call));
+            streamQualitySelect.addEventListener('change', (e) => {
+                const quality = e.target.value;
+                const isBroadcaster = localStream !== null;
+                
+                if (isBroadcaster) {
+                    // Apply to everyone as a global default
+                    if (activeCalls.length > 0) {
+                        log(`Adjusting default stream quality for ${activeCalls.length} viewer(s)...`, "info");
+                        activeCalls.forEach(call => applyQualitySettings(call, quality));
+                    }
+                } else {
+                    // Viewers send request to broadcaster to adjust just their stream
+                    log(`Requesting '${quality}' quality from broadcaster...`, "info");
+                    activeDataConns.forEach(conn => {
+                        if (conn.open) conn.send({ type: 'REQUEST_QUALITY', quality: quality });
+                    });
                 }
             });
 
             const updateConnectionCount = () => {
-                const dict = translations[currentLang];
                 const count = activeCalls.length;
                 
                 document.getElementById('stat-viewers').innerText = count;
-                
-                if (count > 0) {
-                    statusText.innerText = currentLang === 'en' 
-                        ? `Status: ${count} Viewer(s) Connected` 
-                        : `Estado: ${count} Espectador(es) Conectados`;
-                } else {
-                    statusText.innerText = dict.dynBroadcastingZero;
-                }
+                viewerCountText.innerText = count;
 
                 // Broadcast live count down the data channels to all active viewers
                 activeDataConns.forEach(conn => {
@@ -1121,23 +1123,21 @@
                         videoContainer.classList.add('flex'); 
                         modeTabs.classList.add('hidden'); 
                         
-                        // Show broadcaster specific control buttons
                         broadcasterControls.classList.remove('hidden');
+                        viewerCountPill.classList.remove('hidden');
                         
-                        videoLabel.innerText = translations[currentLang].dynBroadcasting;
-                        statusText.innerText = translations[currentLang].dynBroadcastingZero;
+                        videoLabel.innerText = translations[currentLang].broadcasting;
                         
                         streamVideo.srcObject = localStream;
                         streamVideo.muted = true; 
                         streamVideo.play().catch(e => log("Broadcaster preview warning: " + e.message, "error"));
                     });
 
-                    // Manage Data Channels for viewer count syncing
+                    // Manage Data Channels for bi-directional communication
                     peer.on('connection', (conn) => {
                         const requiredPasscode = broadcasterPasscode.value.trim();
                         const providedPasscode = conn.metadata ? conn.metadata.passcode : "";
 
-                        // Reject data connections with bad passcodes
                         if (requiredPasscode && requiredPasscode !== providedPasscode) {
                             conn.close();
                             return;
@@ -1149,6 +1149,17 @@
                             conn.send({ type: 'VIEWER_COUNT', count: activeCalls.length });
                         });
                         
+                        conn.on('data', async (data) => {
+                            // Listen for specific viewers requesting bandwidth caps
+                            if (data && data.type === 'REQUEST_QUALITY') {
+                                log(`Viewer ${conn.peer} requested '${data.quality}' quality.`, "info");
+                                const targetCall = activeCalls.find(c => c.peer === conn.peer);
+                                if (targetCall) {
+                                    await applyQualitySettings(targetCall, data.quality);
+                                }
+                            }
+                        });
+
                         conn.on('close', () => {
                             activeDataConns = activeDataConns.filter(c => c !== conn);
                         });
@@ -1178,12 +1189,11 @@
                         activeCalls.push(call);
                         updateConnectionCount();
 
-                        await applyQualitySettings(call);
+                        await applyQualitySettings(call, streamQualitySelect.value);
                         startStatsPolling(call.peerConnection, 'Broadcaster');
                         
-                        // Unified disconnect handler for graceful closures
                         const handleViewerLeave = () => {
-                            if (!activeCalls.includes(call)) return; // Prevent double-firing
+                            if (!activeCalls.includes(call)) return;
                             log("Viewer disconnected.");
                             activeCalls = activeCalls.filter(c => c !== call);
                             updateConnectionCount();
@@ -1275,7 +1285,6 @@
                         }
                     });
 
-                    // Start Media connection
                     const activeCall = peer.call(fullTargetId, dummyStream, {
                         metadata: { passcode: vPasscode }
                     });
@@ -1305,11 +1314,10 @@
                         videoContainer.classList.remove('hidden');
                         videoContainer.classList.add('flex'); 
                         
-                        // Ensure broadcaster controls stay hidden for viewers
                         broadcasterControls.classList.add('hidden');
+                        viewerCountPill.classList.add('hidden');
                         
-                        videoLabel.innerText = dict.dynWatching;
-                        statusText.innerText = `${currentLang === 'en' ? 'Status: Connected to' : 'Estado: Conectado a'} ${targetId}`;
+                        videoLabel.innerText = dict.watching;
                         
                         streamVideo.srcObject = remoteStream;
                         streamVideo.muted = true; 
@@ -1325,7 +1333,7 @@
                     });
 
                     activeCall.on('close', () => {
-                        if (isDisconnecting) return; // Ignore manual local disconnects!
+                        if (isDisconnecting) return;
                         
                         if (viewerConnectionTimeout) clearTimeout(viewerConnectionTimeout);
                         if (!streamReceived) {
@@ -1356,7 +1364,7 @@
             // DISCONNECT / CLEANUP
             // ==========================================
             function disconnectAll() {
-                if (isDisconnecting) return; // Prevent double-firing
+                if (isDisconnecting) return; 
                 isDisconnecting = true;
                 
                 log("Disconnecting and cleaning up...");
@@ -1382,7 +1390,6 @@
                     }
                 } catch (e) {}
 
-                // Terminate parallel data channels
                 activeDataConns.forEach(conn => {
                     try { conn.close(); } catch(e) {}
                 });
@@ -1422,6 +1429,7 @@
                 bcMuteAudio.classList.remove('muted');
                 bcMuteVideo.classList.remove('muted');
                 broadcasterControls.classList.add('hidden');
+                viewerCountPill.classList.add('hidden');
 
                 videoContainer.classList.add('hidden');
                 videoContainer.classList.remove('flex'); 
@@ -1443,7 +1451,6 @@
                 
                 log("System reset complete.", "success");
                 
-                // Allow a brief moment for events to flush before releasing the disconnect lock
                 setTimeout(() => { isDisconnecting = false; }, 500);
             }
         });
