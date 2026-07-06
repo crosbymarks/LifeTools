@@ -646,6 +646,17 @@
                     document.getElementById('info-surface').innerText = surfaceText;
                     
                     let title = vTrack.label || "Unknown";
+                    
+                    // Sanitize ugly browser privacy UUIDs
+                    if (title.includes("web-contents-media-stream://")) {
+                        title = currentLang === 'en' ? "Selected Browser Tab" : "Pestaña Seleccionada";
+                    } else if (title.startsWith("screen:")) {
+                        const screenNum = title.split(":")[1];
+                        title = currentLang === 'en' ? `Monitor ${screenNum}` : `Monitor ${screenNum}`;
+                    } else if (title.startsWith("window:")) {
+                        title = title.split(":")[1];
+                    }
+
                     document.getElementById('info-title').innerText = title;
                     document.getElementById('info-title').title = title; 
                 }
