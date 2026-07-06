@@ -118,6 +118,18 @@
                                 <span class="text-sm font-medium text-gray-300" data-i18n="maxConn">Max Connections</span>
                                 <input type="number" id="max-connections" value="3" min="1" max="20" class="w-16 bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-center focus:outline-none focus:border-blue-500">
                             </label>
+                            <!-- Broadcast Time Limit Setting -->
+                            <label class="flex flex-col gap-1 mb-3">
+                                <span class="text-sm font-medium text-gray-300" data-i18n="autoClose">Auto-Close Broadcast</span>
+                                <select id="auto-close-time" class="bg-gray-950 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 w-full">
+                                    <option value="0" data-i18n="timeIndefinite">Indefinite (0)</option>
+                                    <option value="3600000" data-i18n="time1Hr">1 Hour</option>
+                                    <option value="14400000" data-i18n="time4Hr">4 Hours</option>
+                                    <option value="43200000" data-i18n="time12Hr">12 Hours</option>
+                                    <option value="86400000" data-i18n="time1Day">1 Day</option>
+                                    <option value="259200000" data-i18n="time3Day">3 Days</option>
+                                </select>
+                            </label>
                         </div>
                         <label class="flex flex-col gap-1">
                             <span class="text-sm font-medium text-gray-300" id="quality-label-text" data-i18n="reqQual">Request Quality</span>
@@ -157,7 +169,7 @@
         <div class="text-center mb-8 mt-6">
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 flex items-center justify-center gap-3">
                 <span data-i18n="appTitle">Live Screen Caster</span>
-                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.26</span>
+                <span class="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-1 rounded-full align-middle font-mono tracking-widest shadow-inner">v1.27</span>
             </h1>
             <p class="text-gray-400" data-i18n="appDesc">Broadcast your screen peer-to-peer directly from your browser.</p>
         </div>
@@ -338,7 +350,7 @@
                         <span class="hidden sm:inline" data-i18n="btnStats">Stats</span>
                     </button>
                     <button id="fullscreen-btn" class="p-2 sm:px-3 sm:py-2 bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
-                        <svg class="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                        <svg class="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
                         <span class="hidden sm:inline" data-i18n="btnFullscreen">Fullscreen</span>
                     </button>
                     <button id="stop-btn" class="p-2 sm:px-3 sm:py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
@@ -366,6 +378,11 @@
             let viewerConnectionTimeout = null;
             let isDisconnecting = false; 
             
+            // SECURITY STATES
+            let connectionAttempts = []; // Tracks timestamps of all attempts for rate-limiting
+            let failedAttempts = []; // Tracks timestamps of failed passwords for lockdown
+            let broadcastTimer = null; // Auto-close timer
+
             // Broadcaster States
             let isPreviewHidden = false;
             let isAudioMuted = false;
@@ -426,6 +443,7 @@
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             const maxConnectionsWrap = document.getElementById('setting-max-connections-wrap');
             const maxConnectionsInput = document.getElementById('max-connections');
+            const autoCloseSelect = document.getElementById('auto-close-time');
             const streamQualitySelect = document.getElementById('stream-quality');
             const qualityLabelText = document.getElementById('quality-label-text');
             
@@ -480,6 +498,13 @@
                     showDiag: "Show Diagnostics",
                     showStats: "Show Stream Stats",
                     maxConn: "Max Connections",
+                    autoClose: "Auto-Close Broadcast",
+                    timeIndefinite: "Indefinite (0)",
+                    time1Hr: "1 Hour",
+                    time4Hr: "4 Hours",
+                    time12Hr: "12 Hours",
+                    time1Day: "1 Day",
+                    time3Day: "3 Days",
                     maxQualAll: "Default Max Quality",
                     reqQual: "Request Quality",
                     qSource: "Source (Uncapped)",
@@ -547,6 +572,13 @@
                     showDiag: "Mostrar diagnósticos",
                     showStats: "Mostrar estadísticas",
                     maxConn: "Conexiones máximas",
+                    autoClose: "Cierre Automático",
+                    timeIndefinite: "Indefinido (0)",
+                    time1Hr: "1 Hora",
+                    time4Hr: "4 Horas",
+                    time12Hr: "12 Horas",
+                    time1Day: "1 Día",
+                    time3Day: "3 Días",
                     maxQualAll: "Calidad Máx Predeterminada",
                     reqQual: "Solicitar Calidad",
                     qSource: "Original (Sin límite)",
@@ -646,17 +678,10 @@
                     document.getElementById('info-surface').innerText = surfaceText;
                     
                     let title = vTrack.label || "Unknown";
+                    // Sanitize unreadable browser UUIDs for cleaner UI
+                    if (title.includes('web-contents-media-stream://')) title = translations[currentLang].sourceTab;
+                    if (title.startsWith('screen:')) title = translations[currentLang].sourceMonitor;
                     
-                    // Sanitize ugly browser privacy UUIDs
-                    if (title.includes("web-contents-media-stream://")) {
-                        title = currentLang === 'en' ? "Selected Browser Tab" : "Pestaña Seleccionada";
-                    } else if (title.startsWith("screen:")) {
-                        const screenNum = title.split(":")[1];
-                        title = currentLang === 'en' ? `Monitor ${screenNum}` : `Monitor ${screenNum}`;
-                    } else if (title.startsWith("window:")) {
-                        title = title.split(":")[1];
-                    }
-
                     document.getElementById('info-title').innerText = title;
                     document.getElementById('info-title').title = title; 
                 }
@@ -913,7 +938,6 @@
             // ==========================================
             // QUALITY & DATA SYNC CONTROL SYSTEM
             // ==========================================
-            // Helper function to resolve the strictest quality setting
             const resolveEffectiveQuality = (broadcasterQuality, viewerQuality) => {
                 const ranks = { 'low': 1, 'medium': 2, 'high': 3, 'source': 4 };
                 const bRank = ranks[broadcasterQuality] || 4;
@@ -962,7 +986,6 @@
                 const isBroadcaster = localStream !== null;
                 
                 if (isBroadcaster) {
-                    // Re-evaluate quality for everyone based on the new broadcaster default ceiling
                     if (activeCalls.length > 0) {
                         log(`Adjusting default stream ceiling. Re-evaluating ${activeCalls.length} viewer(s)...`, "info");
                         activeCalls.forEach(call => {
@@ -971,7 +994,6 @@
                         });
                     }
                 } else {
-                    // Viewers send request to broadcaster to adjust just their stream
                     log(`Requesting '${quality}' quality from broadcaster...`, "info");
                     activeDataConns.forEach(conn => {
                         if (conn.open) conn.send({ type: 'REQUEST_QUALITY', quality: quality });
@@ -985,7 +1007,6 @@
                 document.getElementById('stat-viewers').innerText = count;
                 viewerCountText.innerText = count;
 
-                // Broadcast live count down the data channels to all active viewers
                 activeDataConns.forEach(conn => {
                     if (conn.open) {
                         conn.send({ type: 'VIEWER_COUNT', count: count });
@@ -1153,9 +1174,20 @@
                         streamVideo.srcObject = localStream;
                         streamVideo.muted = true; 
                         streamVideo.play().catch(e => log("Broadcaster preview warning: " + e.message, "error"));
+
+                        // SECURITY: Start Auto-Close Timer
+                        const timeLimit = parseInt(autoCloseSelect.value, 10);
+                        if (timeLimit > 0) {
+                            log(`Broadcast auto-close timer set for ${timeLimit / 3600000} hours.`, "info");
+                            broadcastTimer = setTimeout(() => {
+                                log("Auto-close time limit reached. Terminating broadcast.", "success");
+                                errorBanner.classList.remove('hidden');
+                                errorText.innerText = "Broadcast time limit reached. Session closed.";
+                                disconnectAll();
+                            }, timeLimit);
+                        }
                     });
 
-                    // Manage Data Channels for bi-directional communication
                     peer.on('connection', (conn) => {
                         const requiredPasscode = broadcasterPasscode.value.trim();
                         const providedPasscode = conn.metadata ? conn.metadata.passcode : "";
@@ -1172,7 +1204,6 @@
                         });
                         
                         conn.on('data', async (data) => {
-                            // Listen for specific viewers requesting bandwidth caps
                             if (data && data.type === 'REQUEST_QUALITY') {
                                 log(`Viewer ${conn.peer} requested '${data.quality}' quality.`, "info");
                                 const targetCall = activeCalls.find(c => c.peer === conn.peer);
@@ -1194,9 +1225,32 @@
                         });
                     });
 
-                    // Manage Media Connections
                     peer.on('call', async (call) => {
                         log("Incoming connection request from a viewer...", "success");
+
+                        const now = Date.now();
+                        
+                        // SECURITY: Clean up old logs
+                        connectionAttempts = connectionAttempts.filter(t => now - t < 60000); 
+                        failedAttempts = failedAttempts.filter(t => now - t < 1800000); 
+                        
+                        // SECURITY CHECK 1: Brute-Force Rate Limiting (4 attempts per minute)
+                        if (connectionAttempts.length >= 4) {
+                            log(`RATE LIMIT: Dropping rapid connection attempt.`, "error");
+                            setTimeout(() => call.close(), 100);
+                            return;
+                        }
+                        
+                        connectionAttempts.push(now);
+
+                        // SECURITY CHECK 2: Global Lockdown (20 failed attempts in 30 mins)
+                        if (failedAttempts.length >= 20) {
+                            log("🚨 INTRUSION DETECTION: Massive brute-force attack detected. Locking down system.", "error");
+                            errorBanner.classList.remove('hidden');
+                            errorText.innerText = "SYSTEM LOCKDOWN: Suspected brute-force attack detected. Broadcast terminated.";
+                            disconnectAll();
+                            return;
+                        }
 
                         const maxConns = parseInt(maxConnectionsInput.value, 10) || 1;
                         if (activeCalls.length >= maxConns) {
@@ -1210,13 +1264,13 @@
 
                         if (requiredPasscode && requiredPasscode !== providedPasscode) {
                             log(`Rejected viewer: Incorrect passcode provided.`, "error");
+                            failedAttempts.push(now); // Log the failure
                             call.close();
                             return;
                         }
 
                         call.answer(localStream);
                         
-                        // Set default quality state for new calls
                         call.requestedQuality = 'source';
                         activeCalls.push(call);
                         updateConnectionCount();
@@ -1329,9 +1383,9 @@
 
                     viewerConnectionTimeout = setTimeout(() => {
                         if (!streamReceived) {
-                            log("Connection timed out. Incorrect passcode or broadcaster unavailable.", "error");
+                            log("Connection timed out or rate-limited.", "error");
                             errorBanner.classList.remove('hidden');
-                            errorText.innerText = "Connection failed. Did you enter the correct passcode?";
+                            errorText.innerText = "Too many attempts or bad connection. Try again in 60 seconds.";
                             disconnectAll();
                         }
                     }, 8000);
@@ -1404,6 +1458,12 @@
                 
                 log("Disconnecting and cleaning up...");
                 stopStatsPolling();
+
+                // SECURITY: Clear the auto-close timer
+                if (broadcastTimer) {
+                    clearTimeout(broadcastTimer);
+                    broadcastTimer = null;
+                }
 
                 if (viewerConnectionTimeout) {
                     clearTimeout(viewerConnectionTimeout);
