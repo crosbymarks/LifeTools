@@ -3,167 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Life Tools Resources</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Configure Tailwind for the Inter font -->
+    <title>Tools for different aspects of Daily Living</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc; /* Light gray background */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
         }
-        .card {
-            transition: all 0.3s ease;
+
+        /* Top Section */
+        .top-section {
+            background-color: #ffffff;
+            color: #1e40af;
+            text-align: center;
+            padding: 25px 20px; /* Reduced from 50px */
         }
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        .container-top { max-width: 800px; margin: 0 auto; }
+        .logo { max-width: 120px; margin-bottom: 15px; border-radius: 8px; }
+        h1 { margin: 0 0 5px 0; font-size: 2.5em; } /* Slightly reduced bottom margin */
+        .subtitle { font-size: 1.2em; font-weight: 500; opacity: 0.9; margin: 0; }
+
+        /* Bottom Section */
+        .bottom-section {
+            background-color: #ffffff;
+            color: #1e1f1f;
+            padding: 40px 20px;
+            min-height: 50vh;
         }
-        /* Style for external navigation links (No longer used, but kept for future links) */
-        .nav-link {
+        .container-bottom { max-width: 800px; margin: 0 auto; }
+        .message-container { text-align: center; margin-bottom: 40px; }
+        .message { font-size: 1.2em; margin-bottom: 10px; line-height: 1.5; font-weight: 500;}
+        .submessage { font-size: 1em; opacity: 0.8; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            text-align: left;
             text-decoration: none;
-            background-color: white;
-            color: #2563eb; /* blue-600 */
-            border: 1px solid #2563eb;
+            padding: 25px;
+            border-radius: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
-        .nav-link:hover {
-            background-color: #eff6ff; /* blue-50 */
+        .cell:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        
+        .emoji { font-size: 2.5em; margin-right: 20px; flex-shrink: 0; }
+        .cell-content { flex-grow: 1; }
+        .cell-title { font-size: 1.3em; font-weight: bold; margin-bottom: 6px; }
+        .cell-desc { font-size: 0.95em; opacity: 0.9; line-height: 1.4; margin: 0; }
+
+        /* Mobile Colors (Simple Alternating) */
+        .cell:nth-child(odd) { background-color: #f0fdf4; color: #15803d; }
+        .cell:nth-child(even) { background-color: #faf5ff; color: #7e22ce; }
+
+        /* Desktop Grid & Checkerboard Colors */
+        @media(min-width: 600px) {
+            .grid { grid-template-columns: 1fr 1fr; }
+            
+            /* Checkerboard Logic */
+            /* 1, 4, 5, 8... */
+            .cell:nth-child(4n+1), .cell:nth-child(4n+4) {
+                background-color: #f0fdf4;
+                color: #15803d;
+            }
+            /* 2, 3, 6, 7... */
+            .cell:nth-child(4n+2), .cell:nth-child(4n+3) {
+                background-color: #faf5ff;
+                color: #7e22ce;
+            }
         }
     </style>
 </head>
-<body class="min-h-screen">
+<body>
+    <script id="chooser-config" type="application/json">
+{
+  "logoUrl": "",
+  "pageTitle": "Tools for different aspects of Daily Living",
+  "pageSubtitle": "Life Style Resources and Tools",
+  "headerBgColor": "#ffffff",
+  "headerTextColor": "#1e40af",
+  "pageMessage": "Welcome to Life Style Tools",
+  "pageSubMessage": "Click on the resource you need below to navigate to the life style tools and resources.",
+  "bgColor": "#ffffff",
+  "textColor": "#1e1f1f",
+  "cell1Bg": "#f0fdf4",
+  "cell1Text": "#15803d",
+  "cell2Bg": "#faf5ff",
+  "cell2Text": "#7e22ce",
+  "cells": [
+    {
+      "emoji": "🚀",
+      "title": "Order the Pages of Booklet",
+      "description": "Go to the Booklet Layout Guide",
+      "link": "https://crosbymarks.github.io/LifeTools/bookletlayout.html",
+      "newTab": true
+    },
+    {
+      "emoji": "📤",
+      "title": "Variable Intermittent Fast Calendar",
+      "description": "Go to the calendar to see your fast",
+      "link": "https://crosbymarks.github.io/LifeTools/IntermittentFast.html",
+      "newTab": true
+    },
+    {
+      "emoji": "📄",
+      "title": "Fractions, Inches, and mm Converter",
+      "description": "Go to the Imperial to Metric Converter",
+      "link": "https://crosbymarks.github.io/LifeTools/inch2mm.html",
+      "newTab": true
+    },
+    {
+      "emoji": "📜",
+      "title": "Even a Blind Pig Gets Lucky",
+      "description": "Go to the Blind Pig Game",
+      "link": "https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html",
+      "newTab": true
+    },
+    {
+      "emoji": "📏",
+      "title": "Copy Spanish Letters and Punctuation",
+      "description": "Spanish Tools",
+      "link": "https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html",
+      "newTab": true
+    },
+    {
+      "emoji": "🕐",
+      "title": "Convert Gas Price",
+      "description": "Gas Price Gallon to Liter",
+      "link": "https://crosbymarks.github.io/LifeTools/gasconverter.html",
+      "newTab": true
+    },
+    {
+      "emoji": "📝",
+      "title": "Gas Trip Calculator",
+      "description": "Validate if it is worth the trip to a distant gas station",
+      "link": "https://crosbymarks.github.io/LifeTools/gastrip.html",
+      "newTab": true
+    },
+    {
+      "emoji": "📝",
+      "title": "Fill Me Up Calculator",
+      "description": "How much to pay for a fillup",
+      "link": "https://crosbymarks.github.io/LifeTools/filmeup.html",
+      "newTab": true
+    },
+    {
+      "emoji": "",
+      "title": "Dice Roller",
+      "description": "Roll Dice for Fun",
+      "link": "https://crosbymarks.github.io/LifeTools/diceroll.html",
+      "newTab": true
+    },
+    {
+      "emoji": "",
+      "title": "Web Screen Caster",
+      "description": "Cast or View a Screen/Window on the Lan",
+      "link": "https://crosbymarks.github.io/LifeTools/web_screen_caster.html",
+      "newTab": true
+    }
+  ]
+}
+    </script>
 
-    <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-        <!-- Header -->
-        <header class="text-center mb-10 p-6 bg-white rounded-xl shadow-lg">
-            <h1 class="text-4xl font-extrabold text-blue-800 tracking-tight sm:text-5xl">
-                Tools for Different Aspects of Daily Living
-            </h1>
-            <p class="mt-2 text-xl text-gray-600">LifeStyle Resources and Tools</p>
-        </header>
-
-        <!-- The previous Navigation Tabs block has been removed -->
-
-        <!-- Main Content Area -->
-        <main id="content-container" class="mt-8 p-6 bg-white rounded-xl shadow-lg min-h-[60vh]">
-            <div class="space-y-6">
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Welcome to Life Style Tools</h2>
-                <p class="text-lg text-gray-600 text-center max-w-2xl mx-auto">
-                    Click on the resource you need below to navigate to the life style tools and resources.
-                </p>
-
-                <!-- Cards linking to the main tools -->
-                <div class="grid md:grid-cols-2 gap-6 pt-8 max-w-4xl mx-auto">
-
-                    <!-- External Link Card: Budget Planner -->
-                    <!-- !!! IMPORTANT: Replace 'href' with your actual external Budget Plan link !!! -->
-                    <a href="bookletlayout.html" target="_blank" class="card block p-6 bg-green-50 rounded-xl border border-green-200 hover:shadow-xl hover:border-green-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-green-600">💰</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-green-700">Order The Pages of Booklet</h3>
-                                <p class="text-gray-600 mt-1">Go to the Booklet Layout Guide.</p>
-                            </div>
-                        </div>
-                    </a>
-
-                    <!-- External Link Card: Compound Interest Calculator -->
-                    <!-- !!! IMPORTANT: Replace 'href' with your actual external Calculator link !!! -->
-                    <a href="IntermittentFast.html" target="_blank" class="card block p-6 bg-purple-50 rounded-xl border border-purple-200 hover:shadow-xl hover:border-purple-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Variable Intermittent Fast Calendar</h3>
-                                <p class="text-gray-600 mt-1">Go to the external calendar to see your fast.</p>
-                            </div>
-                        </div>
-                    </a>
-
-                    <!-- Add new cards here for future pages! -->
-                    <!-- External Link Card: Compound Interest Calculator -->
-                    <!-- !!! IMPORTANT: Replace 'href' with your actual external Calculator link !!! -->
-                    <a href="inch2mm.html" target="_blank" class="card block p-6 bg-purple-50 rounded-xl border border-purple-200 hover:shadow-xl hover:border-purple-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Fractions, Inches, and mm Converter</h3>
-                                <p class="text-gray-600 mt-1">Go to the external Imperial to Metric converter.</p>
-                            </div>
-                        </div>
-                    </a>
-                    <a href="blindpig/blindpig.html" target="_blank" class="card block p-6 bg-green-50 rounded-xl border border-green-200 hover:shadow-xl hover:border-green-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Even a Blind Pig Gets Lucky</h3>
-                                <p class="text-gray-600 mt-1">Go to the external Blind Pig Game.</p>
-                            </div>
-                        </div>
-                    </a>
-                    <a href="LanguageType/spanish-tools.html" target="_blank" class="card block p-6 bg-green-50 rounded-xl border border-green-200 hover:shadow-xl hover:border-green-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Copy Spanish Letters and Punctuation</h3>
-                                <p class="text-gray-600 mt-1">Go to the external Spanish Tools.</p>
-                            </div>
-                        </div>
-                    </a>
-                    <a href="gasconverter.html" target="_blank" class="card block p-6 bg-purple-50 rounded-xl border border-purple-200 hover:shadow-xl hover:border-purple-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Convert Gas Pricesr</h3>
-                                <p class="text-gray-600 mt-1">Go to the external Gas Price Gallon to Liter converter.</p>
-                            </div>
-                        </div>
-                    </a>
-                    <a href="gastrip.html" target="_blank" class="card block p-6 bg-purple-50 rounded-xl border border-purple-200 hover:shadow-xl hover:border-purple-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Gas Trip Calculator</h3>
-                                <p class="text-gray-600 mt-1">Validate if it is worth the trip to a distant gas station.</p>
-                            </div>
-                        </div>
-                    </a>
-                    <a href="fillmeup.html" target="_blank" class="card block p-6 bg-green-50 rounded-xl border border-green-200 hover:shadow-xl hover:border-green-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Fill Me Up Calculator</h3>
-                                <p class="text-gray-600 mt-1">How much to pay for a fillup</p>
-                            </div>
-                        </div>
-                    </a>
-                    
-                    <a href="diceroll.html" target="_blank" class="card block p-6 bg-green-50 rounded-xl border border-green-200 hover:shadow-xl hover:border-green-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Dice Roller</h3>
-                                <p class="text-gray-600 mt-1">Roll Dice for Fun</p>
-                            </div>
-                        </div>
-                    </a>
-                    <a href="web_screen_caster.html" target="_blank" class="card block p-6 bg-purple-50 rounded-xl border border-purple-200 hover:shadow-xl hover:border-purple-400">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-3xl text-purple-600">📈</span>
-                            <div>
-                                <h3 class="text-xl font-semibold text-purple-700">Web Screen Caster</h3>
-                                <p class="text-gray-600 mt-1">Cast or View a Screen/Window on the LAN</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </main>
-
+    <div class="top-section">
+        <div class="container-top">
+            
+            <h1>Tools for different aspects of Daily Living</h1>
+            <div class="subtitle">Life Style Resources and Tools</div>
+        </div>
     </div>
 
-    <!-- The entire JavaScript block has been removed as it is no longer needed -->
+    <div class="bottom-section">
+        <div class="container-bottom">
+            
+                <div class="message-container">
+                    <div class="message">Welcome to Life Style Tools</div>
+                    <div class="submessage">Click on the resource you need below to navigate to the life style tools and resources.</div>
+                </div>
+            
 
+            <div class="grid">
+                
+                <a href="https://crosbymarks.github.io/LifeTools/bookletlayout.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">🚀</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Order the Pages of Booklet</div>
+                        <div class="cell-desc">Go to the Booklet Layout Guide</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/IntermittentFast.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">📤</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Variable Intermittent Fast Calendar</div>
+                        <div class="cell-desc">Go to the calendar to see your fast</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/inch2mm.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">📄</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Fractions, Inches, and mm Converter</div>
+                        <div class="cell-desc">Go to the Imperial to Metric Converter</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">📜</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Even a Blind Pig Gets Lucky</div>
+                        <div class="cell-desc">Go to the Blind Pig Game</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">📏</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Copy Spanish Letters and Punctuation</div>
+                        <div class="cell-desc">Spanish Tools</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/gasconverter.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">🕐</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Convert Gas Price</div>
+                        <div class="cell-desc">Gas Price Gallon to Liter</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/gastrip.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">📝</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Gas Trip Calculator</div>
+                        <div class="cell-desc">Validate if it is worth the trip to a distant gas station</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/filmeup.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">📝</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Fill Me Up Calculator</div>
+                        <div class="cell-desc">How much to pay for a fillup</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/diceroll.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    
+                    <div class="cell-content">
+                        <div class="cell-title">Dice Roller</div>
+                        <div class="cell-desc">Roll Dice for Fun</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/web_screen_caster.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    
+                    <div class="cell-content">
+                        <div class="cell-title">Web Screen Caster</div>
+                        <div class="cell-desc">Cast or View a Screen/Window on the Lan</div>
+                    </div>
+                </a>
+            
+            </div>
+        </div>
+    </div>
 </body>
 </html>
