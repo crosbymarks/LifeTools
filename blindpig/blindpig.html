@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blind Pig: Scene Judge 🐷</title>
+    <title>Blind Pig: Scene Judge 🐷 v1.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -337,10 +337,30 @@
             }
 
             // 7. Calculate Hu Moments of the Whole Scene
-            // This captures the distribution of mass (shapes) relative to each other.
             let moments = cv.moments(sceneMask, true);
-            let hu = new cv.Mat();
-            cv.HuMoments(moments, hu);
+            
+            // OpenCV.js doesn't export cv.HuMoments, so we calculate the 7 invariants 
+            // manually using the normalized central moments (nu)
+            let n20 = moments.nu20, n11 = moments.nu11, n02 = moments.nu02;
+            let n30 = moments.nu30, n21 = moments.nu21, n12 = moments.nu12, n03 = moments.nu03;
+
+            let h1 = n20 + n02;
+            let h2 = Math.pow(n20 - n02, 2) + 4 * Math.pow(n11, 2);
+            let h3 = Math.pow(n30 - 3 * n12, 2) + Math.pow(3 * n21 - n03, 2);
+            let h4 = Math.pow(n30 + n12, 2) + Math.pow(n21 + n03, 2);
+            
+            // Intermediate calculations to simplify h5, h6, and h7
+            let t1 = Math.pow(n30 + n12, 2);
+            let t2 = Math.pow(n21 + n03, 2);
+            
+            let h5 = (n30 - 3 * n12) * (n30 + n12) * (t1 - 3 * t2) + 
+                     (3 * n21 - n03) * (n21 + n03) * (3 * t1 - t2);
+            let h6 = (n20 - n02) * (t1 - t2) + 
+                     4 * n11 * (n30 + n12) * (n21 + n03);
+            let h7 = (3 * n21 - n03) * (n30 + n12) * (t1 - 3 * t2) - 
+                     (n30 - 3 * n12) * (n21 + n03) * (3 * t1 - t2);
+
+            let huArray = [h1, h2, h3, h4, h5, h6, h7];
 
             // Debug View
             if (debug && canvasId) {
@@ -349,20 +369,13 @@
                 cv.imshow(canvasId, sceneMask); // Show the clean mask
             }
 
-            // Store Hu Moments in a standard JS array
-            let huArray = [];
-            for(let i=0; i<7; i++) {
-                huArray.push(hu.data64F[i]);
-            }
-
-            // Cleanup
+            // Cleanup (Note: hu.delete() was removed as we no longer create a cv.Mat for hu)
             src.delete(); dst.delete(); contours.delete(); hierarchy.delete(); 
-            sceneMask.delete(); M.delete(); hu.delete();
+            sceneMask.delete(); M.delete(); 
 
             return huArray;
         }
-
-        function compareMoments(huA, huB) {
+function compareMoments(huA, huB) {
             // Log-transform for scale invariance and calculate Euclidean distance
             // Standard method for comparing Hu Moments
             let diff = 0;
