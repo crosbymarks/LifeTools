@@ -3,7 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tools for different aspects of Daily Living</title>
+    <title>Chooser Page Editor</title>
+    <style>
+        :root { --primary: #007bff; --bg: #f4f6f8; --panel: #ffffff; --border: #ddd; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); overflow: hidden; }
+        .sidebar { width: 450px; background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); background: #fafafa; position: sticky; top: 0; z-index: 10; }
+        .sidebar-content { padding: 20px; flex: 1; }
+        .preview-pane { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+        iframe { flex: 1; border: 1px solid var(--border); border-radius: 8px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h1, h2, h3, h4 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; font-size: 0.9em; margin-bottom: 5px; color: #333; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; }
+        .checkbox-group label { margin: 0; font-weight: normal; cursor: pointer; }
+        .checkbox-group input[type="checkbox"] { cursor: pointer; }
+        input[type="text"], input[type="url"], textarea { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        .color-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .color-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .color-group input[type="color"] { cursor: pointer; }
+        .cell-editor { background: #f9f9f9; border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 15px; position: relative; }
+        .cell-editor h4 { margin: 0 0 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        button { background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background 0.2s; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; padding: 4px 8px; font-size: 0.8em; }
+        button.danger:hover { background: #a71d2a; }
+        button.secondary { background: #6c757d; }
+        button.secondary:hover { background: #5a6268; }
+        .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        hr { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Chooser Editor</h2>
+            <div class="actions">
+                <button onclick="exportHTML()">Export HTML</button>
+                <input type="file" id="importFile" accept=".html" style="display: none;" onchange="importHTML(event)">
+                <button class="secondary" onclick="document.getElementById('importFile').click()">Import</button>
+                <button class="secondary" onclick="window.open('https://getemoji.com/', '_blank')" title="Find and copy emojis">Emoji 🔍</button>
+            </div>
+        </div>
+        
+        <div class="sidebar-content" id="form-container">
+            <h3>Top Section (Header)</h3>
+            <div class="form-group">
+                <label>Logo URL (Optional)</label>
+                <input type="text" id="logoUrl" oninput="updateConfig('logoUrl', this.value)" placeholder="https://example.com/logo.png">
+            </div>
+            <div class="form-group">
+                <label>Page Title</label>
+                <input type="text" id="pageTitle" oninput="updateConfig('pageTitle', this.value)" value="My Chooser">
+            </div>
+            <div class="form-group">
+                <label>Page Subtitle (Optional)</label>
+                <input type="text" id="pageSubtitle" oninput="updateConfig('pageSubtitle', this.value)">
+            </div>
+            <div class="color-row">
+                <div class="color-group"><input type="color" id="headerBgColor" oninput="updateConfig('headerBgColor', this.value)" value="#2c3e50"> <label>Top BG</label></div>
+                <div class="color-group"><input type="color" id="headerTextColor" oninput="updateConfig('headerTextColor', this.value)" value="#ffffff"> <label>Top Text</label></div>
+            </div>
+
+            <hr>
+
+            <h3>Bottom Section (Content)</h3>
+            <div class="form-group">
+                <label>Page Message</label>
+                <textarea id="pageMessage" oninput="updateConfig('pageMessage', this.value)" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Page Sub-message (Optional)</label>
+                <textarea id="pageSubMessage" oninput="updateConfig('pageSubMessage', this.value)" rows="2"></textarea>
+            </div>
+
+            <div class="color-row">
+                <div class="color-group"><input type="color" id="bgColor" oninput="updateConfig('bgColor', this.value)" value="#f4f6f8"> <label>Bottom BG</label></div>
+                <div class="color-group"><input type="color" id="textColor" oninput="updateConfig('textColor', this.value)" value="#333333"> <label>Bottom Text</label></div>
+            </div>
+            
+            <hr>
+            <h4>Checkerboard Cell Styles</h4>
+            <div class="color-row">
+                <div class="color-group"><input type="color" id="cell1Bg" oninput="updateConfig('cell1Bg', this.value)" value="#ffffff"> <label>Color A BG</label></div>
+                <div class="color-group"><input type="color" id="cell1Text" oninput="updateConfig('cell1Text', this.value)" value="#000000"> <label>Color A Text</label></div>
+                <div class="color-group"><input type="color" id="cell2Bg" oninput="updateConfig('cell2Bg', this.value)" value="#007bff"> <label>Color B BG</label></div>
+                <div class="color-group"><input type="color" id="cell2Text" oninput="updateConfig('cell2Text', this.value)" value="#ffffff"> <label>Color B Text</label></div>
+            </div>
+
+            <hr>
+            <h3>Grid Cells</h3>
+            <div id="cellsList"></div>
+            <button onclick="addCell()" style="width: 100%; margin-bottom: 30px;">+ Add Cell</button>
+        </div>
+    </div>
+
+    <div class="preview-pane">
+        <h2 style="color: #555;">Live Preview</h2>
+        <iframe id="previewFrame"></iframe>
+    </div>
+
+    <script>
+        let config = {
+            logoUrl: "",
+            pageTitle: "Welcome",
+            pageSubtitle: "Choose your destination",
+            headerBgColor: "#2c3e50",
+            headerTextColor: "#ffffff",
+            pageMessage: "Select an option below to continue.",
+            pageSubMessage: "",
+            bgColor: "#f4f6f8",
+            textColor: "#333333",
+            cell1Bg: "#ffffff",
+            cell1Text: "#000000",
+            cell2Bg: "#007bff",
+            cell2Text: "#ffffff",
+            cells: [
+                { emoji: "🚀", title: "Option 1", description: "This is the first option", link: "https://example.com", newTab: true },
+                { emoji: "⚙️", title: "Option 2", description: "This is the second option", link: "https://example.com", newTab: true },
+                { emoji: "📊", title: "Option 3", description: "This is the third option", link: "https://example.com", newTab: true },
+                { emoji: "💬", title: "Option 4", description: "This is the fourth option", link: "https://example.com", newTab: false }
+            ]
+        };
+
+        function updateConfig(key, value) {
+            config[key] = value;
+            renderPreview();
+        }
+
+        function updateCell(index, key, value) {
+            config.cells[index][key] = value;
+            renderPreview();
+        }
+
+        function addCell() {
+            config.cells.push({ emoji: "", title: "New Option", description: "", link: "#", newTab: true });
+            renderEditor();
+            renderPreview();
+        }
+
+        function removeCell(index) {
+            if(confirm("Remove this cell?")) {
+                config.cells.splice(index, 1);
+                renderEditor();
+                renderPreview();
+            }
+        }
+
+        function moveCell(index, dir) {
+            if (index + dir < 0 || index + dir >= config.cells.length) return;
+            const temp = config.cells[index];
+            config.cells[index] = config.cells[index + dir];
+            config.cells[index + dir] = temp;
+            renderEditor();
+            renderPreview();
+        }
+
+        function renderEditor() {
+            ['logoUrl', 'pageTitle', 'pageSubtitle', 'headerBgColor', 'headerTextColor', 'pageMessage', 'pageSubMessage', 'bgColor', 'textColor', 'cell1Bg', 'cell1Text', 'cell2Bg', 'cell2Text'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = config[id] || '';
+            });
+
+            const container = document.getElementById('cellsList');
+            container.innerHTML = '';
+            config.cells.forEach((cell, index) => {
+                const isNewTab = cell.newTab !== false; 
+                
+                container.innerHTML += `
+                    <div class="cell-editor">
+                        <h4>
+                            <span>Cell ${index + 1}</span>
+                            <div>
+                                <button class="secondary" style="padding: 2px 6px;" onclick="moveCell(${index}, -1)">↑</button>
+                                <button class="secondary" style="padding: 2px 6px;" onclick="moveCell(${index}, 1)">↓</button>
+                                <button class="danger" onclick="removeCell(${index})">X</button>
+                            </div>
+                        </h4>
+                        <div class="form-group">
+                            <label>Emoji (Optional)</label>
+                            <input type="text" value="${cell.emoji || ''}" oninput="updateCell(${index}, 'emoji', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" value="${cell.title || ''}" oninput="updateCell(${index}, 'title', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" value="${cell.description || ''}" oninput="updateCell(${index}, 'description', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Link URL</label>
+                            <input type="url" value="${cell.link || ''}" oninput="updateCell(${index}, 'link', this.value)">
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="newTab_${index}" ${isNewTab ? 'checked' : ''} onchange="updateCell(${index}, 'newTab', this.checked)">
+                            <label for="newTab_${index}">Open in new tab by default</label>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function generateHTML() {
+            const cellsHTML = config.cells.map(c => {
+                const isNewTab = c.newTab !== false;
+                const targetAttr = isNewTab ? 'target="_blank" rel="noopener noreferrer"' : '';
+                
+                // Icon for "Open in New Tab" (Pop-out arrow)
+                const iconNewTab = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+                
+                // Icon for "Open in Same Tab" (Arrow in box)
+                const iconSameTab = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>`;
+
+                const altIcon = isNewTab ? iconSameTab : iconNewTab;
+                const altTarget = isNewTab ? '_self' : '_blank';
+                const altTitle = isNewTab ? 'Open in same tab instead' : 'Open in new tab instead';
+
+                return `
+                <a href="${c.link}" class="cell" ${targetAttr}>
+                    <div class="alt-action" title="${altTitle}" onclick="event.preventDefault(); window.open('${c.link}', '${altTarget}');">
+                        ${altIcon}
+                    </div>
+                    ${c.emoji ? `<div class="emoji">${c.emoji}</div>` : ''}
+                    <div class="cell-content">
+                        <div class="cell-title">${c.title}</div>
+                        ${c.description ? `<div class="cell-desc">${c.description}</div>` : ''}
+                    </div>
+                </a>
+            `}).join('');
+
+            const safeJSON = JSON.stringify(config, null, 2).replace(/</g, '\\u003c');
+
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${config.pageTitle}</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -13,20 +251,20 @@
 
         /* Top Section */
         .top-section {
-            background-color: #ffffff;
-            color: #1e40af;
+            background-color: ${config.headerBgColor};
+            color: ${config.headerTextColor};
             text-align: center;
-            padding: 25px 20px; /* Reduced from 50px */
+            padding: 25px 20px;
         }
         .container-top { max-width: 800px; margin: 0 auto; }
         .logo { max-width: 120px; margin-bottom: 15px; border-radius: 8px; }
-        h1 { margin: 0 0 5px 0; font-size: 2.5em; } /* Slightly reduced bottom margin */
+        h1 { margin: 0 0 5px 0; font-size: 2.5em; }
         .subtitle { font-size: 1.2em; font-weight: 500; opacity: 0.9; margin: 0; }
 
         /* Bottom Section */
         .bottom-section {
-            background-color: #ffffff;
-            color: #1e1f1f;
+            background-color: ${config.bgColor};
+            color: ${config.textColor};
             padding: 40px 20px;
             min-height: 50vh;
         }
@@ -42,6 +280,8 @@
         }
 
         .cell {
+            box-sizing: border-box;
+            position: relative; /* Allows absolute positioning for the corner button */
             display: flex;
             align-items: center;
             text-align: left;
@@ -55,226 +295,137 @@
             transform: translateY(-5px);
             box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
+
+        /* Alt-Action Button inside Cell */
+        .alt-action {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(128, 128, 128, 0.15);
+            color: inherit;
+            transition: background 0.2s, transform 0.1s;
+            z-index: 2; /* Ensure it stays above link area */
+        }
+        .alt-action:hover {
+            background: rgba(128, 128, 128, 0.35);
+            transform: scale(1.05);
+        }
         
         .emoji { font-size: 2.5em; margin-right: 20px; flex-shrink: 0; }
-        .cell-content { flex-grow: 1; }
+        .cell-content { flex-grow: 1; padding-right: 40px; /* Space so text doesn't hit the button */ }
         .cell-title { font-size: 1.3em; font-weight: bold; margin-bottom: 6px; }
         .cell-desc { font-size: 0.95em; opacity: 0.9; line-height: 1.4; margin: 0; }
 
         /* Mobile Colors (Simple Alternating) */
-        .cell:nth-child(odd) { background-color: #f0fdf4; color: #15803d; }
-        .cell:nth-child(even) { background-color: #faf5ff; color: #7e22ce; }
+        .cell:nth-child(odd) { background-color: ${config.cell1Bg}; color: ${config.cell1Text}; }
+        .cell:nth-child(even) { background-color: ${config.cell2Bg}; color: ${config.cell2Text}; }
 
         /* Desktop Grid & Checkerboard Colors */
         @media(min-width: 600px) {
             .grid { grid-template-columns: 1fr 1fr; }
             
             /* Checkerboard Logic */
-            /* 1, 4, 5, 8... */
-            .cell:nth-child(4n+1), .cell:nth-child(4n+4) {
-                background-color: #f0fdf4;
-                color: #15803d;
-            }
-            /* 2, 3, 6, 7... */
-            .cell:nth-child(4n+2), .cell:nth-child(4n+3) {
-                background-color: #faf5ff;
-                color: #7e22ce;
-            }
+            .cell:nth-child(4n+1), .cell:nth-child(4n+4) { background-color: ${config.cell1Bg}; color: ${config.cell1Text}; }
+            .cell:nth-child(4n+2), .cell:nth-child(4n+3) { background-color: ${config.cell2Bg}; color: ${config.cell2Text}; }
         }
     </style>
 </head>
 <body>
     <script id="chooser-config" type="application/json">
-{
-  "logoUrl": "",
-  "pageTitle": "Tools for different aspects of Daily Living",
-  "pageSubtitle": "Life Style Resources and Tools",
-  "headerBgColor": "#ffffff",
-  "headerTextColor": "#1e40af",
-  "pageMessage": "Welcome to Life Style Tools",
-  "pageSubMessage": "Click on the resource you need below to navigate to the life style tools and resources.",
-  "bgColor": "#ffffff",
-  "textColor": "#1e1f1f",
-  "cell1Bg": "#f0fdf4",
-  "cell1Text": "#15803d",
-  "cell2Bg": "#faf5ff",
-  "cell2Text": "#7e22ce",
-  "cells": [
-    {
-      "emoji": "📚",
-      "title": "Order the Pages of Booklet",
-      "description": "Go to the Booklet Layout Guide",
-      "link": "https://crosbymarks.github.io/LifeTools/bookletlayout.html",
-      "newTab": false
-    },
-    {
-      "emoji": "📅",
-      "title": "Variable Intermittent Fast Calendar",
-      "description": "Go to the calendar to see your fast",
-      "link": "https://crosbymarks.github.io/LifeTools/IntermittentFast.html",
-      "newTab": false
-    },
-    {
-      "emoji": "📏",
-      "title": "Fractions, Inches, and mm Converter",
-      "description": "Go to the Imperial to Metric Converter",
-      "link": "https://crosbymarks.github.io/LifeTools/inch2mm.html",
-      "newTab": false
-    },
-    {
-      "emoji": "🐽",
-      "title": "Even a Blind Pig Gets Lucky",
-      "description": "Go to the Blind Pig Game",
-      "link": "https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html",
-      "newTab": false
-    },
-    {
-      "emoji": "🔤",
-      "title": "Copy Spanish Letters and Punctuation",
-      "description": "Spanish Tools",
-      "link": "https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html",
-      "newTab": false
-    },
-    {
-      "emoji": "⛽",
-      "title": "Convert Gas Price",
-      "description": "Gas Price Gallon to Liter",
-      "link": "https://crosbymarks.github.io/LifeTools/gasconverter.html",
-      "newTab": true
-    },
-    {
-      "emoji": "🚗🧮",
-      "title": "Gas Trip Calculator",
-      "description": "Validate if it is worth the trip to a distant gas station",
-      "link": "https://crosbymarks.github.io/LifeTools/gastrip.html",
-      "newTab": true
-    },
-    {
-      "emoji": "⛽🧮",
-      "title": "Fill Me Up Calculator",
-      "description": "How much to pay for a fillup",
-      "link": "https://crosbymarks.github.io/LifeTools/fillmeup.html",
-      "newTab": true
-    },
-    {
-      "emoji": "🎲",
-      "title": "Dice Roller",
-      "description": "Roll Dice for Fun",
-      "link": "https://crosbymarks.github.io/LifeTools/diceroll.html",
-      "newTab": true
-    },
-    {
-      "emoji": "🖥️📡",
-      "title": "Web Screen Caster",
-      "description": "Cast or View a Screen/Window on the Lan",
-      "link": "https://crosbymarks.github.io/LifeTools/web_screen_caster.html",
-      "newTab": true
-    }
-  ]
-}
-    </script>
+${safeJSON}
+    <\/script>
 
     <div class="top-section">
         <div class="container-top">
-            
-            <h1>Tools for different aspects of Daily Living</h1>
-            <div class="subtitle">Life Style Resources and Tools</div>
+            ${config.logoUrl ? `<img src="${config.logoUrl}" alt="Logo" class="logo">` : ''}
+            ${config.pageTitle ? `<h1>${config.pageTitle}</h1>` : ''}
+            ${config.pageSubtitle ? `<div class="subtitle">${config.pageSubtitle}</div>` : ''}
         </div>
     </div>
 
     <div class="bottom-section">
         <div class="container-bottom">
-            
+            ${(config.pageMessage || config.pageSubMessage) ? `
                 <div class="message-container">
-                    <div class="message">Welcome to Life Style Tools</div>
-                    <div class="submessage">Click on the resource you need below to navigate to the life style tools and resources.</div>
+                    ${config.pageMessage ? `<div class="message">${config.pageMessage}</div>` : ''}
+                    ${config.pageSubMessage ? `<div class="submessage">${config.pageSubMessage}</div>` : ''}
                 </div>
-            
+            ` : ''}
 
             <div class="grid">
-                
-                <a href="https://crosbymarks.github.io/LifeTools/bookletlayout.html" class="cell" >
-                    <div class="emoji">📚</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Order the Pages of Booklet</div>
-                        <div class="cell-desc">Go to the Booklet Layout Guide</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/IntermittentFast.html" class="cell" >
-                    <div class="emoji">📅</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Variable Intermittent Fast Calendar</div>
-                        <div class="cell-desc">Go to the calendar to see your fast</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/inch2mm.html" class="cell" >
-                    <div class="emoji">📏</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Fractions, Inches, and mm Converter</div>
-                        <div class="cell-desc">Go to the Imperial to Metric Converter</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html" class="cell" >
-                    <div class="emoji">🐽</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Even a Blind Pig Gets Lucky</div>
-                        <div class="cell-desc">Go to the Blind Pig Game</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html" class="cell" >
-                    <div class="emoji">🔤</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Copy Spanish Letters and Punctuation</div>
-                        <div class="cell-desc">Spanish Tools</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/gasconverter.html" class="cell" target="_blank" rel="noopener noreferrer">
-                    <div class="emoji">⛽</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Convert Gas Price</div>
-                        <div class="cell-desc">Gas Price Gallon to Liter</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/gastrip.html" class="cell" target="_blank" rel="noopener noreferrer">
-                    <div class="emoji">🚗🧮</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Gas Trip Calculator</div>
-                        <div class="cell-desc">Validate if it is worth the trip to a distant gas station</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/fillmeup.html" class="cell" target="_blank" rel="noopener noreferrer">
-                    <div class="emoji">⛽🧮</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Fill Me Up Calculator</div>
-                        <div class="cell-desc">How much to pay for a fillup</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/diceroll.html" class="cell" target="_blank" rel="noopener noreferrer">
-                    <div class="emoji">🎲</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Dice Roller</div>
-                        <div class="cell-desc">Roll Dice for Fun</div>
-                    </div>
-                </a>
-            
-                <a href="https://crosbymarks.github.io/LifeTools/web_screen_caster.html" class="cell" target="_blank" rel="noopener noreferrer">
-                    <div class="emoji">🖥️📡</div>
-                    <div class="cell-content">
-                        <div class="cell-title">Web Screen Caster</div>
-                        <div class="cell-desc">Cast or View a Screen/Window on the Lan</div>
-                    </div>
-                </a>
-            
+                ${cellsHTML}
             </div>
         </div>
     </div>
+</body>
+</html>`;
+        }
+
+        function renderPreview() {
+            const iframe = document.getElementById('previewFrame');
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(generateHTML());
+            doc.close();
+        }
+
+        function exportHTML() {
+            let filename = prompt("Enter file name to save as:", "chooser.html");
+            if (!filename) return; 
+            
+            if (!filename.toLowerCase().endsWith('.html')) {
+                filename += '.html';
+            }
+
+            const htmlContent = generateHTML();
+            const blob = new Blob([htmlContent], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename; 
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importHTML(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const htmlText = e.target.result;
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, "text/html");
+                const scriptTag = doc.getElementById("chooser-config");
+                
+                if (scriptTag) {
+                    try {
+                        config = { ...config, ...JSON.parse(scriptTag.textContent) };
+                        renderEditor();
+                        renderPreview();
+                        alert("Page imported successfully!");
+                    } catch (err) {
+                        alert("Found configuration data, but failed to parse it.");
+                    }
+                } else {
+                    alert("Could not find configuration data in this file. Ensure it was exported from this editor.");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ""; 
+        }
+
+        // Initial render
+        renderEditor();
+        renderPreview();
+    </script>
 </body>
 </html>
