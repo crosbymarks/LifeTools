@@ -200,6 +200,30 @@
             font-style: italic;
         }
 
+        /* Vehicle Selector */
+        .vehicle-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .vehicle-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .vehicle-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
         /* Top Toggles */
         .top-toggles {
             display: flex;
@@ -321,6 +345,18 @@
             </button>
             <div id="settingsPanel" class="settings-content">
                 <div class="field">
+                    <label id="lbl-veh-select">Select Vehicle</label>
+                    <div class="vehicle-selector">
+                        <button class="vehicle-btn active" onclick="selectVehicle(1)" id="vBtn1">Vehicle 1</button>
+                        <button class="vehicle-btn" onclick="selectVehicle(2)" id="vBtn2">Vehicle 2</button>
+                        <button class="vehicle-btn" onclick="selectVehicle(3)" id="vBtn3">Vehicle 3</button>
+                    </div>
+                </div>
+                <div class="field">
+                    <label id="lbl-veh-name">Vehicle Name</label>
+                    <input type="text" id="vehicleName" placeholder="e.g. My Car" oninput="saveVehicleName()">
+                </div>
+                <div class="field">
                     <label id="lbl-tank">Tank Capacity (Gallons)</label>
                     <input type="number" id="tankSize" value="15" min="1">
                 </div>
@@ -352,6 +388,11 @@
             slide: "Slide the gauge to see cost to full.",
             tip: "Estimate based on analog gauge; actual capacity may vary by fuel temperature and expansion room.",
             settings: "⚙️ Vehicle Settings",
+            veh_select: "Select Vehicle",
+            veh_name: "Vehicle Name",
+            v1: "Vehicle 1",
+            v2: "Vehicle 2",
+            v3: "Vehicle 3",
             tank_gal: "Tank Capacity (Gallons)",
             tank_L: "Tank Capacity (Liters)",
             langBtn: "ESPAÑOL",
@@ -386,6 +427,11 @@
             slide: "Deslice el indicador para ver el costo para llenar.",
             tip: "Estimación basada en indicador analógico; la capacidad real puede variar.",
             settings: "⚙️ Configuración del Vehículo",
+            veh_select: "Seleccionar Vehículo",
+            veh_name: "Nombre del Vehículo",
+            v1: "Vehículo 1",
+            v2: "Vehículo 2",
+            v3: "Vehículo 3",
             tank_gal: "Capacidad del Tanque (Galones)",
             tank_L: "Capacidad del Tanque (Litros)",
             langBtn: "ENGLISH",
@@ -413,22 +459,82 @@
 
     let currentLang = 'en';
     let currentUnit = 'gal';
+    let currentVehicleId = 1;
 
     // Load Persistence
     window.onload = () => {
-        const savedTank = localStorage.getItem('gas_tank_size');
-        const savedPrice = localStorage.getItem('gas_last_price');
         const savedLang = localStorage.getItem('gas_lang');
         const savedUnit = localStorage.getItem('gas_unit');
+        const savedPrice = localStorage.getItem('gas_last_price');
+        const savedVehicle = localStorage.getItem('gas_current_vehicle');
         
-        if (savedTank) tankInput.value = savedTank;
-        if (savedPrice) gasPriceInput.value = savedPrice;
         if (savedLang && translations[savedLang]) currentLang = savedLang;
         if (savedUnit === 'gal' || savedUnit === 'L') currentUnit = savedUnit;
+        if (savedVehicle) currentVehicleId = parseInt(savedVehicle);
+        if (savedPrice) gasPriceInput.value = savedPrice;
+
+        // Load vehicle-specific tank size or fallback to legacy 'gas_tank_size'
+        let savedTank = localStorage.getItem(`gas_tank_size_${currentVehicleId}`);
+        if (!savedTank && currentVehicleId === 1) savedTank = localStorage.getItem('gas_tank_size');
+        if (savedTank) tankInput.value = savedTank;
         
+        const savedName = localStorage.getItem(`gas_veh_name_${currentVehicleId}`);
+        document.getElementById('vehicleName').value = savedName || '';
+
+        // Update active vehicle button
+        [1, 2, 3].forEach(v => {
+            document.getElementById(`vBtn${v}`).classList.toggle('active', v === currentVehicleId);
+        });
+
         applyTranslations();
         updateUI();
     };
+
+    function selectVehicle(id) {
+        // Save current tank size before switching
+        localStorage.setItem(`gas_tank_size_${currentVehicleId}`, tankInput.value);
+        
+        currentVehicleId = id;
+        localStorage.setItem('gas_current_vehicle', currentVehicleId);
+        
+        // Update styling
+        [1, 2, 3].forEach(v => {
+            document.getElementById(`vBtn${v}`).classList.toggle('active', v === currentVehicleId);
+        });
+        
+        // Load new tank size
+        let savedTank = localStorage.getItem(`gas_tank_size_${currentVehicleId}`);
+        if (!savedTank && currentVehicleId === 1) savedTank = localStorage.getItem('gas_tank_size');
+        tankInput.value = savedTank ? savedTank : 15;
+        
+        const savedName = localStorage.getItem(`gas_veh_name_${currentVehicleId}`);
+        document.getElementById('vehicleName').value = savedName || '';
+
+        updateVehicleNamesUI();
+        updateUI();
+    }
+
+    function saveVehicleName() {
+        const newName = document.getElementById('vehicleName').value.trim();
+        if (newName) {
+            localStorage.setItem(`gas_veh_name_${currentVehicleId}`, newName);
+        } else {
+            localStorage.removeItem(`gas_veh_name_${currentVehicleId}`);
+        }
+        updateVehicleNamesUI();
+    }
+
+    function updateVehicleNamesUI() {
+        const t = translations[currentLang];
+        [1, 2, 3].forEach(v => {
+            const savedName = localStorage.getItem(`gas_veh_name_${v}`);
+            const displayName = savedName || t[`v${v}`];
+            document.getElementById(`vBtn${v}`).innerText = displayName;
+            if (v === currentVehicleId) {
+                document.getElementById('lbl-level').innerText = `${t.level} (${displayName})`;
+            }
+        });
+    }
 
     function toggleLanguage() {
         currentLang = currentLang === 'en' ? 'es' : 'en';
@@ -448,15 +554,18 @@
         const t = translations[currentLang];
         document.getElementById('lbl-title').innerText = t.title;
         document.getElementById('lbl-price').innerText = t[`price_${currentUnit}`];
-        document.getElementById('lbl-level').innerText = t.level;
         document.getElementById('lbl-spend').innerText = t.spend;
         document.getElementById('lbl-tip').innerText = t.tip;
         document.getElementById('lbl-settings').innerText = t.settings;
+        document.getElementById('lbl-veh-select').innerText = t.veh_select;
+        document.getElementById('lbl-veh-name').innerText = t.veh_name;
         document.getElementById('lbl-tank').innerText = t[`tank_${currentUnit}`];
         document.getElementById('lbl-helper').innerText = t.helper;
         cashInput.placeholder = t.placeholder;
         langBtn.innerText = t.langBtn;
         document.getElementById('unitBtn').innerText = t[`unitBtn_${currentUnit}`];
+
+        updateVehicleNamesUI();
     }
 
     function toggleSettings() {
@@ -541,7 +650,7 @@
         }
 
         // Save preferences
-        localStorage.setItem('gas_tank_size', tankInput.value);
+        localStorage.setItem(`gas_tank_size_${currentVehicleId}`, tankInput.value);
         localStorage.setItem('gas_last_price', gasPriceInput.value);
     }
 
