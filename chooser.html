@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tools for different aspects of Daily Living</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Top Section */
+        .top-section {
+            background-color: #ffffff;
+            color: #1e40af;
+            text-align: center;
+            padding: 25px 20px; /* Reduced from 50px */
+        }
+        .container-top { max-width: 800px; margin: 0 auto; }
+        .logo { max-width: 120px; margin-bottom: 15px; border-radius: 8px; }
+        h1 { margin: 0 0 5px 0; font-size: 2.5em; } /* Slightly reduced bottom margin */
+        .subtitle { font-size: 1.2em; font-weight: 500; opacity: 0.9; margin: 0; }
+
+        /* Bottom Section */
+        .bottom-section {
+            background-color: #ffffff;
+            color: #1e1f1f;
+            padding: 40px 20px;
+            min-height: 50vh;
+        }
+        .container-bottom { max-width: 800px; margin: 0 auto; }
+        .message-container { text-align: center; margin-bottom: 40px; }
+        .message { font-size: 1.2em; margin-bottom: 10px; line-height: 1.5; font-weight: 500;}
+        .submessage { font-size: 1em; opacity: 0.8; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            text-align: left;
+            text-decoration: none;
+            padding: 25px;
+            border-radius: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .cell:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        
+        .emoji { font-size: 2.5em; margin-right: 20px; flex-shrink: 0; }
+        .cell-content { flex-grow: 1; }
+        .cell-title { font-size: 1.3em; font-weight: bold; margin-bottom: 6px; }
+        .cell-desc { font-size: 0.95em; opacity: 0.9; line-height: 1.4; margin: 0; }
+
+        /* Mobile Colors (Simple Alternating) */
+        .cell:nth-child(odd) { background-color: #f0fdf4; color: #15803d; }
+        .cell:nth-child(even) { background-color: #faf5ff; color: #7e22ce; }
+
+        /* Desktop Grid & Checkerboard Colors */
+        @media(min-width: 600px) {
+            .grid { grid-template-columns: 1fr 1fr; }
+            
+            /* Checkerboard Logic */
+            /* 1, 4, 5, 8... */
+            .cell:nth-child(4n+1), .cell:nth-child(4n+4) {
+                background-color: #f0fdf4;
+                color: #15803d;
+            }
+            /* 2, 3, 6, 7... */
+            .cell:nth-child(4n+2), .cell:nth-child(4n+3) {
+                background-color: #faf5ff;
+                color: #7e22ce;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script id="chooser-config" type="application/json">
+{
+  "logoUrl": "",
+  "pageTitle": "Tools for different aspects of Daily Living",
+  "pageSubtitle": "Life Style Resources and Tools",
+  "headerBgColor": "#ffffff",
+  "headerTextColor": "#1e40af",
+  "pageMessage": "Welcome to Life Style Tools",
+  "pageSubMessage": "Click on the resource you need below to navigate to the life style tools and resources.",
+  "bgColor": "#ffffff",
+  "textColor": "#1e1f1f",
+  "cell1Bg": "#f0fdf4",
+  "cell1Text": "#15803d",
+  "cell2Bg": "#faf5ff",
+  "cell2Text": "#7e22ce",
+  "cells": [
+    {
+      "emoji": "📚",
+      "title": "Order the Pages of Booklet",
+      "description": "Go to the Booklet Layout Guide",
+      "link": "https://crosbymarks.github.io/LifeTools/bookletlayout.html",
+      "newTab": false
+    },
+    {
+      "emoji": "📅",
+      "title": "Variable Intermittent Fast Calendar",
+      "description": "Go to the calendar to see your fast",
+      "link": "https://crosbymarks.github.io/LifeTools/IntermittentFast.html",
+      "newTab": false
+    },
+    {
+      "emoji": "📏",
+      "title": "Fractions, Inches, and mm Converter",
+      "description": "Go to the Imperial to Metric Converter",
+      "link": "https://crosbymarks.github.io/LifeTools/inch2mm.html",
+      "newTab": false
+    },
+    {
+      "emoji": "🐽",
+      "title": "Even a Blind Pig Gets Lucky",
+      "description": "Go to the Blind Pig Game",
+      "link": "https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html",
+      "newTab": false
+    },
+    {
+      "emoji": "🔤",
+      "title": "Copy Spanish Letters and Punctuation",
+      "description": "Spanish Tools",
+      "link": "https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html",
+      "newTab": false
+    },
+    {
+      "emoji": "⛽",
+      "title": "Convert Gas Price",
+      "description": "Gas Price Gallon to Liter",
+      "link": "https://crosbymarks.github.io/LifeTools/gasconverter.html",
+      "newTab": true
+    },
+    {
+      "emoji": "🚗🧮",
+      "title": "Gas Trip Calculator",
+      "description": "Validate if it is worth the trip to a distant gas station",
+      "link": "https://crosbymarks.github.io/LifeTools/gastrip.html",
+      "newTab": true
+    },
+    {
+      "emoji": "⛽🧮",
+      "title": "Fill Me Up Calculator",
+      "description": "How much to pay for a fillup",
+      "link": "https://crosbymarks.github.io/LifeTools/fillmeup.html",
+      "newTab": true
+    },
+    {
+      "emoji": "🎲",
+      "title": "Dice Roller",
+      "description": "Roll Dice for Fun",
+      "link": "https://crosbymarks.github.io/LifeTools/diceroll.html",
+      "newTab": true
+    },
+    {
+      "emoji": "🖥️📡",
+      "title": "Web Screen Caster",
+      "description": "Cast or View a Screen/Window on the Lan",
+      "link": "https://crosbymarks.github.io/LifeTools/web_screen_caster.html",
+      "newTab": true
+    }
+  ]
+}
+    </script>
+
+    <div class="top-section">
+        <div class="container-top">
+            
+            <h1>Tools for different aspects of Daily Living</h1>
+            <div class="subtitle">Life Style Resources and Tools</div>
+        </div>
+    </div>
+
+    <div class="bottom-section">
+        <div class="container-bottom">
+            
+                <div class="message-container">
+                    <div class="message">Welcome to Life Style Tools</div>
+                    <div class="submessage">Click on the resource you need below to navigate to the life style tools and resources.</div>
+                </div>
+            
+
+            <div class="grid">
+                
+                <a href="https://crosbymarks.github.io/LifeTools/bookletlayout.html" class="cell" >
+                    <div class="emoji">📚</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Order the Pages of Booklet</div>
+                        <div class="cell-desc">Go to the Booklet Layout Guide</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/IntermittentFast.html" class="cell" >
+                    <div class="emoji">📅</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Variable Intermittent Fast Calendar</div>
+                        <div class="cell-desc">Go to the calendar to see your fast</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/inch2mm.html" class="cell" >
+                    <div class="emoji">📏</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Fractions, Inches, and mm Converter</div>
+                        <div class="cell-desc">Go to the Imperial to Metric Converter</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html" class="cell" >
+                    <div class="emoji">🐽</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Even a Blind Pig Gets Lucky</div>
+                        <div class="cell-desc">Go to the Blind Pig Game</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html" class="cell" >
+                    <div class="emoji">🔤</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Copy Spanish Letters and Punctuation</div>
+                        <div class="cell-desc">Spanish Tools</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/gasconverter.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">⛽</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Convert Gas Price</div>
+                        <div class="cell-desc">Gas Price Gallon to Liter</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/gastrip.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">🚗🧮</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Gas Trip Calculator</div>
+                        <div class="cell-desc">Validate if it is worth the trip to a distant gas station</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/fillmeup.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">⛽🧮</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Fill Me Up Calculator</div>
+                        <div class="cell-desc">How much to pay for a fillup</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/diceroll.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">🎲</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Dice Roller</div>
+                        <div class="cell-desc">Roll Dice for Fun</div>
+                    </div>
+                </a>
+            
+                <a href="https://crosbymarks.github.io/LifeTools/web_screen_caster.html" class="cell" target="_blank" rel="noopener noreferrer">
+                    <div class="emoji">🖥️📡</div>
+                    <div class="cell-content">
+                        <div class="cell-title">Web Screen Caster</div>
+                        <div class="cell-desc">Cast or View a Screen/Window on the Lan</div>
+                    </div>
+                </a>
+            
+            </div>
+        </div>
+    </div>
+</body>
+</html>
