@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blind Pig: Scene Judge 🐷 v1.1</title>
+    <title>Blind Pig: Scene Judge 🐷</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -52,15 +52,19 @@
         .snap-btn:active { background: #ccc; }
         .close-cam { background: #ef4444; color: white; width: 50px; height: 50px; font-size: 1.2rem; }
 
-        /* Results */
+        /* Results & Ties */
         .btn { background-color: var(--primary); color: white; border: none; padding: 14px 20px; font-size: 1rem; font-weight: 600; border-radius: var(--radius); cursor: pointer; width: 100%; box-shadow: 0 4px 6px rgba(255, 64, 129, 0.3); transition: transform 0.1s; }
         .btn:hover { background-color: var(--primary-dark); }
         .btn:disabled { background-color: #cbd5e1; box-shadow: none; cursor: not-allowed; }
         .btn-secondary { background-color: white; color: var(--text-main); border: 2px solid #e5e7eb; box-shadow: none; margin-top: 10px; }
         .result-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #f3f4f6; }
+        
         .winner-card { background: linear-gradient(135deg, #fff0f6 0%, #fff 100%); border: 2px solid var(--primary); }
         .winner-badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; text-transform: uppercase; margin-left: 10px; }
         
+        .tie-card { background: linear-gradient(135deg, #fffbeb 0%, #fff 100%); border: 2px solid #f59e0b; }
+        .tie-badge { background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; text-transform: uppercase; margin-left: 10px; }
+
         .lds-dual-ring { display: inline-block; width: 16px; height: 16px; margin-right: 8px; }
         .lds-dual-ring:after { content: " "; display: block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--text-muted); border-color: var(--text-muted) transparent var(--text-muted) transparent; animation: lds-dual-ring 1.2s linear infinite; }
         @keyframes lds-dual-ring { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -132,6 +136,7 @@
         <br><br>
         <button id="judgeBtn" class="btn" onclick="judgeGame()" disabled>🏆 Judge the Winner</button>
         
+        <!-- Debug Checkbox -->
         <div style="text-align:center; margin-top:15px;">
              <label style="color:#666; font-size:0.8rem; cursor:pointer;">
                 <input type="checkbox" id="debugMode"> Show what the computer sees (Debug Mode)
@@ -256,9 +261,7 @@
             setTimeout(() => {
                 const debug = document.getElementById('debugMode').checked;
                 try {
-                    // 1. Get Target Signature
                     const targetMoments = getSceneSignature(targetImg, debug, 'canvasOutput');
-                    
                     const players = document.querySelectorAll('.player-img');
                     let scores = [];
 
@@ -266,15 +269,10 @@
                         const name = img.closest('.card').querySelector('.card-header span').innerText;
                         if(img.src && img.style.display!=='none') {
                             try {
-                                // 2. Get Player Signature
-                                // We don't debug draw every player, just the target or specific one if needed
                                 const pMoments = getSceneSignature(img, false, null);
-                                
-                                // 3. Compare Signatures (Hu Moments Distance)
                                 const score = compareMoments(targetMoments, pMoments);
                                 scores.push({ name: name, score: score });
                             } catch(e) {
-                                console.error(e);
                                 scores.push({ name: name, score: 999 });
                             }
                         }
@@ -293,37 +291,27 @@
             let src = cv.imread(imgElement);
             let dst = new cv.Mat();
             
-            // 1. Resize for consistency (Normalize scale roughly)
             let dsize = new cv.Size(500, Math.round(500 * src.rows / src.cols));
             cv.resize(src, src, dsize, 0, 0, cv.INTER_AREA);
 
-            // 2. Grayscale & Blur (Heavy blur to kill carpet texture)
             cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
             cv.GaussianBlur(src, src, new cv.Size(9, 9), 0, 0, cv.BORDER_DEFAULT);
 
-            // 3. Edge Detection (Canny) - Works on Dark OR Light backgrounds
-            // Thresholds: 50/150 is standard. 
             cv.Canny(src, dst, 30, 100, 3, false);
 
-            // 4. Dilate: Thicken edges to close gaps in the shapes
             let M = cv.Mat.ones(3, 3, cv.CV_8U);
             cv.dilate(dst, dst, M, new cv.Point(-1, -1), 2, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
 
-            // 5. Find Contours
             let contours = new cv.MatVector();
             let hierarchy = new cv.Mat();
             cv.findContours(dst, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-            // 6. Draw "Scene Mask"
-            // Create a blank black canvas. Draw ALL significant contours on it.
-            // This creates a clean silhouette of the entire arrangement.
             let sceneMask = cv.Mat.zeros(dst.rows, dst.cols, cv.CV_8UC1);
             let color = new cv.Scalar(255);
-            
             let foundShapes = 0;
+            
             for (let i = 0; i < contours.size(); ++i) {
                 let area = cv.contourArea(contours.get(i));
-                // Filter noise (carpet fuzz) and container box (if entire image detected)
                 if (area > 500 && area < (src.rows * src.cols * 0.9)) {
                     cv.drawContours(sceneMask, contours, i, color, cv.FILLED);
                     foundShapes++;
@@ -331,61 +319,53 @@
             }
 
             if (foundShapes === 0) {
-                // Cleanup
                 src.delete(); dst.delete(); contours.delete(); hierarchy.delete(); sceneMask.delete(); M.delete();
                 throw new Error("No shapes found. Check lighting.");
             }
 
-            // 7. Calculate Hu Moments of the Whole Scene
             let moments = cv.moments(sceneMask, true);
-            
-            // OpenCV.js doesn't export cv.HuMoments, so we calculate the 7 invariants 
-            // manually using the normalized central moments (nu)
-            let n20 = moments.nu20, n11 = moments.nu11, n02 = moments.nu02;
-            let n30 = moments.nu30, n21 = moments.nu21, n12 = moments.nu12, n03 = moments.nu03;
+            let huArray = calculateHuMoments(moments);
 
-            let h1 = n20 + n02;
-            let h2 = Math.pow(n20 - n02, 2) + 4 * Math.pow(n11, 2);
-            let h3 = Math.pow(n30 - 3 * n12, 2) + Math.pow(3 * n21 - n03, 2);
-            let h4 = Math.pow(n30 + n12, 2) + Math.pow(n21 + n03, 2);
-            
-            // Intermediate calculations to simplify h5, h6, and h7
-            let t1 = Math.pow(n30 + n12, 2);
-            let t2 = Math.pow(n21 + n03, 2);
-            
-            let h5 = (n30 - 3 * n12) * (n30 + n12) * (t1 - 3 * t2) + 
-                     (3 * n21 - n03) * (n21 + n03) * (3 * t1 - t2);
-            let h6 = (n20 - n02) * (t1 - t2) + 
-                     4 * n11 * (n30 + n12) * (n21 + n03);
-            let h7 = (3 * n21 - n03) * (n30 + n12) * (t1 - 3 * t2) - 
-                     (n30 - 3 * n12) * (n21 + n03) * (3 * t1 - t2);
-
-            let huArray = [h1, h2, h3, h4, h5, h6, h7];
-
-            // Debug View
             if (debug && canvasId) {
                 const canvas = document.getElementById(canvasId);
                 canvas.style.display = 'block';
-                cv.imshow(canvasId, sceneMask); // Show the clean mask
+                cv.imshow(canvasId, sceneMask);
             }
 
-            // Cleanup (Note: hu.delete() was removed as we no longer create a cv.Mat for hu)
-            src.delete(); dst.delete(); contours.delete(); hierarchy.delete(); 
-            sceneMask.delete(); M.delete(); 
-
+            src.delete(); dst.delete(); contours.delete(); hierarchy.delete(); sceneMask.delete(); M.delete();
             return huArray;
         }
-function compareMoments(huA, huB) {
-            // Log-transform for scale invariance and calculate Euclidean distance
-            // Standard method for comparing Hu Moments
+
+        function calculateHuMoments(m) {
+            let nu20 = m.nu20; let nu02 = m.nu02; let nu11 = m.nu11; let nu30 = m.nu30;
+            let nu12 = m.nu12; let nu21 = m.nu21; let nu03 = m.nu03;
+
+            let t0 = nu20 + nu02;
+            let t1 = Math.pow(nu20 - nu02, 2) + 4 * Math.pow(nu11, 2);
+            let t2 = Math.pow(nu30 - 3 * nu12, 2) + Math.pow(3 * nu21 - nu03, 2);
+            let t3 = Math.pow(nu30 + nu12, 2) + Math.pow(nu21 + nu03, 2);
+            let t4 = (nu30 - 3 * nu12) * (nu30 + nu12) * (Math.pow(nu30 + nu12, 2) - 3 * Math.pow(nu21 + nu03, 2)) +
+                     (3 * nu21 - nu03) * (nu21 + nu03) * (3 * Math.pow(nu30 + nu12, 2) - Math.pow(nu21 + nu03, 2));
+            let t5 = (nu20 - nu02) * (Math.pow(nu30 + nu12, 2) - Math.pow(nu21 + nu03, 2)) +
+                     4 * nu11 * (nu30 + nu12) * (nu21 + nu03);
+            let t6 = (3 * nu21 - nu03) * (nu30 + nu12) * (Math.pow(nu30 + nu12, 2) - 3 * Math.pow(nu21 + nu03, 2)) -
+                     (nu30 - 3 * nu12) * (nu21 + nu03) * (3 * Math.pow(nu30 + nu12, 2) - Math.pow(nu21 + nu03, 2));
+
+            return [t0, t1, t2, t3, t4, t5, t6];
+        }
+
+        function compareMoments(huA, huB) {
             let diff = 0;
             for(let i=0; i<7; i++) {
-                // Use sign of the moment to avoid log of negative
-                let valA = Math.sign(huA[i]) * Math.log(Math.abs(huA[i]));
-                let valB = Math.sign(huB[i]) * Math.log(Math.abs(huB[i]));
-                if(isNaN(valA)) valA = 0;
-                if(isNaN(valB)) valB = 0;
-                diff += Math.abs(valA - valB);
+                // THE FIX: Clamp values to a tiny epsilon (1e-15) to prevent NaN/Infinity from exact zeros.
+                let absA = Math.max(Math.abs(huA[i]), 1e-15);
+                let absB = Math.max(Math.abs(huB[i]), 1e-15);
+                
+                let valA = Math.sign(huA[i]) * Math.log(absA);
+                let valB = Math.sign(huB[i]) * Math.log(absB);
+                
+                let d = Math.abs(valA - valB);
+                if (!isNaN(d)) diff += d; // Failsafe
             }
             return diff;
         }
@@ -393,14 +373,40 @@ function compareMoments(huA, huB) {
         function displayResults(scores) {
             const list = document.getElementById('resultsList');
             let html = "";
+            
+            // Check for a tie at the very top (Scores match closely)
+            let tieScore = -1;
+            if (scores.length > 1 && scores[0].score < 999 && Math.abs(scores[0].score - scores[1].score) < 0.001) {
+                tieScore = scores[0].score;
+            }
+
             scores.forEach((s, i) => {
-                const isWinner = i === 0 && s.score < 999;
-                const scoreText = s.score === 999 ? "Failed" : s.score.toFixed(4);
-                const rowClass = isWinner ? "result-item winner-card" : "result-item";
-                const badge = isWinner ? `<span class="winner-badge">Winner</span>` : "";
-                const icon = isWinner ? "👑" : `#${i+1}`;
+                const isValid = s.score < 999;
+                
+                // Determine Winner vs Tie
+                const isWinner = isValid && i === 0 && tieScore === -1;
+                const isTie = isValid && tieScore !== -1 && Math.abs(s.score - tieScore) < 0.001;
+
+                const scoreText = isValid ? s.score.toFixed(4) : "Failed";
+                let rowClass = "result-item";
+                let badge = "";
+                let icon = `#${i+1}`;
+
+                if (isWinner) {
+                    rowClass += " winner-card";
+                    badge = `<span class="winner-badge">Winner</span>`;
+                    icon = "🏆";
+                } else if (isTie) {
+                    rowClass += " tie-card";
+                    badge = `<span class="tie-badge">Tie</span>`;
+                    icon = "🤝";
+                }
+
                 html += `<div class="${rowClass}"><span class="result-rank">${icon}</span><span class="result-name">${s.name} ${badge}</span><span class="result-score">${scoreText}</span></div>`;
             });
+            
+            if(scores.length === 0) html = "<div style='padding:15px; text-align:center;'>No players found!</div>";
+            
             list.innerHTML = html;
             document.getElementById('resultsArea').style.display = 'block';
             document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
