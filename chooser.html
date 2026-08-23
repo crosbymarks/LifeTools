@@ -103,6 +103,21 @@
             </div>
 
             <hr>
+            <h3>Footer Section</h3>
+            <div class="form-group">
+                <label>Creator</label>
+                <input type="text" id="footerCreator" oninput="updateConfig('footerCreator', this.value)">
+            </div>
+            <div class="form-group">
+                <label>Version</label>
+                <input type="text" id="footerVersion" oninput="updateConfig('footerVersion', this.value)">
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="text" id="footerDate" oninput="updateConfig('footerDate', this.value)" placeholder="e.g., 2026">
+            </div>
+
+            <hr>
             <h3>Grid Cells</h3>
             <div id="cellsList"></div>
             <button onclick="addCell()" style="width: 100%; margin-bottom: 30px;">+ Add Cell</button>
@@ -144,6 +159,9 @@
             cell1Text: "#000000",
             cell2Bg: "#007bff",
             cell2Text: "#ffffff",
+            footerCreator: "Crosby Marks",
+            footerVersion: "1.0",
+            footerDate: new Date().getFullYear().toString(),
             cells: [
                 { emoji: "🚀", title: "Option 1", description: "This is the first option", link: "https://example.com", newTab: true },
                 { emoji: "⚙️", title: "Option 2", description: "This is the second option", link: "https://example.com", newTab: true },
@@ -186,7 +204,7 @@
         }
 
         function renderEditor() {
-            ['logoUrl', 'pageTitle', 'pageSubtitle', 'headerBgColor', 'headerTextColor', 'pageMessage', 'pageSubMessage', 'bgColor', 'textColor', 'cell1Bg', 'cell1Text', 'cell2Bg', 'cell2Text'].forEach(id => {
+            ['logoUrl', 'pageTitle', 'pageSubtitle', 'headerBgColor', 'headerTextColor', 'pageMessage', 'pageSubMessage', 'bgColor', 'textColor', 'cell1Bg', 'cell1Text', 'cell2Bg', 'cell2Text', 'footerCreator', 'footerVersion', 'footerDate'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = config[id] || '';
             });
@@ -260,8 +278,18 @@
             `}).join('');
 
             const safeJSON = JSON.stringify(config, null, 2).replace(/</g, '\\u003c');
+            
+            const footerParts = [];
+            if (config.footerCreator) footerParts.push(`Created by ${config.footerCreator}`);
+            if (config.footerVersion) footerParts.push(`Version ${config.footerVersion}`);
+            if (config.footerDate) footerParts.push(`${config.footerDate}`);
+            
+            const footerHTML = footerParts.length > 0 
+                ? `<div class="page-footer">${footerParts.join(' | ')}</div>` 
+                : '';
 
             return `<!DOCTYPE html>
+<!-- Created by Crosby Marks -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -292,8 +320,10 @@
             color: ${config.textColor};
             padding: 40px 20px;
             min-height: 50vh;
+            display: flex;
+            flex-direction: column;
         }
-        .container-bottom { max-width: 800px; margin: 0 auto; }
+        .container-bottom { max-width: 800px; margin: 0 auto; flex: 1; width: 100%; display: flex; flex-direction: column; }
         .message-container { text-align: center; margin-bottom: 40px; }
         .message { font-size: 1.2em; margin-bottom: 10px; line-height: 1.5; font-weight: 500;}
         .submessage { font-size: 1em; opacity: 0.8; }
@@ -302,11 +332,12 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 20px;
+            margin-bottom: 40px;
         }
 
         .cell {
             box-sizing: border-box;
-            position: relative; /* Allows absolute positioning for the corner button */
+            position: relative; 
             display: flex;
             align-items: center;
             text-align: left;
@@ -335,7 +366,7 @@
             background: rgba(128, 128, 128, 0.15);
             color: inherit;
             transition: background 0.2s, transform 0.1s;
-            z-index: 2; /* Ensure it stays above link area */
+            z-index: 2; 
         }
         .alt-action:hover {
             background: rgba(128, 128, 128, 0.35);
@@ -343,7 +374,7 @@
         }
         
         .emoji { font-size: 2.5em; margin-right: 20px; flex-shrink: 0; }
-        .cell-content { flex-grow: 1; padding-right: 40px; /* Space so text doesn't hit the button */ }
+        .cell-content { flex-grow: 1; padding-right: 40px; }
         .cell-title { font-size: 1.3em; font-weight: bold; margin-bottom: 6px; }
         .cell-desc { font-size: 0.95em; opacity: 0.9; line-height: 1.4; margin: 0; }
 
@@ -358,6 +389,16 @@
             /* Checkerboard Logic */
             .cell:nth-child(4n+1), .cell:nth-child(4n+4) { background-color: ${config.cell1Bg}; color: ${config.cell1Text}; }
             .cell:nth-child(4n+2), .cell:nth-child(4n+3) { background-color: ${config.cell2Bg}; color: ${config.cell2Text}; }
+        }
+
+        /* Footer */
+        .page-footer {
+            margin-top: auto; /* Pushes footer to the bottom of the container */
+            padding-top: 30px;
+            text-align: center;
+            font-size: 0.85em;
+            opacity: 0.6;
+            border-top: 1px solid rgba(128, 128, 128, 0.2);
         }
     </style>
 </head>
@@ -386,6 +427,8 @@ ${safeJSON}
             <div class="grid">
                 ${cellsHTML}
             </div>
+
+            ${footerHTML}
         </div>
     </div>
 </body>
