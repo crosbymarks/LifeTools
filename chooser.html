@@ -114,7 +114,7 @@
             </div>
             <div class="form-group">
                 <label>Date</label>
-                <input type="text" id="footerDate" oninput="updateConfig('footerDate', this.value)" placeholder="e.g., 2026">
+                <input type="text" id="footerDate" oninput="updateConfig('footerDate', this.value)" placeholder="e.g., 2026-08-23">
             </div>
 
             <hr>
@@ -145,6 +145,13 @@
     </div>
 
     <script>
+        // Generate today's date in YYYY-mm-dd format
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${yyyy}-${mm}-${dd}`;
+
         let config = {
             logoUrl: "",
             pageTitle: "Welcome",
@@ -161,7 +168,7 @@
             cell2Text: "#ffffff",
             footerCreator: "Crosby Marks",
             footerVersion: "1.0",
-            footerDate: new Date().getFullYear().toString(),
+            footerDate: formattedDate,
             cells: [
                 { emoji: "🚀", title: "Option 1", description: "This is the first option", link: "https://example.com", newTab: true },
                 { emoji: "⚙️", title: "Option 2", description: "This is the second option", link: "https://example.com", newTab: true },
@@ -280,9 +287,10 @@
             const safeJSON = JSON.stringify(config, null, 2).replace(/</g, '\\u003c');
             
             const footerParts = [];
-            if (config.footerCreator) footerParts.push(`Created by ${config.footerCreator}`);
-            if (config.footerVersion) footerParts.push(`Version ${config.footerVersion}`);
-            if (config.footerDate) footerParts.push(`${config.footerDate}`);
+            // Changed to just output the raw values
+            if (config.footerCreator) footerParts.push(config.footerCreator);
+            if (config.footerVersion) footerParts.push(config.footerVersion);
+            if (config.footerDate) footerParts.push(config.footerDate);
             
             const footerHTML = footerParts.length > 0 
                 ? `<div class="page-footer">${footerParts.join(' | ')}</div>` 
@@ -393,7 +401,7 @@
 
         /* Footer */
         .page-footer {
-            margin-top: auto; /* Pushes footer to the bottom of the container */
+            margin-top: auto;
             padding-top: 30px;
             text-align: center;
             font-size: 0.85em;
@@ -469,7 +477,6 @@ ${safeJSON}
             output.value = generateHTML();
             document.getElementById('htmlModal').classList.add('active');
             
-            // Reset copy button text if it was previously clicked
             document.getElementById('copyBtn').innerText = "Copy to Clipboard";
         }
         
