@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grade Chaser v1.05</title>
+<style>
+  :root {
+    --bg-color: #0b0f19;
+    --card-bg: #1e293b;
+    --accent: #38bdf8;
+    --accent-hover: #0ea5e9;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --energy: #a855f7;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+  body { background: var(--bg-color); color: var(--text); display: flex; justify-content: center; padding: 20px; }
+  .game-container { width: 100%; max-width: 860px; background: var(--card-bg); border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 16px; }
+
+  /* Top Bar */
+  .top-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .badges-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .status-tag { font-size: 0.8rem; font-weight: 700; color: var(--accent); background: #0f172a; padding: 5px 12px; border-radius: 6px; border: 1px solid #334155; }
+  .btn-nav { background: #0f172a; border: 1px solid #475569; color: #cbd5e1; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+  .btn-nav:hover { background: #334155; border-color: var(--accent); color: #fff; }
+  .btn-exit:hover { background: var(--danger) !important; border-color: #b91c1c !important; color: #fff !important; }
+
+  /* Dashboard */
+  .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: #0f172a; padding: 14px; border-radius: 12px; border: 1px solid #334155; }
+  .stat-box { text-align: center; }
+  .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: bold; }
+  .stat-val { font-size: 1.3rem; font-weight: 800; margin-top: 4px; }
+  
+  .bar-container { width: 100%; background: #334155; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .bar-fill { height: 100%; width: 100%; transition: width 0.3s ease; }
+  .energy-fill { background: var(--energy); }
+
+  /* Stacked Two-Line Grade Breakdown */
+  .grade-breakdown-box { display: flex; flex-direction: column; gap: 3px; font-size: 0.72rem; color: var(--muted); font-weight: 600; margin-top: 5px; line-height: 1.25; }
+  .grade-breakdown-box div { white-space: nowrap; }
+
+  /* Sports Banner */
+  .sports-banner { display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; }
+  .sports-warning { background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); color: #fde047; }
+  .sports-cut { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; }
+
+  /* Warnings */
+  .warning-box { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: #fca5a5; display: none; }
+  .event-banner { background: #334155; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--warning); display: flex; align-items: center; gap: 8px; }
+
+  /* Action Card Backgrounds */
+  .event-card { border-radius: 12px; padding: 20px; border: 1px solid #334155; transition: background 0.3s ease, border-color 0.3s ease; }
+  .event-card.formative-mode { background: linear-gradient(180deg, rgba(14, 116, 144, 0.18) 0%, #1e293b 100%); border-color: rgba(56, 189, 248, 0.4); }
+  .event-card.summative-mode { background: linear-gradient(180deg, rgba(190, 18, 60, 0.22) 0%, #1e293b 100%); border-color: rgba(244, 63, 94, 0.5); }
+
+  .event-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
+  .badge-formative { background: #0369a1; color: #e0f2fe; }
+  .badge-summative { background: #b91c1c; color: #fee2e2; }
+
+  /* Choices */
+  .choices-grid { display: grid; gap: 10px; margin-top: 14px; }
+  .btn-choice { background: #1e293b; border: 1px solid #475569; color: var(--text); padding: 12px 16px; border-radius: 8px; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+  .btn-choice:hover:not(:disabled) { background: #334155; border-color: var(--accent); transform: translateX(4px); }
+  .btn-choice:disabled { opacity: 0.4; cursor: not-allowed; }
+  .danger-choice:hover:not(:disabled) { border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.15) !important; }
+
+  /* Campus Store */
+  .shop-panel { display: flex; gap: 10px; flex-wrap: wrap; background: #0f172a; padding: 12px; border-radius: 10px; align-items: center; justify-content: space-between; }
+  .shop-btn { background: #334155; border: 1px solid #475569; color: var(--text); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+  .shop-btn:hover:not(:disabled) { background: var(--accent); color: #000; }
+  .shop-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Analytics View Switcher */
+  .view-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+  .tab-buttons { display: flex; gap: 6px; }
+  .tab-btn { background: #1e293b; border: 1px solid #475569; color: var(--muted); padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+  .tab-btn.active { background: var(--accent); color: #000; font-weight: bold; border-color: var(--accent); }
+
+  .view-pane { background: #0f172a; border-radius: 10px; padding: 14px; border: 1px solid #334155; min-height: 200px; position: relative; }
+  #canvas-container { position: relative; width: 100%; height: 200px; }
+  canvas { width: 100% !important; height: 100% !important; display: block; }
+  
+  .history-log { max-height: 180px; overflow-y: auto; font-size: 0.8rem; display: flex; flex-direction: column-reverse; gap: 4px; }
+  .log-item { color: var(--muted); padding: 2px 0; }
+
+  /* Sandbox */
+  .sandbox-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #475569; border-radius: 10px; padding: 14px; margin-top: 14px; }
+  .chips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 8px; margin-top: 10px; max-height: 180px; overflow-y: auto; padding-right: 4px; }
+  .grade-chip { background: #1e293b; border: 1px solid #475569; padding: 6px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; flex-direction: column; gap: 2px; transition: 0.2s; user-select: none; }
+  .grade-chip:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .grade-chip.is-zero { border-color: #991b1b; background: rgba(239, 68, 68, 0.15); }
+  .grade-chip.is-modified { border: 2px solid var(--warning); background: rgba(245, 158, 11, 0.25); box-shadow: 0 0 6px rgba(245, 158, 11, 0.3); }
+
+  .btn-reset-sandbox { background: #334155; border: 1px solid var(--warning); color: var(--warning); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+  .btn-reset-sandbox:hover { background: var(--warning); color: #000; }
+
+  /* Setup Screen Elements */
+  .setup-section { margin-bottom: 18px; }
+  .setup-title { font-size: 0.9rem; font-weight: 700; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .sport-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+  .sport-btn { background: #0f172a; border: 1.5px solid #334155; color: var(--text); padding: 8px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; text-align: center; transition: 0.2s; }
+  .sport-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .sport-btn.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.15); font-weight: 700; color: var(--accent); }
+
+  .mode-select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mode-btn { background: #0f172a; border: 1.5px solid #334155; color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; text-align: left; transition: 0.2s; }
+  .mode-btn:hover { border-color: var(--accent); }
+  .mode-btn.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.15); font-weight: 700; }
+  .mode-btn small { display: block; font-size: 0.72rem; color: var(--muted); font-weight: normal; margin-top: 3px; }
+
+  .archetype-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .archetype-card { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 16px; cursor: pointer; transition: 0.2s; text-align: left; }
+  .archetype-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .archetype-name { font-size: 1.05rem; font-weight: bold; color: var(--accent); margin-bottom: 6px; }
+  .archetype-desc { font-size: 0.8rem; color: #cbd5e1; line-height: 1.4; }
+
+  /* Settings Modal Components */
+  .settings-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
+  .settings-group { background: #0f172a; border-radius: 8px; padding: 12px; border: 1px solid #334155; }
+  .settings-group-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .group-summative { border-top: 3px solid #e11d48; }
+  .group-formative { border-top: 3px solid #0284c7; }
+  .setting-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  .setting-field label { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+  .setting-field input { background: #1e293b; border: 1px solid #475569; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; }
+  .setting-field input:focus { outline: none; border-color: var(--accent); }
+
+  /* Modals */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-box { background: #1e293b; border: 2px solid var(--accent); border-radius: 14px; max-width: 500px; width: 100%; padding: 22px; text-align: left; box-shadow: 0 10px 40px rgba(0,0,0,0.85); }
+  .modal-box h3 { color: var(--accent); margin-bottom: 10px; }
+  .modal-box p { font-size: 0.85rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 12px; }
+  .modal-box ul { font-size: 0.85rem; color: #cbd5e1; padding-left: 18px; margin-bottom: 16px; }
+  .modal-box li { margin-bottom: 6px; }
+
+  .wheel-box { border-color: var(--warning); text-align: center; display: flex; flex-direction: column; align-items: center; max-width: 420px; }
+  .wheel-outer { position: relative; width: 260px; height: 260px; margin: 12px 0 8px 0; display: flex; justify-content: center; align-items: center; }
+  #wheelCanvas { width: 260px !important; height: 260px !important; border-radius: 50%; box-shadow: 0 0 20px rgba(0,0,0,0.6); }
+  .wheel-ticker { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid #f8fafc; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 5; transform-origin: 50% 0%; transition: transform 0.05s ease; }
+  .wheel-display { font-size: 0.95rem; font-weight: bold; min-height: 52px; width: 100%; display: flex; align-items: center; justify-content: center; background: #0f172a; border-radius: 8px; margin: 8px 0 12px 0; border: 1px solid #334155; padding: 8px 12px; line-height: 1.3; }
+
+  .footer-credit { text-align: center; font-size: 0.75rem; color: var(--muted); padding-top: 8px; border-top: 1px solid #1e293b; }
+</style>
+</head>
+<body>
+
+<div class="game-container">
+  <div class="top-header">
+    <div>
+      <h2>🎒 Grade Chaser</h2>
+      <p style="font-size: 0.85rem; color: var(--muted);" id="header-weights-desc">Weights: <b>55% Summative</b> | <b>45% Formative</b></p>
+    </div>
+    <div class="badges-row">
+      <span class="status-tag" id="disp-mode">Mode: Standard</span>
+      <span class="status-tag" id="disp-sport">Sport: None</span>
+      <span class="status-tag" id="disp-archetype">Class: Unchosen</span>
+      <button class="btn-nav" onclick="openSettings()">⚙️ Settings</button>
+      <button class="btn-nav" onclick="openAbout()">ℹ️ About</button>
+      <button class="btn-nav btn-exit" id="btn-exit" onclick="confirmExit()">⎋ Exit to Setup</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <div class="stat-box">
+      <div class="stat-label">Week</div>
+      <div class="stat-val" id="disp-week">1 / 18</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Energy</div>
+      <div class="stat-val" id="disp-energy" style="color: var(--energy)">100%</div>
+      <div class="bar-container"><div class="bar-fill energy-fill" id="energy-bar"></div></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Brain Coins</div>
+      <div class="stat-val" id="disp-coins" style="color: var(--warning)">🪙 20</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Overall Grade</div>
+      <div class="stat-val" id="disp-overall" style="color: var(--success)">100%</div>
+      <div class="grade-breakdown-box">
+        <div id="disp-summative-breakdown">Summative: --%</div>
+        <div id="disp-formative-breakdown">Formative: --%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sports-banner" id="sports-status-banner"></div>
+
+  <div class="warning-box" id="warning-box"></div>
+
+  <div class="shop-panel" id="shop-panel" style="display: none;">
+    <span style="font-size: 0.85rem; font-weight: bold; color: var(--muted);">Campus Store:</span>
+    <button class="shop-btn" id="buy-coffee" onclick="buyItem('coffee', 30)">☕ Energy Drink (+40 Energy) - 30 🪙</button>
+    <button class="shop-btn" id="buy-cheat" onclick="buyItem('cheat', 50)">📖 Study Guide (+15% Summative) - 50 🪙</button>
+    <span style="font-size: 0.8rem; color: var(--accent);" id="inventory-disp">No Boosts Active</span>
+  </div>
+
+  <div class="event-card formative-mode" id="event-card">
+    <div id="setup-screen">
+      <div class="setup-section">
+        <div class="setup-title">1. Choose Pace & Schedule</div>
+        <div class="mode-select-grid">
+          <button class="mode-btn selected" id="mode-std-btn" onclick="pickMode('standard')">
+            ⏱️ Standard Mode
+            <small>2 Formative tasks per regular week + 3 Summative exams (~33 tasks total).</small>
+          </button>
+          <button class="mode-btn" id="mode-quick-btn" onclick="pickMode('quick')">
+            ⚡ Quick Mode (Fast Pace)
+            <small>Exactly 1 task or exam per week (18 total assessments over 18 weeks).</small>
+          </button>
+        </div>
+      </div>
+
+      <div class="setup-section">
+        <div class="setup-title">2. Select Your Varsity Sport (Optional)</div>
+        <div class="sport-select-grid">
+          <button class="sport-btn selected" onclick="pickSport('none', '📚 None (Non-Athlete)')">📚 None (Non-Athlete)</button>
+          <button class="sport-btn" onclick="pickSport('football', '🏈 Football')">🏈 Football</button>
+          <button class="sport-btn" onclick="pickSport('soccer', '⚽ Soccer')">⚽ Soccer</button>
+          <button class="sport-btn" onclick="pickSport('volleyball', '🏐 Volleyball')">🏐 Volleyball</button>
+          <button class="sport-btn" onclick="pickSport('cheer', '📣 Cheer')">📣 Cheer</button>
+          <button class="sport-btn" onclick="pickSport('dance', '🩰 Dance')">🩰 Dance</button>
+          <button class="sport-btn" onclick="pickSport('xc', '🏃 Cross Country')">🏃 Cross Country</button>
+        </div>
+      </div>
+
+      <div class="setup-section">
+        <div class="setup-title">3. Select Archetype to Start Semester</div>
+        <div class="archetype-grid">
+          <div class="archetype-card" onclick="selectArchetype('procrastinator')">
+            <div class="archetype-name">⏳ The Procrastinator</div>
+            <div class="archetype-desc">
+              <b>Perk:</b> Caffeine rushes give +60 Energy.<br>
+              <b>Curse:</b> 15% chance to forget an assignment deadline and drop to excuses.
+            </div>
+          </div>
+
+          <div class="archetype-card" onclick="selectArchetype('gymrat')">
+            <div class="archetype-name">🏋️ The Gym Rat</div>
+            <div class="archetype-desc">
+              <b>Perk:</b> High stamina pool (130 Max Energy).<br>
+              <b>Curse:</b> Early morning practices drain -10 Energy every Monday.
+            </div>
+          </div>
+
+          <div class="archetype-card" onclick="selectArchetype('academic')">
+            <div class="archetype-name">🧠 The Academic Weapon</div>
+            <div class="archetype-desc">
+              <b>Perk:</b> Permanent +5% curve on all Summative exams.<br>
+              <b>Curse:</b> Exhaustion panic! If Energy &lt; 30%, activities cost double energy.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameplay-area" style="display: none;">
+      <div id="random-event-box" style="margin-bottom: 12px; display: none;" class="event-banner"></div>
+      <div class="event-header">
+        <h3 id="event-title">Week 1: Practice Homework</h3>
+        <span class="badge badge-formative" id="event-badge">Formative</span>
+      </div>
+      <p id="event-desc" style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.4;"></p>
+      <div class="choices-grid" id="choices-grid"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="view-controls">
+      <span class="stat-label" id="analytics-header">Performance Analytics:</span>
+      <div class="tab-buttons">
+        <button class="tab-btn active" id="tab-graph" onclick="switchView('graph')">📊 Grade Chart</button>
+        <button class="tab-btn" id="tab-log" onclick="switchView('log')">📜 Audit Log</button>
+      </div>
+    </div>
+    
+    <div class="view-pane" style="margin-top: 8px;">
+      <div id="graph-view">
+        <div id="canvas-container">
+          <canvas id="gradeCanvas"></canvas>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 12px; font-size: 0.75rem; color: var(--muted); margin-top: 8px; flex-wrap: wrap;">
+          <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; background:#0284c7; border-radius:2px;"></span> Formative</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; background:#e11d48; border-radius:2px;"></span> Summative</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; background:#f59e0b; border-radius:2px;"></span> Yellow-Orange (Modified / What-If)</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:4px; background:#991b1b; border-radius:1px;"></span> Min / 0% Solid Marker</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:12px; height:2px; background:#22c55e;"></span> Cumulative Average</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:12px; height:2px; background:#f59e0b; border-top: 1px dashed #f59e0b;"></span> 70% Eligibility Line</span>
+        </div>
+      </div>
+      <div id="log-view" style="display: none;">
+        <div class="history-log" id="history-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-credit">
+    Grade Chaser © Crosby Marks 2026 all rights reserved - Version 1.05
+  </div>
+</div>
+
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal-box">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="margin-bottom: 0;">⚙️ Gradebook Settings</h3>
+      <button class="btn-nav" style="padding: 2px 8px; font-size: 0.72rem;" onclick="resetRuleDefaults()">Defaults</button>
+    </div>
+
+    <div class="settings-columns">
+      <div class="settings-group group-summative">
+        <div class="settings-group-title" style="color: #f43f5e;">Summative Rules</div>
+        <div class="setting-field">
+          <label>Category Weight (%)</label>
+          <input type="number" id="rule-s-weight" value="55" min="10" max="90" onchange="syncWeights('summative')">
+        </div>
+        <div class="setting-field">
+          <label>Min Score (%)</label>
+          <input type="number" id="rule-s-min" value="0" min="0" max="60">
+        </div>
+        <div class="setting-field">
+          <label>Mid Score (%)</label>
+          <input type="number" id="rule-s-mid" value="75" min="50" max="85">
+        </div>
+        <div class="setting-field">
+          <label>Max Score (%)</label>
+          <input type="number" id="rule-s-max" value="95" min="80" max="100">
+        </div>
+      </div>
+
+      <div class="settings-group group-formative">
+        <div class="settings-group-title" style="color: #38bdf8;">Formative Rules</div>
+        <div class="setting-field">
+          <label>Category Weight (%)</label>
+          <input type="number" id="rule-f-weight" value="45" min="10" max="90" onchange="syncWeights('formative')">
+        </div>
+        <div class="setting-field">
+          <label>Min Score (%)</label>
+          <input type="number" id="rule-f-min" value="0" min="0" max="60">
+        </div>
+        <div class="setting-field">
+          <label>Mid Score (%)</label>
+          <input type="number" id="rule-f-mid" value="70" min="50" max="85">
+        </div>
+        <div class="setting-field">
+          <label>Max Score (%)</label>
+          <input type="number" id="rule-f-max" value="100" min="80" max="100">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group" style="margin-bottom: 14px;">
+      <div class="setting-field" style="margin-bottom: 0;">
+        <label>Make-Up Work Maximum Score (%)</label>
+        <input type="number" id="rule-makeup-max" value="70" min="50" max="100">
+      </div>
+    </div>
+
+    <button class="btn-choice" style="justify-content: center; font-weight: bold; background: var(--accent); color: #000; width: 100%;" onclick="saveSettings()">Save & Close</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="about-modal">
+  <div class="modal-box">
+    <h3>ℹ️ About Grade Chaser</h3>
+    <p>
+      <b>Grade Chaser</b> is an interactive educational RPG simulation designed to teach students the mathematical consequences of missed assignments, grade weights, and academic standing.
+    </p>
+    <ul>
+      <li><b>The Zero Trap:</b> Mathematically demonstrates how taking a single zero causes immense cumulative grade drag compared to submitting partial work.</li>
+      <li><b>Custom Rules Engine:</b> Customize category weights (e.g. 55/45), formative/summative grade brackets, and make-up caps via the Settings menu.</li>
+      <li><b>Pace Modes:</b> Choose Standard Mode (2 formatives/week) or Quick Mode (1 grade/week).</li>
+      <li><b>No-Pass, No-Play:</b> Simulates varsity athletic eligibility rules with realistic probation periods and benched game days.</li>
+      <li><b>Sandbox Simulator:</b> Interactive post-game sandbox lets you directly click graph bars to test "What If" scenarios and see grade changes instantly.</li>
+    </ul>
+    <p style="font-size: 0.78rem; color: var(--muted); border-top: 1px solid #334155; padding-top: 10px;">
+      Grade Chaser © Crosby Marks 2026 all rights reserved - Version 1.05
+    </p>
+    <button class="btn-choice" style="justify-content: center; font-weight: bold; background: var(--accent); color: #000; width: 100%; margin-top: 10px;" onclick="closeAbout()">Close</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="wheel-modal">
+  <div class="modal-box wheel-box">
+    <h3 style="color: var(--warning);">🎡 The Wheel of Excuses</h3>
+    <p style="font-size: 0.8rem; color: var(--muted); margin-top: 4px; text-align: center;">Cost: 5 Energy. (70% Chance for Make-Up Work!)</p>
+    
+    <div class="wheel-outer">
+      <div class="wheel-ticker" id="wheel-ticker"></div>
+      <canvas id="wheelCanvas" width="260" height="260"></canvas>
+    </div>
+
+    <div class="wheel-display" id="wheel-result">Ready to spin!</div>
+    <button class="btn-choice" id="btn-spin" style="justify-content: center; font-weight: bold; background: var(--warning); color: #000; width: 100%;" onclick="startWheelSpin()">🎲 Spin the Wheel!</button>
+  </div>
+</div>
+
+<script>
+  const TOTAL_WEEKS = 18;
+
+  // Active Rule Configuration
+  let rules = {
+    summativeWeight: 0.55,
+    formativeWeight: 0.45,
+    makeupMax: 70,
+    fMin: 0,
+    fMid: 70,
+    fMax: 100,
+    sMin: 0,
+    sMid: 75,
+    sMax: 95
+  };
+
+  // Wheel Segments (70% chance to land on Make-Up Work)
+  const WHEEL_SEGMENTS = [
+    { label: "Make-Up Work", isPass: true, color: "#16a34a", desc: "Late packet turned in!" },
+    { label: "Make-Up Work", isPass: true, color: "#22c55e", desc: "Finished during lunch detention!" },
+    { label: "Dog Ate It", isPass: false, color: "#dc2626", desc: "Teacher just laughed. 0%." },
+    { label: "Make-Up Work", isPass: true, color: "#15803d", desc: "Stayed after school to complete!" },
+    { label: "Make-Up Work", isPass: true, color: "#16a34a", desc: "Earned partial credit redemption!" },
+    { label: "Laptop Died", isPass: false, color: "#b91c1c", desc: "No tech excuses accepted. 0% entered." },
+    { label: "Make-Up Work", isPass: true, color: "#22c55e", desc: "Submitted during study hall!" },
+    { label: "Make-Up Work", isPass: true, color: "#15803d", desc: "Teacher accepted the makeup packet!" },
+    { label: "Caught Cheating", isPass: false, color: "#7f1d1d", desc: "Caught on Quizlet! 0% and lost 15 Coins!", penalty: 15 },
+    { label: "Make-Up Work", isPass: true, color: "#16a34a", desc: "Turned in for maximum passing credit!" }
+  ];
+
+  // State
+  let gameMode = 'standard';
+  let chosenSport = { id: 'none', label: '📚 None (Non-Athlete)' };
+  let isAthlete = false;
+  let archetype = null;
+  let maxEnergy = 100;
+  let week = 1;
+  let subIndex = 0;
+  let energy = 100;
+  let coins = 20;
+  let weeksBelow70 = 0;
+  let sportsStatus = 'eligible';
+  let isGameOver = false;
+  let inExcusePhase = false;
+  let pendingWheelItem = null;
+
+  // Cooldown flag to prevent back-to-back brain fog
+  let hadBrainFogLastTurn = false;
+
+  let currentWheelAngle = 0;
+  let isWheelSpinning = false;
+
+  let historyData = [];
+  let baseEndingStats = null;
+  let inventory = { studyGuide: false };
+  let currentTab = 'graph';
+  let barHitboxes = [];
+
+  // Settings Modal Functions
+  function openSettings() {
+    document.getElementById('rule-s-weight').value = Math.round(rules.summativeWeight * 100);
+    document.getElementById('rule-f-weight').value = Math.round(rules.formativeWeight * 100);
+    document.getElementById('rule-makeup-max').value = rules.makeupMax;
+    document.getElementById('rule-f-min').value = rules.fMin;
+    document.getElementById('rule-f-mid').value = rules.fMid;
+    document.getElementById('rule-f-max').value = rules.fMax;
+    document.getElementById('rule-s-min').value = rules.sMin;
+    document.getElementById('rule-s-mid').value = rules.sMid;
+    document.getElementById('rule-s-max').value = rules.sMax;
+    document.getElementById('settings-modal').style.display = 'flex';
+  }
+
+  function saveSettings() {
+    rules.summativeWeight = (parseFloat(document.getElementById('rule-s-weight').value) || 55) / 100;
+    rules.formativeWeight = (parseFloat(document.getElementById('rule-f-weight').value) || 45) / 100;
+    rules.makeupMax = parseInt(document.getElementById('rule-makeup-max').value) || 70;
+    rules.fMin = parseInt(document.getElementById('rule-f-min').value) || 0;
+    rules.fMid = parseInt(document.getElementById('rule-f-mid').value) || 70;
+    rules.fMax = parseInt(document.getElementById('rule-f-max').value) || 100;
+    rules.sMin = parseInt(document.getElementById('rule-s-min').value) || 0;
+    rules.sMid = parseInt(document.getElementById('rule-s-mid').value) || 75;
+    rules.sMax = parseInt(document.getElementById('rule-s-max').value) || 95;
+
+    const sPct = Math.round(rules.summativeWeight * 100);
+    const fPct = Math.round(rules.formativeWeight * 100);
+    document.getElementById('header-weights-desc').innerHTML = `Weights: <b>${sPct}% Summative</b> | <b>${fPct}% Formative</b>`;
+    
+    document.getElementById('settings-modal').style.display = 'none';
+    updateUI();
+    if (archetype && !isGameOver && !inExcusePhase) renderChoices();
+  }
+
+  function syncWeights(changed) {
+    const sInput = document.getElementById('rule-s-weight');
+    const fInput = document.getElementById('rule-f-weight');
+    let sVal = parseInt(sInput.value) || 55;
+    let fVal = parseInt(fInput.value) || 45;
+
+    if (changed === 'summative') {
+      sVal = Math.max(10, Math.min(90, sVal));
+      sInput.value = sVal;
+      fInput.value = 100 - sVal;
+    } else {
+      fVal = Math.max(10, Math.min(90, fVal));
+      fInput.value = fVal;
+      sInput.value = 100 - fVal;
+    }
+  }
+
+  function resetRuleDefaults() {
+    document.getElementById('rule-s-weight').value = 55;
+    document.getElementById('rule-f-weight').value = 45;
+    document.getElementById('rule-makeup-max').value = 70;
+    document.getElementById('rule-f-min').value = 0;
+    document.getElementById('rule-f-mid').value = 70;
+    document.getElementById('rule-f-max').value = 100;
+    document.getElementById('rule-s-min').value = 0;
+    document.getElementById('rule-s-mid').value = 75;
+    document.getElementById('rule-s-max').value = 95;
+  }
+
+  function pickMode(mode) {
+    gameMode = mode;
+    document.getElementById('mode-std-btn').classList.toggle('selected', mode === 'standard');
+    document.getElementById('mode-quick-btn').classList.toggle('selected', mode === 'quick');
+    document.getElementById('disp-mode').innerText = mode === 'quick' ? 'Mode: ⚡ Quick' : 'Mode: Standard';
+  }
+
+  function pickSport(id, label) {
+    chosenSport = { id, label };
+    isAthlete = (id !== 'none');
+    document.querySelectorAll('.sport-btn').forEach(btn => btn.classList.remove('selected'));
+    event.target.classList.add('selected');
+    document.getElementById('disp-sport').innerText = `Sport: ${chosenSport.label}`;
+  }
+
+  function selectArchetype(type) {
+    archetype = type;
+    const dispArch = document.getElementById('disp-archetype');
+    const dispSport = document.getElementById('disp-sport');
+    
+    dispSport.innerText = `Sport: ${chosenSport.label}`;
+
+    if (type === 'procrastinator') {
+      maxEnergy = 100; energy = 100;
+      dispArch.innerText = "Class: ⏳ Procrastinator";
+    } else if (type === 'gymrat') {
+      maxEnergy = 130; energy = 130;
+      dispArch.innerText = "Class: 🏋️ Gym Rat";
+    } else if (type === 'academic') {
+      maxEnergy = 100; energy = 100;
+      dispArch.innerText = "Class: 🧠 Academic Weapon";
+    }
+
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('gameplay-area').style.display = 'block';
+    document.getElementById('shop-panel').style.display = 'flex';
+
+    loadTurn();
+  }
+
+  function confirmExit() {
+    if (week > 1 && week <= TOTAL_WEEKS && !isGameOver) {
+      if (!confirm("Are you sure you want to exit? Current semester progress will be lost.")) {
+        return;
+      }
+    }
+    restart();
+  }
+
+  function isSummativeWeek(w) {
+    return [6, 12, 18].includes(w);
+  }
+
+  function calculateGrades(dataList = historyData) {
+    const fScores = dataList.filter(d => d.type === 'F').map(d => d.currentScore);
+    const sScores = dataList.filter(d => d.type === 'S').map(d => d.currentScore);
+
+    const fAvg = fScores.length ? fScores.reduce((a,b)=>a+b,0) / fScores.length : 100;
+    const sAvg = sScores.length ? sScores.reduce((a,b)=>a+b,0) / sScores.length : 100;
+    
+    let overall = 100;
+    if (fScores.length && sScores.length) {
+      overall = (sAvg * rules.summativeWeight) + (fAvg * rules.formativeWeight);
+    } else if (fScores.length) {
+      overall = fAvg;
+    } else if (sScores.length) {
+      overall = sAvg;
+    }
+
+    return { 
+      fAvg: Math.round(fAvg * 10) / 10, 
+      sAvg: Math.round(sAvg * 10) / 10, 
+      overall: Math.round(overall * 10) / 10 
+    };
+  }
+
+  function checkSportsEligibility(overallGrade) {
+    const banner = document.getElementById('sports-status-banner');
+    if (!isAthlete) {
+      banner.style.display = 'none';
+      return;
+    }
+
+    if (sportsStatus === 'cut') {
+      banner.style.display = 'block';
+      banner.className = 'sports-banner sports-cut';
+      banner.innerHTML = `🚫 <b>Benched & Cut from ${chosenSport.label}:</b> You spent more than 2 consecutive weeks below 70%.`;
+      return;
+    }
+
+    if (overallGrade < 70) {
+      weeksBelow70++;
+      if (weeksBelow70 >= 3) {
+        sportsStatus = 'cut';
+        banner.style.display = 'block';
+        banner.className = 'sports-banner sports-cut';
+        banner.innerHTML = `🚫 <b>Cut from ${chosenSport.label}:</b> Failed to raise your grade above 70 within 2 weeks!`;
+      } else {
+        sportsStatus = 'probation';
+        banner.style.display = 'block';
+        banner.className = 'sports-banner sports-warning';
+        banner.innerHTML = `⚠️ <b>Academic Probation (${chosenSport.label}):</b> Below 70%! You are benched. You have <b>${3 - weeksBelow70} week(s) left</b> to recover!`;
+      }
+    } else {
+      if (weeksBelow70 > 0 && sportsStatus !== 'cut') {
+        log(`🎉 <b>Cleared for ${chosenSport.label}:</b> Grade recovered above 70%! Returned to active roster.`);
+      }
+      weeksBelow70 = 0;
+      sportsStatus = 'eligible';
+      banner.style.display = 'none';
+    }
+  }
+
+  function updateUI() {
+    const g = calculateGrades();
+    document.getElementById('disp-week').innerText = `${Math.min(week, TOTAL_WEEKS)} / ${TOTAL_WEEKS}`;
+    document.getElementById('disp-energy').innerText = `${energy}%`;
+    document.getElementById('energy-bar').style.width = `${Math.min(100, Math.max(0, (energy / maxEnergy) * 100))}%`;
+    document.getElementById('disp-coins').innerText = `🪙 ${coins}`;
+    
+    const overEl = document.getElementById('disp-overall');
+    overEl.innerText = `${g.overall}%`;
+    overEl.style.color = g.overall >= 80 ? 'var(--success)' : g.overall >= 70 ? 'var(--warning)' : 'var(--danger)';
+    
+    const hasS = historyData.some(d => d.type === 'S');
+    const hasF = historyData.some(d => d.type === 'F');
+    const sPct = Math.round(rules.summativeWeight * 100);
+    const fPct = Math.round(rules.formativeWeight * 100);
+    
+    document.getElementById('disp-summative-breakdown').innerText = `Summative (${sPct}%): ${hasS ? g.sAvg + '%' : '--%'}`;
+    document.getElementById('disp-formative-breakdown').innerText = `Formative (${fPct}%): ${hasF ? g.fAvg + '%' : '--%'}`;
+
+    document.getElementById('buy-coffee').disabled = coins < 30;
+    document.getElementById('buy-cheat').disabled = coins < 50 || inventory.studyGuide;
+    document.getElementById('inventory-disp').innerText = inventory.studyGuide ? '📖 Study Guide Ready (+15% Exam)' : 'No Boosts Active';
+
+    if (currentTab === 'graph') drawGraph();
+  }
+
+  function switchView(tab) {
+    currentTab = tab;
+    document.getElementById('tab-graph').className = `tab-btn ${tab === 'graph' ? 'active' : ''}`;
+    document.getElementById('tab-log').className = `tab-btn ${tab === 'log' ? 'active' : ''}`;
+    document.getElementById('graph-view').style.display = tab === 'graph' ? 'block' : 'none';
+    document.getElementById('log-view').style.display = tab === 'log' ? 'block' : 'none';
+    if (tab === 'graph') {
+      setTimeout(drawGraph, 20);
+    }
+  }
+
+  function buyItem(type, cost) {
+    if (coins < cost) return;
+    coins -= cost;
+    if (type === 'coffee') {
+      const boost = archetype === 'procrastinator' ? 60 : 40;
+      energy = Math.min(maxEnergy, energy + boost);
+      log(`☕ Chugged Energy Drink (+${boost} Energy).`);
+    } else if (type === 'cheat') {
+      inventory.studyGuide = true;
+      log(`📖 Bought Study Guide (+15% on upcoming summative).`);
+    }
+    updateUI();
+    if (!inExcusePhase) {
+      renderChoices();
+    } else {
+      renderExcuseOptions(isSummativeWeek(week));
+    }
+  }
+
+  function log(text) {
+    const l = document.getElementById('history-log');
+    const d = document.createElement('div');
+    d.className = 'log-item';
+    d.innerHTML = text;
+    l.appendChild(d);
+  }
+
+  function renderChoices() {
+    const choices = document.getElementById('choices-grid');
+    choices.innerHTML = '';
+    const isSummative = isSummativeWeek(week);
+    const panicMultiplier = (archetype === 'academic' && energy < 30) ? 2 : 1;
+
+    if (isSummative) {
+      let scoreMaster = rules.sMax + (inventory.studyGuide ? 5 : 0) + (archetype === 'academic' ? 5 : 0);
+      let scoreCram = rules.sMid + (inventory.studyGuide ? 10 : 0) + (archetype === 'academic' ? 5 : 0);
+
+      addChoice(`Master Material (Cost: ${35 * panicMultiplier} Energy)`, 35 * panicMultiplier, Math.min(100, scoreMaster), 25, isSummative);
+      addChoice(`Cram Notes (Cost: ${15 * panicMultiplier} Energy)`, 15 * panicMultiplier, Math.min(100, scoreCram), 10, isSummative);
+      addChoice(`Skip / Rest (Gain +30 Energy) ⚠️ ${rules.sMin}%`, -30, rules.sMin, 0, isSummative, true);
+    } else {
+      addChoice(`High Quality Homework (Cost: ${20 * panicMultiplier} Energy)`, 20 * panicMultiplier, rules.fMax, 10, false);
+      addChoice(`Rushed Homework (Cost: ${10 * panicMultiplier} Energy)`, 10 * panicMultiplier, rules.fMid, 5, false);
+      addChoice(`Skip / Rest (Gain +25 Energy) ⚠️ ${rules.fMin}%`, -25, rules.fMin, 0, false, true);
+    }
+  }
+
+  function loadTurn() {
+    inExcusePhase = false;
+    updateUI();
+    if (week > TOTAL_WEEKS) {
+      showEndScreen();
+      return;
+    }
+
+    const isSummative = isSummativeWeek(week);
+    const card = document.getElementById('event-card');
+    const badge = document.getElementById('event-badge');
+    const title = document.getElementById('event-title');
+    const desc = document.getElementById('event-desc');
+    const warnBox = document.getElementById('warning-box');
+    const randBox = document.getElementById('random-event-box');
+    const sPct = Math.round(rules.summativeWeight * 100);
+    const fPct = Math.round(rules.formativeWeight * 100);
+
+    warnBox.style.display = 'none';
+    randBox.style.display = 'none';
+
+    if (isSummative) {
+      card.className = 'event-card summative-mode';
+      badge.className = 'badge badge-summative';
+      badge.innerText = `Summative Exam (${sPct}% Weight)`;
+      title.innerText = `Week ${week}: Major Unit Exam`;
+      desc.innerText = `Summative exams carry ${sPct}% weight! Missing an exam causes massive grade drag.`;
+
+      warnBox.style.display = 'block';
+      warnBox.innerHTML = `🚨 <b>Math Warning:</b> With ${sPct}% Summative weight, taking ${rules.sMin}% here causes severe mathematical damage!`;
+    } else {
+      card.className = 'event-card formative-mode';
+      badge.className = 'badge badge-formative';
+      badge.innerText = gameMode === 'quick' ? `Weekly Formative (${fPct}%)` : `Formative Task #${subIndex + 1}`;
+      title.innerText = `Week ${week}: Practice Assignment`;
+      desc.innerText = `Formative tasks count for ${fPct}% of your grade. Steady marks protect your standing.`;
+    }
+
+    if (subIndex === 0 && archetype === 'gymrat' && isAthlete) {
+      energy = Math.max(0, energy - 10);
+      randBox.style.display = 'block';
+      randBox.innerText = `🏋️ 6:00 AM Team Lift: Morning practice drained -10 Energy!`;
+    } else if (archetype === 'procrastinator' && !hadBrainFogLastTurn && Math.random() < 0.15) {
+      // Set cooldown flag to prevent back-to-back triggers
+      hadBrainFogLastTurn = true;
+      randBox.style.display = 'block';
+      randBox.innerText = `⏳ Brain Fog: You forgot the assignment deadline! Rest energy gained, now facing the excuse choice.`;
+      chooseZero(isSummative, isSummative ? 30 : 25);
+      return;
+    } else {
+      // Cooldown cleared on non-trigger turns
+      hadBrainFogLastTurn = false;
+      
+      if (Math.random() < 0.20 && energy > 20) {
+        const events = [
+          { text: "🎮 Late-night gaming tournament! (-15 Energy, +15 Coins)", e: -15, c: 15 },
+          { text: "🤧 Woke up with a cold! (-20 Energy)", e: -20, c: 0 },
+          { text: "🍕 Free cafeteria pizza lunch! (+15 Energy)", e: 15, c: 0 },
+          { text: "💰 Paid peer tutoring gig! (-10 Energy, +30 Coins)", e: -10, c: 30 }
+        ];
+        const ev = events[Math.floor(Math.random() * events.length)];
+        energy = Math.max(0, energy + ev.e);
+        coins += ev.c;
+        randBox.style.display = 'block';
+        randBox.innerText = ev.text;
+      }
+    }
+
+    renderChoices();
+  }
+
+  function addChoice(label, energyCost, baseScore, coinReward, isSummative, isZero = false) {
+    const grid = document.getElementById('choices-grid');
+    const btn = document.createElement('button');
+    btn.className = `btn-choice ${isZero ? 'danger-choice' : ''}`;
+    
+    const canAfford = energyCost <= 0 || energy >= energyCost;
+    btn.disabled = !canAfford;
+
+    btn.innerHTML = `
+      <span>${label} ${!canAfford ? '<b style="color:var(--danger)">(Too Exhausted!)</b>' : ''}</span>
+      <strong>${baseScore}%</strong>
+    `;
+
+    btn.onclick = () => {
+      if (isZero) {
+        const bonusEnergy = Math.abs(energyCost);
+        chooseZero(isSummative, bonusEnergy);
+      } else {
+        energy = Math.max(0, Math.min(maxEnergy, energy - energyCost));
+        coins += coinReward;
+        commitGrade(baseScore, isSummative);
+      }
+    };
+
+    grid.appendChild(btn);
+  }
+
+  function chooseZero(isSummative, bonusEnergy) {
+    inExcusePhase = true;
+    energy = Math.min(maxEnergy, energy + bonusEnergy);
+    log(`😴 Rested and skipped work: Gained <b>+${bonusEnergy} Energy</b>.`);
+    updateUI();
+
+    const minVal = isSummative ? rules.sMin : rules.fMin;
+    document.getElementById('event-desc').innerHTML = `
+      You rested and took a zero/minimum on this task (+${bonusEnergy} Energy added).<br>
+      You can accept the <b>${minVal}%</b>, or spend <b>5 Energy</b> to spin the <b>Wheel of Excuses</b> for a 70% chance at Make-Up work (up to ${rules.makeupMax}%)!
+    `;
+
+    renderExcuseOptions(isSummative);
+  }
+
+  function renderExcuseOptions(isSummative) {
+    const choices = document.getElementById('choices-grid');
+    choices.innerHTML = '';
+    const minVal = isSummative ? rules.sMin : rules.fMin;
+
+    const btnAccept = document.createElement('button');
+    btnAccept.className = 'btn-choice danger-choice';
+    btnAccept.innerHTML = `
+      <span>Accept Minimum (${minVal}%) (Cost: 0 Energy)</span>
+      <strong style="color:var(--danger);">${minVal}%</strong>
+    `;
+    btnAccept.onclick = () => {
+      inExcusePhase = false;
+      commitGrade(minVal, isSummative);
+    };
+    choices.appendChild(btnAccept);
+
+    const canAffordWheel = energy >= 5;
+    const btnWheel = document.createElement('button');
+    btnWheel.className = 'btn-choice';
+    btnWheel.style.borderColor = 'var(--warning)';
+    btnWheel.disabled = !canAffordWheel;
+    btnWheel.innerHTML = `
+      <span>🎡 Spin Wheel of Excuses (Cost: 5 Energy) ${!canAffordWheel ? '<b style="color:var(--danger)">(Too Exhausted!)</b>' : ''}</span>
+      <strong style="color:var(--warning);">70% Chance for ${rules.makeupMax}% Make-Up</strong>
+    `;
+    btnWheel.onclick = () => {
+      energy = Math.max(0, energy - 5);
+      updateUI();
+      openWheel(isSummative);
+    };
+    choices.appendChild(btnWheel);
+  }
+
+  function openWheel(isSummative) {
+    pendingWheelItem = { isSummative };
+    const modal = document.getElementById('wheel-modal');
+    const resultBox = document.getElementById('wheel-result');
+    const spinBtn = document.getElementById('btn-spin');
+    
+    resultBox.innerHTML = `Ready to spin! (5 Energy spent - Target: ${rules.makeupMax}%)`;
+    spinBtn.disabled = false;
+    modal.style.display = 'flex';
+    
+    drawWheelCanvas(currentWheelAngle);
+  }
+
+  function drawWheelCanvas(angleOffset) {
+    const canvas = document.getElementById('wheelCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const size = 260;
+    const center = size / 2;
+    const radius = center - 8;
+    const numSegs = WHEEL_SEGMENTS.length;
+    const segAngle = (Math.PI * 2) / numSegs;
+
+    ctx.clearRect(0, 0, size, size);
+
+    ctx.beginPath();
+    ctx.arc(center, center, radius + 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    for (let i = 0; i < numSegs; i++) {
+      const seg = WHEEL_SEGMENTS[i];
+      const startAngle = angleOffset + (i * segAngle);
+      const endAngle = startAngle + segAngle;
+
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.arc(center, center, radius, startAngle, endAngle);
+      ctx.closePath();
+      ctx.fillStyle = seg.color;
+      ctx.fill();
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(center, center);
+      ctx.rotate(startAngle + (segAngle / 2));
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 9.5px system-ui';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(seg.label, radius - 14, 3);
+      ctx.restore();
+    }
+
+    for (let i = 0; i < numSegs; i++) {
+      const pegAngle = angleOffset + (i * segAngle);
+      const pegX = center + Math.cos(pegAngle) * (radius - 4);
+      const pegY = center + Math.sin(pegAngle) * (radius - 4);
+      ctx.beginPath();
+      ctx.arc(pegX, pegY, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.arc(center, center, 22, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 10px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('SPIN', center, center + 4);
+  }
+
+  function startWheelSpin() {
+    if (isWheelSpinning) return;
+    isWheelSpinning = true;
+
+    const spinBtn = document.getElementById('btn-spin');
+    const resultBox = document.getElementById('wheel-result');
+    const tickerEl = document.getElementById('wheel-ticker');
+    spinBtn.disabled = true;
+    resultBox.innerText = "Spinning...";
+
+    const targetIdx = Math.floor(Math.random() * WHEEL_SEGMENTS.length);
+    const numSegs = WHEEL_SEGMENTS.length;
+    const segAngle = (Math.PI * 2) / numSegs;
+
+    const pointerAngle = (3 * Math.PI) / 2;
+    const desiredCenter = pointerAngle - ((targetIdx + 0.5) * segAngle);
+
+    const extraRotations = (4 + Math.floor(Math.random() * 2)) * Math.PI * 2;
+    const startAngle = currentWheelAngle;
+    const normalizedStart = startAngle % (Math.PI * 2);
+    let diff = desiredCenter - normalizedStart;
+    while (diff < 0) diff += Math.PI * 2;
+    const finalAngle = startAngle + extraRotations + diff;
+
+    const duration = 3200;
+    const startTime = performance.now();
+    let lastPegPassed = -1;
+
+    function animate(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const angle = startAngle + ((finalAngle - startAngle) * easeOut);
+      currentWheelAngle = angle;
+
+      drawWheelCanvas(angle);
+
+      const pinIndex = Math.floor(angle / segAngle);
+      if (pinIndex !== lastPegPassed) {
+        lastPegPassed = pinIndex;
+        tickerEl.style.transform = 'translateX(-50%) rotate(-18deg)';
+        setTimeout(() => {
+          tickerEl.style.transform = 'translateX(-50%) rotate(0deg)';
+        }, 40);
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        isWheelSpinning = false;
+        resolveWheelOutcome(targetIdx);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  function resolveWheelOutcome(index) {
+    const outcome = WHEEL_SEGMENTS[index];
+    const isSummative = pendingWheelItem.isSummative;
+    const minVal = isSummative ? rules.sMin : rules.fMin;
+    const finalScore = outcome.isPass ? rules.makeupMax : minVal;
+    const resultBox = document.getElementById('wheel-result');
+
+    if (outcome.penalty) {
+      coins = Math.max(0, coins - outcome.penalty);
+    }
+
+    if (outcome.isPass) {
+      resultBox.innerHTML = `
+        <span style="color:var(--success)">🎉 ${outcome.label}!</span><br>
+        <span style="font-size:0.8rem; color:#cbd5e1;">${outcome.desc} Grade set to <b>${finalScore}%</b>!</span>
+      `;
+    } else {
+      resultBox.innerHTML = `
+        <span style="color:var(--danger)">❌ ${outcome.label}</span><br>
+        <span style="font-size:0.8rem; color:#cbd5e1;">${outcome.desc} <b>Score: ${finalScore}%</b></span>
+      `;
+    }
+
+    setTimeout(() => {
+      document.getElementById('wheel-modal').style.display = 'none';
+      inExcusePhase = false;
+      commitGrade(finalScore, isSummative);
+    }, 1900);
+  }
+
+  function commitGrade(finalScore, isSummative) {
+    if (isSummative && inventory.studyGuide) {
+      inventory.studyGuide = false;
+    }
+
+    const itemRecord = {
+      id: historyData.length,
+      type: isSummative ? 'S' : 'F',
+      originalScore: finalScore,
+      currentScore: finalScore,
+      week: week,
+      title: isSummative ? `Wk ${week} Exam` : (gameMode === 'quick' ? `Wk ${week} Formative` : `Wk ${week} Task ${subIndex + 1}`)
+    };
+    historyData.push(itemRecord);
+
+    const currentStats = calculateGrades();
+    log(`Wk ${week} [${isSummative ? 'Summative' : 'Formative'}]: <b>${finalScore}%</b> &rarr; Overall: <b>${currentStats.overall}%</b>`);
+
+    if (gameMode === 'quick' || isSummative) {
+      week++;
+      subIndex = 0;
+      checkSportsEligibility(currentStats.overall);
+    } else {
+      subIndex++;
+      if (subIndex >= 2) {
+        subIndex = 0;
+        week++;
+        checkSportsEligibility(currentStats.overall);
+      }
+    }
+
+    loadTurn();
+  }
+
+  function cycleGrade(itemId) {
+    const item = historyData.find(d => d.id === itemId);
+    if (!item) return;
+
+    const minVal = item.type === 'S' ? rules.sMin : rules.fMin;
+    const midVal = item.type === 'S' ? rules.sMid : rules.fMid;
+    const maxVal = item.type === 'S' ? rules.sMax : rules.fMax;
+
+    if (item.currentScore === minVal) {
+      item.currentScore = midVal;
+    } else if (item.currentScore === midVal) {
+      item.currentScore = maxVal;
+    } else {
+      item.currentScore = minVal;
+    }
+
+    updateUI();
+    if (isGameOver) renderEndScreenHTML();
+  }
+
+  function resetToOriginalGrades() {
+    historyData.forEach(item => {
+      item.currentScore = item.originalScore;
+    });
+    updateUI();
+    renderEndScreenHTML();
+  }
+
+  function drawGraph() {
+    const canvas = document.getElementById('gradeCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    const w = rect.width;
+    const h = rect.height;
+    ctx.clearRect(0, 0, w, h);
+    barHitboxes = [];
+
+    if (historyData.length === 0) {
+      ctx.fillStyle = '#64748b';
+      ctx.font = '12px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('No grades recorded yet. Complete activities to see live graph!', w / 2, h / 2);
+      return;
+    }
+
+    const paddingLeft = 32;
+    const paddingBottom = 22;
+    const chartW = w - paddingLeft - 10;
+    const chartH = h - paddingBottom - 10;
+
+    const y70 = chartH - (0.70 * chartH) + 10;
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(paddingLeft, y70);
+    ctx.lineTo(w - 10, y70);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '10px system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText('70%', paddingLeft - 4, y70 + 3);
+
+    const totalSlots = Math.max(historyData.length, gameMode === 'quick' ? 18 : 20);
+    const barWidth = Math.max(5, Math.min(22, (chartW / totalSlots) - 4));
+    const step = chartW / totalSlots;
+
+    let runningF = [];
+    let runningS = [];
+    let rollingOveralls = [];
+
+    historyData.forEach((item) => {
+      if (item.type === 'S') runningS.push(item.currentScore);
+      else runningF.push(item.currentScore);
+
+      const fA = runningF.length ? runningF.reduce((a,b)=>a+b,0)/runningF.length : 100;
+      const sA = runningS.length ? runningS.reduce((a,b)=>a+b,0)/runningS.length : 100;
+      let ov = (runningF.length && runningS.length) 
+        ? (sA * rules.summativeWeight) + (fA * rules.formativeWeight) 
+        : (runningF.length ? fA : sA);
+      rollingOveralls.push(ov);
+    });
+
+    historyData.forEach((item, idx) => {
+      const x = paddingLeft + (idx * step) + 2;
+      const isModified = item.currentScore !== item.originalScore;
+      
+      barHitboxes.push({
+        id: item.id,
+        x: x - 2,
+        y: 10,
+        w: barWidth + 4,
+        h: chartH + 10
+      });
+
+      if (item.currentScore === 0) {
+        if (isModified) {
+          ctx.fillStyle = '#f59e0b';
+          ctx.fillRect(x, chartH + 6, barWidth, 6);
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x, chartH + 6, barWidth, 6);
+        } else {
+          ctx.fillStyle = '#991b1b';
+          ctx.fillRect(x, chartH + 7, barWidth, 4);
+        }
+      } else {
+        const barH = (item.currentScore / 100) * chartH;
+        const y = chartH - barH + 10;
+
+        if (isModified) {
+          ctx.fillStyle = '#f59e0b';
+          ctx.fillRect(x, y, barWidth, barH);
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x, y, barWidth, barH);
+        } else if (item.type === 'S') {
+          ctx.fillStyle = '#e11d48';
+          ctx.fillRect(x, y, barWidth, barH);
+        } else {
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(x, y, barWidth, barH);
+        }
+      }
+    });
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 2.5;
+    rollingOveralls.forEach((val, idx) => {
+      const x = paddingLeft + (idx * step) + (barWidth / 2) + 2;
+      const y = chartH - ((val / 100) * chartH) + 10;
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    rollingOveralls.forEach((val, idx) => {
+      const x = paddingLeft + (idx * step) + (barWidth / 2) + 2;
+      const y = chartH - ((val / 100) * chartH) + 10;
+      ctx.fillStyle = val >= 70 ? '#22c55e' : '#ef4444';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    if (isGameOver) {
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 11px system-ui';
+      ctx.textAlign = 'right';
+      ctx.fillText(`⚡ Click bars to cycle (${rules.fMin} ⇄ ${rules.fMid}/${rules.sMid} ⇄ ${rules.fMax}/${rules.sMax})`, w - 12, 22);
+    }
+  }
+
+  const gradeCanvas = document.getElementById('gradeCanvas');
+  gradeCanvas.addEventListener('click', (e) => {
+    if (!isGameOver) return;
+    const rect = gradeCanvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const hit = barHitboxes.find(b => clickX >= b.x && clickX <= b.x + b.w && clickY >= b.y && clickY <= b.y + b.h);
+    if (hit) {
+      cycleGrade(hit.id);
+    }
+  });
+
+  gradeCanvas.addEventListener('mousemove', (e) => {
+    if (!isGameOver) {
+      gradeCanvas.style.cursor = 'default';
+      return;
+    }
+    const rect = gradeCanvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const hit = barHitboxes.some(b => mouseX >= b.x && mouseX <= b.x + b.w && mouseY >= b.y && mouseY <= b.y + b.h);
+    gradeCanvas.style.cursor = hit ? 'pointer' : 'default';
+  });
+
+  function showEndScreen() {
+    isGameOver = true;
+    baseEndingStats = calculateGrades();
+    document.getElementById('warning-box').style.display = 'none';
+    document.getElementById('shop-panel').style.display = 'none';
+    document.getElementById('analytics-header').innerText = 'Interactive Sandbox Active (Click Bars Below):';
+
+    switchView('graph');
+    renderEndScreenHTML();
+  }
+
+  function renderEndScreenHTML() {
+    const card = document.getElementById('event-card');
+    card.className = 'event-card';
+    const currentStats = calculateGrades();
+    const hasAnyModifications = historyData.some(item => item.currentScore !== item.originalScore);
+
+    let rank = "";
+    if (baseEndingStats.overall >= 90) rank = "🏆 Outstanding Standing: Balanced academic performance effortlessly!";
+    else if (baseEndingStats.overall >= 75) rank = "⚠️ Passing Grade: Exam weights kept you right on the razor's edge.";
+    else rank = "🚨 The Academic Sinkhole: Heavy weighting made missed assignments fatal.";
+
+    let sportsSummary = "";
+    if (isAthlete) {
+      sportsSummary = sportsStatus === 'cut' 
+        ? `<p style="color:var(--danger); margin-top:4px;">🚫 <b>Varsity Status (${chosenSport.label}):</b> CUT due to sub-70 probation period.</p>`
+        : `<p style="color:var(--success); margin-top:4px;">${chosenSport.label.split(' ')[0]} <b>Varsity Status (${chosenSport.label}):</b> Stayed eligible through final week!</p>`;
+    }
+
+    const chipsHTML = historyData.map(item => {
+      const isMin = item.currentScore === (item.type === 'S' ? rules.sMin : rules.fMin);
+      const isMod = item.currentScore !== item.originalScore;
+      return `
+        <div class="grade-chip ${isMin ? 'is-zero' : ''} ${isMod ? 'is-modified' : ''}" onclick="cycleGrade(${item.id})">
+          <div style="font-weight:bold; display:flex; justify-content:space-between;">
+            <span>${item.title}</span>
+            <span style="color:${item.type==='S'?'#f43f5e':'#38bdf8'}">${item.type}</span>
+          </div>
+          <div style="font-size:0.85rem; margin-top:2px;">
+            Score: <b>${item.currentScore}%</b> ${isMod ? '✏️' : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const sPct = Math.round(rules.summativeWeight * 100);
+    const fPct = Math.round(rules.formativeWeight * 100);
+
+    card.innerHTML = `
+      <h2 style="color: var(--accent); margin-bottom: 6px;">Semester Final Report</h2>
+      <p style="margin-bottom: 10px; color: #cbd5e1; font-size:0.9rem;">${rank}</p>
+      
+      <div style="background:#0f172a; padding:14px; border-radius:10px; border: 1px solid #334155;">
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+          <span>Summative (${sPct}%): <b>${currentStats.sAvg}%</b></span>
+          <span>Formative (${fPct}%): <b>${currentStats.fAvg}%</b></span>
+        </div>
+        ${sportsSummary}
+        
+        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #334155; display: flex; justify-content: space-between; align-items: baseline;">
+          <div>
+            <span style="font-size:0.8rem; color:var(--muted);">ACTUAL FINAL GRADE:</span>
+            <div style="font-size:1.1rem; font-weight:bold; color:${baseEndingStats.overall>=70?'var(--success)':'var(--danger)'}">${baseEndingStats.overall}%</div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:0.8rem; color:var(--accent);">SIMULATED FINAL GRADE:</span>
+            <div style="font-size:1.4rem; font-weight:800; color:${currentStats.overall>=70?'var(--success)':'var(--danger)'}">${currentStats.overall}%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sandbox-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span style="font-size:0.9rem; font-weight:bold; color:var(--accent);">🔬 Grade Modifier Sandbox</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${hasAnyModifications ? '<button class="btn-reset-sandbox" onclick="resetToOriginalGrades()">↺ Reset to Original Scores</button>' : ''}
+            <span style="font-size:0.75rem; color:var(--warning);">Cycles: Min ⇄ Mid ⇄ Max</span>
+          </div>
+        </div>
+        <p style="font-size:0.8rem; color:var(--muted); margin-top:4px;">
+          Click assignments below <b>or click bars directly on the chart</b> to adjust any grade:
+        </p>
+        <div class="chips-grid">${chipsHTML}</div>
+      </div>
+
+      <button class="btn-choice" style="justify-content:center; font-weight:bold; background:var(--accent); color:#000; margin-top:14px;" onclick="restart()">🔄 Play Another Semester</button>
+    `;
+  }
+
+  function restart() {
+    week = 1; subIndex = 0; energy = 100; coins = 20;
+    weeksBelow70 = 0; sportsStatus = 'eligible'; isGameOver = false; inExcusePhase = false;
+    hadBrainFogLastTurn = false;
+    historyData = []; baseEndingStats = null;
+    inventory = { studyGuide: false };
+    archetype = null;
+    chosenSport = { id: 'none', label: '📚 None (Non-Athlete)' };
+    isAthlete = false;
+    
+    document.getElementById('history-log').innerHTML = '';
+    document.getElementById('sports-status-banner').style.display = 'none';
+    document.getElementById('shop-panel').style.display = 'none';
+    document.getElementById('disp-archetype').innerText = "Class: Unchosen";
+    document.getElementById('disp-sport').innerText = `Sport: None`;
+    document.getElementById('disp-mode').innerText = gameMode === 'quick' ? 'Mode: ⚡ Quick' : 'Mode: Standard';
+    document.getElementById('analytics-header').innerText = 'Performance Analytics:';
+    
+    document.getElementById('event-card').className = 'event-card formative-mode';
+    document.getElementById('event-card').innerHTML = `
+      <div id="setup-screen">
+        <div class="setup-section">
+          <div class="setup-title">1. Choose Pace & Schedule</div>
+          <div class="mode-select-grid">
+            <button class="mode-btn ${gameMode==='standard'?'selected':''}" id="mode-std-btn" onclick="pickMode('standard')">
+              ⏱️ Standard Mode
+              <small>2 Formative tasks per regular week + 3 Summative exams (~33 tasks total).</small>
+            </button>
+            <button class="mode-btn ${gameMode==='quick'?'selected':''}" id="mode-quick-btn" onclick="pickMode('quick')">
+              ⚡ Quick Mode (Fast Pace)
+              <small>Exactly 1 task or exam per week (18 total assessments over 18 weeks).</small>
+            </button>
+          </div>
+        </div>
+
+        <div class="setup-section">
+          <div class="setup-title">2. Select Your Varsity Sport (Optional)</div>
+          <div class="sport-select-grid">
+            <button class="sport-btn selected" onclick="pickSport('none', '📚 None (Non-Athlete)')">📚 None (Non-Athlete)</button>
+            <button class="sport-btn" onclick="pickSport('football', '🏈 Football')">🏈 Football</button>
+            <button class="sport-btn" onclick="pickSport('soccer', '⚽ Soccer')">⚽ Soccer</button>
+            <button class="sport-btn" onclick="pickSport('volleyball', '🏐 Volleyball')">🏐 Volleyball</button>
+            <button class="sport-btn" onclick="pickSport('cheer', '📣 Cheer')">📣 Cheer</button>
+            <button class="sport-btn" onclick="pickSport('dance', '🩰 Dance')">🩰 Dance</button>
+            <button class="sport-btn" onclick="pickSport('xc', '🏃 Cross Country')">🏃 Cross Country</button>
+          </div>
+        </div>
+
+        <div class="setup-section">
+          <div class="setup-title">3. Select Archetype to Start Semester</div>
+          <div class="archetype-grid">
+            <div class="archetype-card" onclick="selectArchetype('procrastinator')">
+              <div class="archetype-name">⏳ The Procrastinator</div>
+              <div class="archetype-desc">
+                <b>Perk:</b> Caffeine rushes give +60 Energy.<br>
+                <b>Curse:</b> 15% chance to forget an assignment deadline and drop to excuses.
+              </div>
+            </div>
+
+            <div class="archetype-card" onclick="selectArchetype('gymrat')">
+              <div class="archetype-name">🏋️ The Gym Rat</div>
+              <div class="archetype-desc">
+                <b>Perk:</b> High stamina pool (130 Max Energy).<br>
+                <b>Curse:</b> Early morning practices drain -10 Energy every Monday.
+              </div>
+            </div>
+
+            <div class="archetype-card" onclick="selectArchetype('academic')">
+              <div class="archetype-name">🧠 The Academic Weapon</div>
+              <div class="archetype-desc">
+                <b>Perk:</b> Permanent +5% curve on all Summative exams.<br>
+                <b>Curse:</b> Exhaustion panic! If Energy &lt; 30%, activities cost double energy.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gameplay-area" style="display: none;">
+        <div id="random-event-box" style="margin-bottom: 12px; display: none;" class="event-banner"></div>
+        <div class="event-header">
+          <h3 id="event-title"></h3>
+          <span class="badge" id="event-badge"></span>
+        </div>
+        <p id="event-desc"></p>
+        <div class="choices-grid" id="choices-grid"></div>
+      </div>
+    `;
+    updateUI();
+  }
+
+  function openAbout() { document.getElementById('about-modal').style.display = 'flex'; }
+  function closeAbout() { document.getElementById('about-modal').style.display = 'none'; }
+
+  window.addEventListener('resize', () => { if (currentTab === 'graph') drawGraph(); });
+  updateUI();
+</script>
+</body>
+</html>
