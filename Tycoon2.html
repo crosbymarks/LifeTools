@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tycoon - Wealth Journey</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @media (min-height: 820px) and (min-width: 1200px) { body { overflow: hidden; } }
+    @media print {
+      body * { visibility: hidden; }
+      #certificatePrintArea, #certificatePrintArea * { visibility: visible; }
+      #certificatePrintArea { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; background: white !important; color: black !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen w-screen p-3 lg:p-4 flex flex-col justify-between font-sans select-none overflow-x-hidden">
+
+  <!-- ==================== ENTRY SPLASH SCREEN ==================== -->
+  <div id="entrySplashModal" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-4">
+    <div class="text-center space-y-8 max-w-md w-full">
+      
+      <div>
+        <span class="text-6xl block mb-4">🏛️</span>
+        <h1 class="text-5xl font-black text-emerald-400 tracking-tight">Tycoon</h1>
+        <p class="text-slate-400 text-base mt-2 font-medium tracking-wide uppercase">30-Year Wealth Journey</p>
+      </div>
+
+      <!-- Cloud Connection State -->
+      <div id="entryLoading" class="space-y-4">
+        <div class="text-emerald-400 font-bold animate-pulse text-2xl">Connecting to Cloud...</div>
+        <p class="text-slate-500 text-sm">Authenticating your profile...</p>
+      </div>
+      
+      <div id="entryNewGame" class="hidden space-y-4">
+        <button onclick="openOnboarding()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xl py-5 rounded-xl transition shadow-lg shadow-emerald-950/50">
+          Open New Account
+        </button>
+      </div>
+
+      <div id="entryResumeGame" class="hidden space-y-4">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-xl text-left shadow-inner">
+          <h3 class="text-emerald-400 font-bold text-xl">Welcome back, <span id="entryPlayerName">Player</span>!</h3>
+          <p class="text-base text-slate-400 mt-2">Current Status: Year <span id="entryYear" class="text-white font-bold">1</span> (Age <span id="entryAge" class="text-white font-bold">25</span>)</p>
+          <p class="text-sm text-indigo-300 mt-2 font-medium">Mode: <span id="entryMode">Normal</span></p>
+        </div>
+        <button onclick="resumeGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xl py-5 rounded-xl transition shadow-lg shadow-indigo-950/50">
+          Access Account
+        </button>
+        <button onclick="fullResetGame()" class="text-sm font-bold text-rose-500 hover:text-rose-400 mt-4 underline decoration-rose-900 underline-offset-4 transition">
+          Wipe Cloud Save & Start Over
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="max-w-[1850px] w-full mx-auto bg-slate-800 border border-slate-700 rounded-xl p-4 lg:p-5 shadow-2xl flex flex-col gap-4 flex-1 max-h-[calc(100vh-2.2rem)] overflow-hidden">
+    
+    <!-- Top Header -->
+    <header class="flex justify-between items-center border-b border-slate-700/80 pb-3">
+      <div class="flex items-center gap-4">
+        <h1 class="text-2xl font-black tracking-tight text-emerald-400">Tycoon - Wealth Journey</h1>
+        <span id="playerBadge" class="hidden text-sm bg-slate-700 text-slate-200 px-3 py-1 rounded-full font-semibold border border-slate-600"></span>
+        <span id="modeBadge" class="hidden text-xs uppercase font-bold px-2 py-0.5 rounded-sm tracking-wider"></span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600 text-sm px-3 py-1.5 rounded-lg transition font-medium">ℹ️ Sponsor Info & Goals</button>
+        <button onclick="openReviewModal()" class="bg-slate-700 hover:bg-slate-600 text-indigo-300 border border-indigo-500/40 text-sm px-3 py-1.5 rounded-lg transition font-medium">📊 Year Report</button>
+        <span class="inline-block bg-slate-900 border border-slate-700 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider text-slate-300 ml-2">
+          Year <span id="currentDay">1</span> / 30 &bull; <span id="currentAge">Age 25</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Top Stats Row -->
+    <section class="grid grid-cols-4 gap-4">
+      <div class="bg-slate-900/70 p-3.5 rounded-xl border border-slate-700/70 flex flex-col justify-center">
+        <span class="text-xs uppercase font-bold text-slate-400 block tracking-wide">Net Game Portfolio</span>
+        <span id="totalGameVal" class="text-2xl font-black text-white leading-tight">$0.00</span>
+      </div>
+      <div class="bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-800/50 flex flex-col justify-center">
+        <span class="text-xs uppercase font-bold text-emerald-400 block tracking-wide">Real Savings (<span id="uiRatio1">2000</span>:1)</span>
+        <span id="totalRealVal" class="text-2xl font-black text-emerald-400 leading-tight">$0.00</span>
+      </div>
+      <div class="bg-amber-950/40 p-3.5 rounded-xl border border-amber-800/50 flex flex-col justify-center">
+        <span class="text-xs uppercase font-bold text-amber-300 block tracking-wide">Cashed Out Real $</span>
+        <span id="cashedOutRealVal" class="text-2xl font-black text-amber-400 leading-tight">$0.00</span>
+      </div>
+      <div class="bg-rose-950/40 p-3.5 rounded-xl border border-rose-800/50 flex flex-col justify-center">
+        <span class="text-xs uppercase font-bold text-rose-300 block tracking-wide"><span id="sponsorCharityLabel">Sponsor</span> <span id="uiMultiplier1">5</span>x Charity</span>
+        <span id="charityMatchVal" class="text-2xl font-black text-rose-400 leading-tight">$0.00</span>
+      </div>
+    </section>
+
+    <!-- Overdraft Banner -->
+    <div id="debtWarningBanner" class="hidden bg-rose-950/90 border border-rose-600 px-4 py-2.5 rounded-lg flex justify-between items-center text-sm">
+      <div class="flex items-center gap-2 text-rose-200">
+        <span class="font-bold text-rose-300">⚠️ OVERDRAFT DEBT ACTIVE:</span>
+        <span>Checking is negative. $10.00/month ($120.00/yr) fee being assessed until repaid.</span>
+      </div>
+      <span id="debtBannerAmount" class="font-black text-white text-base">-$0.00</span>
+    </div>
+
+    <!-- 2-Column Desktop Grid -->
+    <main class="grid grid-cols-12 gap-4 flex-1 min-h-0">
+      
+      <!-- Left Column -->
+      <div class="col-span-12 lg:col-span-5 flex flex-col gap-4 min-h-0 justify-between">
+        
+        <!-- Merged Budget & Status Engine -->
+        <div class="bg-indigo-950/40 border border-indigo-700/60 rounded-xl p-4 space-y-3.5">
+          <div class="flex justify-between items-center border-b border-indigo-800/50 pb-2.5">
+            <div>
+              <span class="text-xs uppercase tracking-wider font-bold text-indigo-300 flex items-center gap-1.5">
+                <span class="h-2.5 w-2.5 rounded-full bg-indigo-400 animate-pulse"></span> Monthly Discretionary Cash Flow
+              </span>
+              <div class="text-sm font-semibold text-white mt-1">
+                Take-Home: <span id="effectiveMonthlyIncome" class="text-emerald-400 font-bold">$500.00</span>/mo 
+                <span id="effectiveAnnualIncome" class="text-slate-400 text-xs font-normal">($6,000.00/yr)</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-400 block">Long-Term Cap Left:</span>
+              <span id="longCapRemaining" class="text-sm font-bold text-amber-300">$125.00/mo</span>
+            </div>
+          </div>
+          <p id="shockDeductionNotice" class="text-xs text-slate-400">No active life expenses this year. Full discretionary pay available.</p>
+
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-700">
+              <span class="text-slate-400 text-[10px] uppercase font-bold block">Planned /mo</span>
+              <strong id="liveTotalAllocated" class="text-sm font-black text-emerald-400">$0.00</strong>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-700">
+              <span class="text-slate-400 text-[10px] uppercase font-bold block">Annual Total</span>
+              <strong id="liveAnnualTotal" class="text-sm font-black text-white">$0.00</strong>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-700">
+              <span class="text-slate-400 text-[10px] uppercase font-bold block">Checking Impact</span>
+              <strong id="liveCheckingImpact" class="text-sm font-black text-emerald-400">+$500.00</strong>
+            </div>
+          </div>
+          <div class="text-xs text-slate-400 flex justify-between items-center px-1">
+            <span>Buffer Allowance: +$100/mo beyond income</span>
+            <span id="maxMonthlyBudgetLabel" class="text-amber-300 font-semibold">Max: $600.00/mo</span>
+          </div>
+        </div>
+
+        <!-- Desktop Action Controls -->
+        <div class="space-y-3 flex-shrink-0">
+          <div id="statusMsg" class="text-xs text-center py-2 px-3 rounded-lg font-medium border bg-slate-700/80 text-slate-200 border-slate-600">Awaiting Year 1 plan.</div>
+          <div class="flex gap-3">
+            <button onclick="resetCurrentDay()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-3 px-4 rounded-xl text-sm transition">Reset Inputs</button>
+            <button id="mainActionBtn" onclick="handleMainAction()" class="flex-1 bg-slate-700 text-slate-400 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wider transition flex flex-col items-center justify-center min-h-[60px] border border-slate-600">
+              <span id="mainActionText">Budget Saved</span>
+              <span id="autoTimerText" class="text-base font-black text-amber-300 hidden mt-1">Auto-advances in: 00:00:00</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Expanded Activity Ledger -->
+        <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-4 flex-1 flex flex-col min-h-[220px]">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2.5 shrink-0">
+            <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Activity Ledger (Audit Log)</span>
+            <span class="text-[10px] text-slate-500">Live Timeline</span>
+          </div>
+          <div id="quickActivityLogs" class="overflow-y-auto flex-1 min-h-0 space-y-2 text-xs text-slate-300 pr-2">
+            <div class="text-slate-400 italic">Game initialized. Awaiting Year 1 plan.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Accounts & Asset Classes -->
+      <div class="col-span-12 lg:col-span-7 flex flex-col gap-3 min-h-0 justify-between">
+        
+        <div class="bg-slate-900/80 p-3.5 rounded-xl border border-indigo-500/40 flex justify-between items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-white text-sm">Checking Account (Liquid Hub)</h3>
+              <span class="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded">0% APY</span>
+              <span id="overdraftBadge" class="hidden text-[10px] bg-rose-900/80 text-rose-300 px-2 py-0.5 rounded font-bold">Overdraft</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Available: <span id="checkingBal" class="text-emerald-400 font-bold ml-1">$0.00</span></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="convertCheckingToShort()" id="btnConvertCheckShort" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium shadow" title="Convert 25% of positive checking balance into short-term">Convert 25% to Short (1/day)</button>
+            <button onclick="openCashoutModal()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition shadow">💵 Cash Out (<span id="uiRatioBtn">2000</span>:1)</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-700/60 flex justify-between items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-white text-sm">Short-Term Savings</h3>
+              <span class="text-[10px] bg-blue-900/60 text-blue-300 px-2 py-0.5 rounded">5% APY</span>
+              <span class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-1.5 rounded">Rolling 2-Yr Lock</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Total: <span id="shortBal" class="text-emerald-400 font-semibold">$0.00</span> | Avail: <span id="shortAvail" class="text-indigo-300 font-semibold">$0.00</span></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="convertShortToMid()" id="btnConvertShortMid" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">Convert 25% to Mid (1/day)</button>
+            <label class="text-xs text-slate-400 ml-1">Plan /mo:</label>
+            <input type="number" id="allocShort" min="0" step="10" placeholder="0" class="alloc-input w-24 bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-right focus:outline-none focus:border-blue-400">
+            <button onclick="withdrawShort()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded transition">Withdraw</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-700/60 flex justify-between items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-white text-sm">Mid-Term Savings</h3>
+              <span class="text-[10px] bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded">8% APY</span>
+              <span class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-1.5 rounded">Rolling 5-Yr Lock</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Total: <span id="midBal" class="text-emerald-400 font-semibold">$0.00</span> | Avail: <span id="midAvail" class="text-indigo-300 font-semibold">$0.00</span></p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap justify-end">
+            <button onclick="convertMidToLong()" id="convertBtn" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">Convert 10% (1/yr)</button>
+            <label class="text-xs text-slate-400 ml-1">Plan /mo:</label>
+            <input type="number" id="allocMid" min="0" step="10" placeholder="0" class="alloc-input w-24 bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-right focus:outline-none focus:border-indigo-400">
+            <button onclick="withdrawMid()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded transition">Withdraw</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-700/60 flex justify-between items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-white text-sm">Long-Term Growth (VOO Index)</h3>
+              <span class="text-[10px] bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded">11% APY</span>
+              <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-1.5 rounded font-medium">Tax-Free</span>
+            </div>
+            <p class="text-xs text-amber-400/90 mt-1">Locked until Age 55 &bull; Max $125/mo ($1,500/yr)</p>
+            <p class="text-xs text-slate-400">Current Balance: <span id="longBal" class="text-emerald-400 font-semibold">$0.00</span></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400 ml-1">Plan /mo:</label>
+            <input type="number" id="allocLong" min="0" step="10" placeholder="0" class="alloc-input w-24 bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-right focus:outline-none focus:border-emerald-400">
+          </div>
+        </div>
+
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-rose-900/40 flex justify-between items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-rose-300 text-sm">Charity & Giving</h3>
+              <span class="text-[10px] bg-rose-900/60 text-rose-300 px-2 py-0.5 rounded"><span id="sponsorCharityTag">Sponsor</span> <span id="uiMultiplier2">5</span>x Match</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Total Donated: <span id="charityBal" class="text-rose-400 font-semibold">$0.00</span></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400 ml-1">Plan /mo:</label>
+            <input type="number" id="allocCharity" min="0" step="10" placeholder="0" class="alloc-input w-24 bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-right focus:outline-none focus:border-rose-400">
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+    
+    <!-- Collapsible End Game Summary Strip -->
+    <section id="endGameStrip" class="hidden bg-slate-900/95 border-2 border-emerald-500 rounded-xl p-3 flex justify-between items-center gap-4">
+      <div class="flex items-center gap-4">
+        <span class="text-3xl">🎓</span>
+        <div>
+          <h4 class="text-sm font-black text-emerald-400">Career Horizon Complete (Age 55)</h4>
+          <p class="text-xs text-slate-300">Total Real Cash Earned: <strong id="stripRealCash" class="text-white">$0.00</strong> &bull; Charity Match: <strong id="stripCharityMatch" class="text-rose-300">$0.00</strong></p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="openCertificateModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm px-4 py-2 rounded-lg transition shadow">📜 Certificate</button>
+        <button onclick="openComparisonModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-4 py-2 rounded-lg transition shadow">📊 Compare Graphs</button>
+        <button onclick="openEndDashboardModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition">Full Audit & Charts</button>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="w-full text-center text-xs text-slate-500 py-1.5">
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 2.0 (Firebase Cloud Save)
+  </footer>
+
+  <!-- ==================== MODALS & OVERLAYS ==================== -->
+
+  <!-- Onboarding Setup Modal -->
+  <div id="onboardingModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[90] overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-emerald-500/80 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-auto">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <div class="flex items-center gap-4">
+          <div class="bg-emerald-950 p-2.5 rounded-xl border border-emerald-700 text-2xl">🏛️</div>
+          <div>
+            <h2 class="text-2xl font-black text-emerald-400">Tycoon - Wealth Journey Setup</h2>
+            <p class="text-sm text-slate-400">Configure your 30-Year Wealth & Cash-Flow Defense Simulation</p>
+          </div>
+        </div>
+        <button onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-emerald-300 border border-slate-600 text-sm px-4 py-2 rounded-lg transition font-bold shadow-lg">
+          ℹ️ View Sponsor Goals
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-300 mb-1">Player Name:</label>
+          <input type="text" id="playerNameInput" placeholder="Enter your name" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-300 mb-1">Sponsor Name:</label>
+          <input type="text" id="sponsorNameInput" value="Dad" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-300 mb-1">Cash Conversion Ratio (Game $ : 1 Real $):</label>
+          <input type="number" id="cashRatioInput" value="2000" min="1" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-300 mb-1">Charity Match Multiplier (x):</label>
+          <input type="number" id="charityMultiplierInput" value="5" min="0" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-700 space-y-4">
+        <h3 class="text-base font-bold text-white text-center">Select Your Game Mode</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button id="modeSelectNormal" onclick="selectMode('normal')" class="bg-indigo-900/60 border-2 border-indigo-500 p-5 rounded-xl text-left transition group">
+            <span class="block text-base font-black text-indigo-300 mb-1.5">🕒 Normal Mode (Default)</span>
+            <span class="block text-xs text-slate-300 leading-relaxed">1 Calendar Day = 1 Year (Advances at Midnight). Plan your budget, and changes save. (Test overrides: Set Sponsor to T=1, T=2, or T=5)</span>
+          </button>
+          <button id="modeSelectFast" onclick="selectMode('fast')" class="bg-slate-900 border-2 border-slate-700 hover:border-emerald-500/50 p-5 rounded-xl text-left transition group">
+            <span class="block text-base font-black text-slate-400 mb-1.5 group-hover:text-emerald-400">⚡ Fast Mode</span>
+            <span class="block text-xs text-slate-400 leading-relaxed">You manually control time. Instantly conclude the year and simulate the next 12 months on your click.</span>
+          </button>
+        </div>
+      </div>
+
+      <button onclick="saveOnboardingAndStart()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-4 rounded-xl transition shadow-lg shadow-emerald-950/50 mt-3">
+        Begin 30-Year Wealth Journey
+      </button>
+    </div>
+  </div>
+
+  <!-- Sponsor Info & Goals Modal -->
+  <div id="sponsorInfoModal" class="hidden fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-[110] overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-slate-500 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-3 border-b border-slate-700 pb-3">
+        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 text-2xl">ℹ️</div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-200">Sponsor Info & Game Goals</h3>
+          <p class="text-sm text-slate-400">Why we play and how the incentives work</p>
+        </div>
+      </div>
+      <div class="space-y-4 text-sm text-slate-300 leading-relaxed max-h-[50vh] overflow-y-auto pr-2">
+        <div class="bg-slate-900/50 border border-slate-700 p-4 rounded-xl">
+          <strong class="text-emerald-400 block mb-1 text-base">🎯 The Core Goal</strong>
+          <p>Learn the timeless power of compound interest, how to build a cash-flow defense against unexpected life storms, and the foundational habit of paying yourself first.</p>
+        </div>
+        <div class="bg-slate-900/50 border border-slate-700 p-4 rounded-xl">
+          <strong class="text-indigo-400 block mb-1 text-base">📜 Rules of the Journey</strong>
+          <ul class="list-disc pl-5 space-y-1.5">
+            <li><strong>Discretionary Pay:</strong> You receive $500/mo ($6,000/yr) after living bills and a modest 10% for entertainment.</li>
+            <li><strong>Life Shocks:</strong> You face a 60% chance each year of a major recurring expense that will reduce your monthly paycheck for that entire year.</li>
+            <li><strong>Debt Consequence:</strong> If you allocate more than you earn, Checking goes negative and bleeds $10/mo in overdraft fees until cleared.</li>
+          </ul>
+        </div>
+        <div class="bg-slate-900/50 border border-slate-700 p-4 rounded-xl">
+          <strong class="text-amber-400 block mb-1 text-base">💰 Sponsor Incentive Structure</strong>
+          <ul class="list-disc pl-5 space-y-1.5">
+            <li><strong>Real Cash Payout:</strong> Final net savings will be converted and paid out in real life at a ratio of <strong><span id="infoRatio">2000</span> game dollars = $1 real dollar</strong>.</li>
+            <li><strong>Charitable Giving:</strong> Any game money donated to Charity is also converted at the same ratio, and then <strong>multiplied by <span id="infoMultiplier">5</span>x</strong> as a real-world donation by your Sponsor!</li>
+          </ul>
+        </div>
+      </div>
+      <button onclick="closeSponsorInfoModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm py-3 rounded-lg transition shadow mt-2">Got it!</button>
+    </div>
+  </div>
+
+  <!-- Auto Catch-Up Alert Modal -->
+  <div id="catchUpModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[80] overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-indigo-500 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl my-auto text-center">
+      <div class="text-6xl mb-3">⏳</div>
+      <h2 class="text-3xl font-black text-indigo-300">Time Passed While You Were Away!</h2>
+      <p class="text-base text-slate-300 leading-relaxed">
+        The game continued running based on calendar time. You have <strong id="catchUpTurns" class="text-white text-xl px-1">0</strong> simulated years to review.<br><br>
+        Your portfolio will now compound visually using your last saved budget settings from <strong>Year <span id="catchUpSettingsYear">1</span></strong>. 
+      </p>
+      <button onclick="startCatchUpSequence()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg py-4 rounded-xl transition shadow-lg mt-5">
+        Play Through Missed Years
+      </button>
+    </div>
+  </div>
+
+  <!-- Monthly Simulation Modal (Used for Fast Mode AND Interactive Catch-Up) -->
+  <div id="simulationModal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[85]">
+    <div class="bg-slate-800 border-2 border-emerald-500 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <div>
+          <h3 class="text-lg font-bold text-emerald-400">Simulating Year <span id="simYear">1</span> (Age <span id="simAge">25</span>)</h3>
+          <p class="text-xs text-slate-400">Tracking monthly interest & growth vs. deposits...</p>
+        </div>
+        <span id="simMonthBadge" class="bg-emerald-900/60 text-emerald-300 text-sm px-3 py-1 rounded-full font-bold border border-emerald-700">Month 1 / 12</span>
+      </div>
+
+      <div class="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-700">
+        <div id="simProgressBar" class="bg-emerald-400 h-3 transition-all duration-300" style="width: 8.33%"></div>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-700 p-3.5 rounded-xl space-y-2">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-slate-400">Monthly Deposit: <strong id="simMonthlyDep" class="text-white">$0.00</strong></span>
+          <span class="text-slate-400">Growth This Month: <strong id="simMonthlyInt" class="text-amber-400">$0.00</strong></span>
+        </div>
+        <div id="simCrossoverBadge" class="hidden text-center py-1.5 bg-emerald-950 border border-emerald-700/80 rounded-lg text-sm font-extrabold text-emerald-300 animate-pulse">
+          ✨ CROSSOVER ACHIEVED: Monthly interest & growth exceeds deposits!
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400 text-xs">Checking:</span>
+            <span class="text-[10px] text-slate-500">+$0.00/mo</span>
+          </div>
+          <span id="simChecking" class="text-sm font-bold text-white">$0.00</span>
+        </div>
+        <div class="bg-slate-900 p-3 rounded-lg border border-blue-900/40">
+          <div class="flex justify-between items-center">
+            <span class="text-blue-300 text-xs">Short-Term (5%):</span>
+            <span id="simShortMoInt" class="text-[11px] text-amber-300 font-medium">+$0.00/mo</span>
+          </div>
+          <span id="simShort" class="text-sm font-bold text-blue-400">$0.00</span>
+        </div>
+        <div class="bg-slate-900 p-3 rounded-lg border border-indigo-900/40">
+          <div class="flex justify-between items-center">
+            <span class="text-indigo-300 text-xs">Mid-Term (8%):</span>
+            <span id="simMidMoInt" class="text-[11px] text-amber-300 font-medium">+$0.00/mo</span>
+          </div>
+          <span id="simMid" class="text-sm font-bold text-indigo-400">$0.00</span>
+        </div>
+        <div class="bg-slate-900 p-3 rounded-lg border border-emerald-900/40">
+          <div class="flex justify-between items-center">
+            <span class="text-emerald-300 text-xs">Long-Term (11% VOO):</span>
+            <span id="simLongMoInt" class="text-[11px] text-amber-300 font-medium">+$0.00/mo</span>
+          </div>
+          <span id="simLong" class="text-sm font-bold text-emerald-400">$0.00</span>
+        </div>
+      </div>
+      <div id="simTicker" class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 text-slate-300 min-h-[44px] flex items-center justify-center text-center font-mono text-xs">
+        Month 1: Discretionary income deposited. Plan applied.
+      </div>
+      
+      <!-- Catch-Up Next Button Container (Hidden by default) -->
+      <div id="simActionContainer" class="hidden mt-3 pt-3 border-t border-slate-700">
+        <button id="simNextBtn" class="w-full bg-indigo-500 hover:bg-indigo-400 text-slate-950 font-black text-sm py-3.5 rounded-xl transition shadow-lg shadow-indigo-950/50">
+          Play Next Year
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annual Shock Modal -->
+  <div id="shockModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[70] overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-rose-500 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-4 border-b border-slate-700 pb-3">
+        <div class="bg-rose-950/80 p-2.5 rounded-xl border border-rose-800 text-2xl">⚠️</div>
+        <div>
+          <h3 class="text-lg font-bold text-rose-400 uppercase tracking-wide">Year-Long Financial Burden</h3>
+          <p class="text-sm text-slate-400">Simulated Age <span id="shockAge">25</span> Milestone</p>
+        </div>
+      </div>
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-2">
+        <div class="flex justify-between items-center">
+          <span id="shockCategory" class="text-sm font-semibold uppercase tracking-wider text-rose-300">Emergency Outlay</span>
+          <div class="text-right">
+            <span id="shockMonthlyCost" class="text-sm font-bold text-rose-400 block">-$180.00 / mo</span>
+            <span id="shockAnnualCost" class="text-xs text-slate-400">(-$2,160.00/yr)</span>
+          </div>
+        </div>
+        <p id="shockDescription" class="text-xs text-slate-300 leading-relaxed"></p>
+      </div>
+      <div class="space-y-1 text-sm">
+        <p class="text-slate-300 font-semibold text-xs">Impact on This Year's Discretionary Pay:</p>
+        <div id="shockResolution" class="bg-slate-900 p-3 rounded-lg text-slate-300 text-xs space-y-1"></div>
+      </div>
+      <button onclick="closeShockModal()" class="w-full bg-rose-600 hover:bg-rose-500 text-slate-950 font-bold text-sm py-3 rounded-lg transition shadow">Acknowledge & Adjust Plan</button>
+    </div>
+  </div>
+
+  <!-- Accelerator Milestone Modal -->
+  <div id="acceleratorModal" class="hidden fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-[75] overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-purple-500 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-4 border-b border-slate-700 pb-3">
+        <div class="bg-purple-950/80 p-2.5 rounded-xl border border-purple-800 text-2xl">🚀</div>
+        <div>
+          <h3 class="text-lg font-bold text-purple-300">Milestone Unlocked: Catch-Up Accelerator</h3>
+          <p class="text-sm text-slate-400">Portfolio Rebalancing Opportunity</p>
+        </div>
+      </div>
+      <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
+        <p>You have reached <strong>Year 20 (Age 44)</strong>. You can now convert <strong>10% of your Mid-Term funds once each year</strong> into Long-Term Growth (11% APY).</p>
+      </div>
+      <button onclick="closeAcceleratorModal()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm py-3 rounded-lg transition shadow">I Understand &bull; Continue</button>
+    </div>
+  </div>
+
+  <!-- Plan Confirmation Modal (Fast Mode Only) -->
+  <div id="confirmCommitModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <h3 class="text-base font-bold text-white border-b border-slate-700 pb-2">Confirm Annual Plan (Year <span id="confirmYearNum">1</span>)</h3>
+      <div class="bg-slate-900 p-3 rounded-xl space-y-2 text-sm text-slate-300">
+        <div class="flex justify-between"><span>Short-Term Savings:</span> <strong id="confShort" class="text-white">$0.00/mo</strong></div>
+        <div class="flex justify-between"><span>Mid-Term Savings:</span> <strong id="confMid" class="text-white">$0.00/mo</strong></div>
+        <div class="flex justify-between"><span>Long-Term Growth:</span> <strong id="confLong" class="text-white">$0.00/mo</strong></div>
+        <div class="flex justify-between"><span>Charity & Giving:</span> <strong id="confCharity" class="text-white">$0.00/mo</strong></div>
+        <div class="border-t border-slate-700 pt-1.5 mt-1.5 flex justify-between font-bold">
+          <span class="text-emerald-400">Total Monthly:</span>
+          <span id="confTotalAllocated" class="text-emerald-400">$0.00/mo</span>
+        </div>
+        <div class="flex justify-between text-xs text-slate-400">
+          <span>Net Impact on Checking:</span>
+          <span id="confRemainingChecking" class="font-bold">$0.00/mo</span>
+        </div>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeConfirmModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold py-2.5 rounded-lg transition">Go Back</button>
+        <button onclick="executeYearConclusion()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold py-2.5 rounded-lg transition shadow">Simulate 12 Months</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cashout Modal -->
+  <div id="cashoutModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+      <h3 class="text-base font-bold text-white border-b border-slate-700 pb-2">Convert Checking to Real Cash</h3>
+      <p class="text-sm text-slate-400">Exchange game dollars from checking at a <strong id="uiCashoutRatio">2000:1</strong> ratio.</p>
+      <div>
+        <label class="block text-sm font-semibold text-slate-300 mb-1.5">Game Dollars to Cash Out:</label>
+        <input type="number" id="cashoutInput" step="100" min="100" placeholder="100, 500, 2000..." class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
+        <p class="text-xs text-amber-300 mt-1.5">You will receive: <span id="realConversionPreview">$0.00</span> in real cash</p>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeCashoutModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-semibold py-2.5 rounded-lg transition">Cancel</button>
+        <button onclick="executeCashout()" class="flex-1 bg-amber-600 hover:bg-amber-500 text-slate-950 text-sm font-bold py-2.5 rounded-lg transition">Convert & Payout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div id="reviewModal" class="hidden fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="text-xl font-bold text-emerald-400">Annual Account Report (Year <span id="reportYear">1</span> &bull; Age <span id="reportAge">25</span>)</h3>
+        <button onclick="closeReviewModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-slate-300">
+          <thead class="text-slate-400 uppercase bg-slate-900/60 border-b border-slate-700 text-xs">
+            <tr>
+              <th class="p-3">Account</th>
+              <th class="p-3 text-right">Total Deposited</th>
+              <th class="p-3 text-right">Last Yr Growth</th>
+              <th class="p-3 text-right">Total Growth</th>
+            </tr>
+          </thead>
+          <tbody id="reviewTableBody" class="divide-y divide-slate-700/60 text-sm"></tbody>
+        </table>
+      </div>
+      <div class="text-right pt-2">
+        <button onclick="closeReviewModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side-by-Side Comparison Modal -->
+  <div id="comparisonModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 md:p-6 z-50 overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-indigo-500 rounded-2xl max-w-5xl w-full p-4 md:p-5 space-y-3 shadow-2xl my-auto">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+        <div>
+          <h2 class="text-base md:text-lg font-black text-indigo-300">Side-by-Side Strategy Comparison: $100/mo for 30 Years</h2>
+        </div>
+        <button onclick="closeComparisonModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 space-y-0.5">
+          <div class="flex justify-between items-center">
+            <strong class="text-slate-200 text-xs">Scenario A: Parallel Growth</strong>
+            <span class="text-xs font-black text-emerald-400" id="scenATotal">$0.00</span>
+          </div>
+          <p class="text-[10px] text-slate-400">Fixed $100/mo into 8% & $100/mo into 11% with zero transfers.</p>
+        </div>
+        <div class="bg-indigo-950/60 p-2.5 rounded-xl border border-indigo-700 space-y-0.5">
+          <div class="flex justify-between items-center">
+            <strong class="text-indigo-200 text-xs">Scenario B: Year 20 Accelerator</strong>
+            <span class="text-xs font-black text-indigo-300" id="scenBTotal">$0.00</span>
+          </div>
+          <p class="text-[10px] text-slate-400">10% of short/mid-term converted to long-term annually from Year 20.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700">
+          <h4 class="text-[11px] font-bold text-slate-300 text-center mb-1">Scenario A: Pure Parallel</h4>
+          <canvas id="compChartA" height="190"></canvas>
+        </div>
+        <div class="bg-slate-900 p-2.5 rounded-xl border border-indigo-700/60">
+          <h4 class="text-[11px] font-bold text-indigo-300 text-center mb-1">Scenario B: Accelerated</h4>
+          <canvas id="compChartB" height="190"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700 text-[10px] text-slate-300">
+        <strong>Lesson:</strong> Rebalancing capital into higher compounding vehicles in the final decade produces <strong id="scenDifference" class="text-emerald-400">+$0.00</strong> more.
+      </div>
+      <div class="text-right">
+        <button onclick="closeComparisonModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition">Close Comparison</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full End Game Dashboard Modal -->
+  <div id="endDashboardModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 z-50 overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-emerald-500 rounded-2xl max-w-5xl w-full p-6 space-y-5 shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="text-xl font-black text-emerald-400">Lifetime Audit & Growth Charts</h3>
+        <button onclick="closeEndDashboardModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+        <canvas id="growthChart" height="200"></canvas>
+      </div>
+      <div class="bg-slate-900/90 border border-emerald-500/40 rounded-xl p-4 space-y-2 text-xs">
+        <strong class="text-emerald-400 uppercase block text-sm">🛡️ Real-World Cash Flow Defense Strategy</strong>
+        <p class="text-slate-300 leading-relaxed">
+          Maintain 3–6 months in high-yield cash at Ally or Marcus, automate sinking funds for home & auto, and max your HSA at Fidelity to absorb recurring lifecycle shocks without interrupting index investing (VOO).
+        </p>
+      </div>
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+        <div class="flex justify-between items-center">
+          <h4 class="text-sm font-bold text-slate-300 uppercase">Audit Ledger</h4>
+          <button onclick="fullResetGame()" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-sm px-4 py-1.5 rounded transition">Start New Game at Year 1</button>
+        </div>
+        <div id="transactionLogs" class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-300 pr-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certificate Modal -->
+  <div id="certificateModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-amber-400/80 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl my-auto">
+      <div id="certificatePrintArea" class="bg-amber-50 text-slate-900 p-8 rounded-xl border-4 border-double border-amber-600 space-y-4 text-center font-serif shadow-inner">
+        <div class="border-b-2 border-amber-700 pb-3">
+          <span class="text-xs tracking-widest uppercase font-bold text-amber-800">Certificate of Completion</span>
+          <h2 class="text-3xl font-black text-amber-950 mt-1">Tycoon Wealth Journey</h2>
+        </div>
+        <h3 id="certStudentName" class="text-3xl font-bold text-emerald-900 underline decoration-amber-600 underline-offset-4 pt-3">Student</h3>
+        <p class="text-sm text-slate-800 max-w-lg mx-auto leading-relaxed pt-3">For diligently completing the 30-day perseverance course in personal finance.</p>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left bg-white/80 p-3.5 rounded-lg border border-amber-300 text-sm font-sans mt-5">
+          <div><span class="text-[10px] text-slate-500 block">Total Overall Savings:</span><strong id="certTotalSaved" class="text-slate-900">$0.00</strong></div>
+          <div><span class="text-[10px] text-slate-500 block">Tax-Free Growth:</span><strong id="certTaxFree" class="text-emerald-700">$0.00</strong></div>
+          <div><span class="text-[10px] text-slate-500 block">Total Income Saved:</span><strong id="certLifetimeDeposited" class="text-slate-900">$0.00</strong></div>
+          <div><span class="text-[10px] text-slate-500 block">Real Cash Payout (<span id="certRatioText">2000</span>:1):</span><strong id="certRealCash" class="text-amber-800">$0.00</strong></div>
+        </div>
+
+        <div class="pt-4 flex justify-between items-end border-t border-amber-300 text-sm text-slate-700 mt-5">
+          <div><span id="certSponsorSignature" class="font-bold font-sans block text-base border-b border-slate-500 pb-1">Dad</span><span class="text-[10px] text-slate-500">Sponsor</span></div>
+          <div class="text-right"><span id="certDate" class="font-sans block text-sm font-semibold"></span><span class="text-[10px] text-slate-500">Date of Graduation</span></div>
+        </div>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeCertificateModal()" class="flex-1 bg-slate-700 text-slate-200 text-sm font-bold py-3 rounded-lg">Close</button>
+        <button onclick="window.print()" class="flex-1 bg-amber-500 text-slate-950 text-sm font-bold py-3 rounded-lg">🖨️ Print Certificate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE CLOUD SAVE SCRIPT (Module) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtr3ynB5L5iazf9gWZ-MGwjSZ1oAbsQ7M",
+      authDomain: "tycoon-459c6.firebaseapp.com",
+      projectId: "tycoon-459c6",
+      storageBucket: "tycoon-459c6.firebasestorage.app",
+      messagingSenderId: "336814910140",
+      appId: "1:336814910140:web:8b5552fd38b0f3a1defeb9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Make Cloud Save functions globally accessible for the main script
+    window.saveStateToCloud = async function(stateData) {
+      if (auth.currentUser) {
+        await setDoc(doc(db, "tycoon_saves", auth.currentUser.uid), stateData);
+      }
+    };
+
+    window.deleteStateFromCloud = async function() {
+      if (auth.currentUser) {
+        await deleteDoc(doc(db, "tycoon_saves", auth.currentUser.uid));
+      }
+    };
+
+    // Authenticate silently
+    signInAnonymously(auth).catch((error) => {
+      console.error("Auth Error:", error);
+      alert("Failed to connect to Firebase. Falling back to temporary session.");
+      window.loadStateFromCloud(null);
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
+          window.loadStateFromCloud(docSnap.exists() ? docSnap.data() : null);
+        } catch (e) {
+          console.error("Firestore Error:", e);
+          window.loadStateFromCloud(null);
+        }
+      }
+    });
+  </script>
+
+  <!-- MAIN GAME ENGINE LOGIC -->
+  <script>
+    const SHOCK_CATALOG = {
+      young: [
+        { title: "Career Relocation & Lease Commitment", monthlyCost: 50, desc: "Moving loan repayment, storage, and higher rental premiums." },
+        { title: "Wedding Financing & Family Travel", monthlyCost: 100, desc: "Monthly installments covering ceremony and travel obligations." },
+        { title: "First Home Closing Escrow", monthlyCost: 110, desc: "Ongoing monthly private mortgage insurance (PMI) and home repair escrow." },
+        { title: "Early Childcare & Infant Setup", monthlyCost: 80, desc: "Recurring baby supplies, formula, and pediatric copays." }
+      ],
+      mid: [
+        { title: "Full-Time Daycare Tuitions", monthlyCost: 150, desc: "Mandatory monthly preschool and infant daycare tuition commitments." },
+        { title: "Home System Failure (HVAC)", monthlyCost: 165, desc: "Financing payments on complete central heat pump replacement." },
+        { title: "Roof Replacement", monthlyCost: 180, desc: "Monthly home equity loan servicing after storm structural restoration." },
+        { title: "Vehicle Transmission Replacement", monthlyCost: 140, desc: "Auto repair financing and substitute transportation costs." }
+      ],
+      mature: [
+        { title: "College Tuition Support", monthlyCost: 220, desc: "Monthly tuition payment plan, dorm boarding, and semester living stipend." },
+        { title: "Adolescent Orthodontics", monthlyCost: 130, desc: "Monthly payment plan for multi-year corrective braces." },
+        { title: "Aging Parent Medical Support", monthlyCost: 180, desc: "Out-of-pocket assisted care and prescription assistance ($2,160/yr)." },
+        { title: "High-Deductible Emergency Surgery", monthlyCost: 160, desc: "Hospital payment plan for surgical deductibles and recovery." }
+      ]
+    };
+
+    function getFreshState() {
+      return {
+        playerName: "", sponsorName: "Dad", cashConversionRatio: 2000, charityMultiplier: 5,
+        gameMode: null, nextTurnTime: 0, settingsLastUpdatedYear: 1, day: 1,
+        checking: 0, short: 0, mid: 0, long: 0, charity: 0,
+        shortDeposits: [], midDeposits: [],
+        hasConvertedThisYear: false, hasConvertedCheckToShortThisYear: false, hasConvertedShortToMidThisYear: false,
+        onboardingCompleted: false, currentYearShock: null, currentStatusMessage: "Awaiting Year 1 plan.",
+        currentStatusIsError: false, cashedOutRealDollars: 0, cumulativeSavingsDeposits: 0,
+        lastAllocations: { short: '', mid: '', long: '', charity: '' },
+        accountStats: {
+          short: { totalDeposited: 0, lastInterest: 0, totalInterest: 0 },
+          mid: { totalDeposited: 0, lastInterest: 0, totalInterest: 0 },
+          long: { totalDeposited: 0, lastInterest: 0, totalInterest: 0 },
+          charity: { totalDeposited: 0, lastInterest: 0, totalInterest: 0 }
+        },
+        transactions: ["Game initialized. Waiting for plan."],
+        history: { labels: ['Yr 1 (Age 25)'], checking: [0], short: [0], mid: [0], long: [0], charity: [0], cumulativeDeposits: [0] },
+        isGameOver: false, isCatchingUp: false, catchUpYearsRemaining: 0, shockAcknowledged: false, daySnapshot: null
+      };
+    }
+
+    function mergeStateSafely(fresh, saved) {
+      if (!saved) return fresh;
+      for (let key in fresh) {
+        if (saved[key] === undefined) { saved[key] = fresh[key]; } 
+        else if (typeof fresh[key] === 'object' && fresh[key] !== null && !Array.isArray(fresh[key])) { mergeStateSafely(fresh[key], saved[key]); }
+      }
+      saved.shortDeposits = saved.shortDeposits || []; saved.midDeposits = saved.midDeposits || []; saved.transactions = saved.transactions || [];
+      return saved;
+    }
+
+    // Temporarily load fresh state until Firebase pulls the cloud file
+    let state = getFreshState(); 
+    let chartInstance = null, compChartAInstance = null, compChartBInstance = null;
+    let onboardingSelectedMode = 'normal'; 
+    let isDirty = false; 
+
+    // TRIGGERED BY FIREBASE ONCE AUTHENTICATED
+    window.loadStateFromCloud = function(cloudData) {
+      if (cloudData) {
+        state = mergeStateSafely(getFreshState(), cloudData);
+      } else {
+        state = getFreshState();
+      }
+      initApp();
+    };
+
+    function captureDaySnapshot() {
+      state.daySnapshot = JSON.parse(JSON.stringify(state));
+      delete state.daySnapshot.daySnapshot;
+    }
+
+    function initApp() {
+      document.getElementById('entryLoading').classList.add('hidden');
+
+      if (!state.onboardingCompleted) {
+        document.getElementById('entryNewGame').classList.remove('hidden');
+        document.getElementById('entryResumeGame').classList.add('hidden');
+      } else {
+        document.getElementById('entryPlayerName').textContent = state.playerName;
+        document.getElementById('entryYear').textContent = state.day;
+        document.getElementById('entryAge').textContent = 24 + state.day;
+        
+        const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
+        let modeText = 'Normal (Midnight Rollover)';
+        if (sNameCheck === 'T=1') modeText = 'Normal (1-Min Cycles)';
+        if (sNameCheck === 'T=2') modeText = 'Normal (2-Min Cycles)';
+        if (sNameCheck === 'T=5') modeText = 'Normal (5-Min Cycles)';
+        document.getElementById('entryMode').textContent = state.gameMode === 'normal' ? modeText : 'Fast (Manual)';
+        
+        document.getElementById('entryNewGame').classList.add('hidden');
+        document.getElementById('entryResumeGame').classList.remove('hidden');
+      }
+    }
+
+    function saveState() {
+      if (window.saveStateToCloud) window.saveStateToCloud(state);
+      render();
+    }
+
+    function logTx(desc) {
+      const age = 24 + state.day;
+      state.transactions.unshift(`Year ${state.day} (Age ${age}): ${desc}`);
+    }
+
+    function setPersistentStatus(text, isError = false) {
+      state.currentStatusMessage = text;
+      state.currentStatusIsError = isError;
+      const el = document.getElementById('statusMsg');
+      el.textContent = text;
+      el.className = `text-xs text-center py-2 px-3 rounded-lg font-medium border ${isError ? 'bg-rose-950/90 text-rose-300 border-rose-800' : 'bg-slate-700/80 text-slate-200 border-slate-600'}`;
+      el.classList.remove('hidden');
+    }
+
+    function getLockedAmount(deposits, lockYears) {
+      if (!deposits) return 0;
+      return deposits.filter(d => (state.day - d.day) < lockYears).reduce((sum, d) => sum + d.amount, 0);
+    }
+
+    function rollYearShock() {
+      state.shockAcknowledged = false; 
+      if (state.day > 30) { state.currentYearShock = null; return; }
+      if (Math.random() <= 0.60) {
+        let bracket = state.day <= 10 ? 'young' : (state.day <= 20 ? 'mid' : 'mature');
+        const pool = SHOCK_CATALOG[bracket];
+        state.currentYearShock = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        state.currentYearShock = null;
+      }
+    }
+
+    function convertCheckingToShort() {
+      if (state.hasConvertedCheckToShortThisYear) return setPersistentStatus("Conversion limited to 1/year.", true);
+      if (state.checking <= 0) return setPersistentStatus("No available funds in Checking to convert.", true);
+      const amt = state.checking * 0.25;
+      state.checking -= amt; state.short += amt;
+      state.shortDeposits.push({ day: state.day, amount: amt });
+      state.accountStats.short.totalDeposited += amt; state.cumulativeSavingsDeposits += amt;
+      state.hasConvertedCheckToShortThisYear = true;
+      logTx(`Converted 25% of Checking ($${amt.toFixed(2)}) into Short-Term`);
+      setPersistentStatus(`Converted $${amt.toFixed(2)} (25% of Checking) into Short-Term!`);
+      saveState(); updateLiveAllocationTotals(false);
+    }
+
+    function convertShortToMid() {
+      if (state.hasConvertedShortToMidThisYear) return setPersistentStatus("Conversion limited to 1/year.", true);
+      const avail = Math.max(0, state.short - getLockedAmount(state.shortDeposits, 2));
+      if (avail <= 0) return setPersistentStatus(`No unlocked funds in Short-Term.`, true);
+      const amt = avail * 0.25;
+      state.short -= amt; state.mid += amt;
+      state.midDeposits.push({ day: state.day, amount: amt });
+      state.accountStats.mid.totalDeposited += amt;
+      state.hasConvertedShortToMidThisYear = true;
+      logTx(`Converted 25% of unlocked Short-Term ($${amt.toFixed(2)}) into Mid-Term`);
+      setPersistentStatus(`Converted $${amt.toFixed(2)} (25% of Short-Term) into Mid-Term!`);
+      saveState(); updateLiveAllocationTotals(false);
+    }
+
+    function withdrawShort() {
+      const avail = Math.max(0, state.short - getLockedAmount(state.shortDeposits, 2));
+      if (avail <= 0) return setPersistentStatus(`No unlocked funds in Short-Term.`, true);
+      state.checking += avail; state.short -= avail;
+      state.shortDeposits = state.shortDeposits.filter(d => (state.day - d.day) < 2);
+      document.getElementById('allocShort').value = ''; state.lastAllocations.short = ''; updateLiveAllocationTotals(true);
+      logTx(`Returned unlocked $${avail.toFixed(2)} from Short-Term to Checking`);
+      setPersistentStatus(`Withdrew unlocked $${avail.toFixed(2)} to Checking.`);
+      saveState();
+    }
+
+    function withdrawMid() {
+      const avail = Math.max(0, state.mid - getLockedAmount(state.midDeposits, 5));
+      if (avail <= 0) return setPersistentStatus(`No unlocked funds in Mid-Term.`, true);
+      state.checking += avail; state.mid -= avail;
+      state.midDeposits = state.midDeposits.filter(d => (state.day - d.day) < 5);
+      document.getElementById('allocMid').value = ''; state.lastAllocations.mid = ''; updateLiveAllocationTotals(true);
+      logTx(`Returned unlocked $${avail.toFixed(2)} from Mid-Term to Checking`);
+      setPersistentStatus(`Withdrew unlocked $${avail.toFixed(2)} to Checking.`);
+      saveState();
+    }
+
+    function convertMidToLong() {
+      if (state.day < 20) return setPersistentStatus("Accelerator unlocks at Year 20.", true);
+      if (state.hasConvertedThisYear) return setPersistentStatus("Conversion limited to 1/year.", true);
+      if (state.mid <= 0) return setPersistentStatus("No Mid-Term funds available.", true);
+      const amt = state.mid * 0.10;
+      state.mid -= amt; state.long += amt; state.hasConvertedThisYear = true;
+      state.midDeposits.forEach(d => { d.amount *= 0.90; });
+      logTx(`Accelerator: Converted 10% ($${amt.toFixed(2)}) from Mid-Term to Long-Term`);
+      setPersistentStatus(`Converted 10% ($${amt.toFixed(2)}) into Long-Term!`);
+      saveState();
+    }
+
+    window.openCashoutModal = function() {
+      document.getElementById('cashoutInput').value = '';
+      document.getElementById('realConversionPreview').textContent = '$0.00';
+      document.getElementById('uiCashoutRatio').textContent = state.cashConversionRatio || 2000;
+      document.getElementById('cashoutModal').classList.remove('hidden');
+    }
+    window.closeCashoutModal = function() { document.getElementById('cashoutModal').classList.add('hidden'); }
+    document.getElementById('cashoutInput').addEventListener('input', (e) => {
+      document.getElementById('realConversionPreview').textContent = `$${((parseFloat(e.target.value)||0) / (state.cashConversionRatio||2000)).toFixed(2)}`;
+    });
+    window.executeCashout = function() {
+      const val = parseInt(document.getElementById('cashoutInput').value, 10);
+      if (isNaN(val) || val <= 0 || val % 100 !== 0) return alert("Multiples of 100 game dollars only.");
+      if (val > state.checking) return alert("Insufficient checking funds.");
+      const ratio = state.cashConversionRatio || 2000;
+      const realCash = val / ratio;
+      state.checking -= val; state.cashedOutRealDollars += realCash;
+      logTx(`Cashed out $${val} game dollars for $${realCash.toFixed(2)} real dollars`);
+      closeCashoutModal();
+      setPersistentStatus(`Successfully cashed out $${val} for $${realCash.toFixed(2)} real money!`);
+      saveState();
+    }
+
+    window.openOnboarding = function() { document.getElementById('entrySplashModal').classList.add('hidden'); document.getElementById('onboardingModal').classList.remove('hidden'); }
+    window.openSponsorInfoModal = function() { 
+      document.getElementById('infoRatio').textContent = state.cashConversionRatio || 2000;
+      document.getElementById('infoMultiplier').textContent = state.charityMultiplier || 5;
+      document.getElementById('sponsorInfoModal').classList.remove('hidden'); 
+    }
+    window.closeSponsorInfoModal = function() { document.getElementById('sponsorInfoModal').classList.add('hidden'); }
+
+    window.selectMode = function(mode) {
+      onboardingSelectedMode = mode;
+      if (mode === 'normal') {
+        document.getElementById('modeSelectNormal').classList.add('border-indigo-500', 'bg-indigo-900/60');
+        document.getElementById('modeSelectNormal').classList.remove('border-slate-700', 'bg-slate-900');
+        document.getElementById('modeSelectFast').classList.add('border-slate-700', 'bg-slate-900');
+        document.getElementById('modeSelectFast').classList.remove('border-emerald-500/50', 'bg-emerald-900/40');
+      } else {
+        document.getElementById('modeSelectFast').classList.add('border-emerald-500/50', 'bg-emerald-900/40');
+        document.getElementById('modeSelectFast').classList.remove('border-slate-700', 'bg-slate-900');
+        document.getElementById('modeSelectNormal').classList.add('border-slate-700', 'bg-slate-900');
+        document.getElementById('modeSelectNormal').classList.remove('border-indigo-500', 'bg-indigo-900/60');
+      }
+    }
+
+    window.saveOnboardingAndStart = function() {
+      state.playerName = document.getElementById('playerNameInput').value.trim() || "Young Tycoon";
+      state.sponsorName = document.getElementById('sponsorNameInput').value.trim() || "Dad";
+      state.cashConversionRatio = parseInt(document.getElementById('cashRatioInput').value) || 2000;
+      state.charityMultiplier = parseFloat(document.getElementById('charityMultiplierInput').value) || 5;
+      state.gameMode = onboardingSelectedMode;
+      state.onboardingCompleted = true;
+      
+      if (state.gameMode === 'normal') {
+        const sNameCheck = state.sponsorName.toUpperCase().replace(/\s/g, '');
+        if (sNameCheck === 'T=1') { state.nextTurnTime = Date.now() + (1 * 60 * 1000); setPersistentStatus(`Normal Mode: 1 Min = 1 Year.`); }
+        else if (sNameCheck === 'T=2') { state.nextTurnTime = Date.now() + (2 * 60 * 1000); setPersistentStatus(`Normal Mode: 2 Min = 1 Year.`); } 
+        else if (sNameCheck === 'T=5') { state.nextTurnTime = Date.now() + (5 * 60 * 1000); setPersistentStatus(`Normal Mode: 5 Min = 1 Year.`); } 
+        else {
+          let nextDay = new Date(); nextDay.setDate(nextDay.getDate() + 1); nextDay.setHours(0, 0, 0, 0);
+          state.nextTurnTime = nextDay.getTime();
+          setPersistentStatus(`Normal Mode: 1 Calendar Day = 1 Year.`);
+        }
+        state.settingsLastUpdatedYear = state.day;
+      } else {
+        setPersistentStatus("Fast Mode Active: Click Conclude Year when ready.");
+      }
+      
+      logTx(`Started Journey. Mode: ${state.gameMode === 'normal' ? 'Normal' : 'Fast (Manual)'}`);
+      document.getElementById('onboardingModal').classList.add('hidden');
+      document.getElementById('entrySplashModal').classList.add('hidden');
+      rollYearShock();
+      captureDaySnapshot();
+      saveState();
+      populateInputs();
+      updateLiveAllocationTotals(false);
+    }
+
+    function getMissedTurns() {
+      let missed = 0;
+      let tempTime = state.nextTurnTime;
+      const now = Date.now();
+      const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
+      while (now >= tempTime && (state.day + missed) <= 30) {
+        missed++;
+        if (sNameCheck === 'T=1') tempTime += (1 * 60 * 1000);
+        else if (sNameCheck === 'T=2') tempTime += (2 * 60 * 1000);
+        else if (sNameCheck === 'T=5') tempTime += (5 * 60 * 1000);
+        else {
+          let d = new Date(tempTime);
+          d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0);
+          tempTime = d.getTime();
+        }
+      }
+      return missed;
+    }
+
+    function checkAutoAdvance() {
+      if (state.gameMode !== 'normal' || state.isGameOver || state.day > 30) return;
+      const missed = getMissedTurns();
+      if (missed > 0 && !state.isCatchingUp) {
+          state.isCatchingUp = true;
+          state.catchUpYearsRemaining = missed;
+          document.getElementById('catchUpTurns').textContent = state.catchUpYearsRemaining;
+          document.getElementById('catchUpSettingsYear').textContent = state.settingsLastUpdatedYear;
+          document.getElementById('catchUpModal').classList.remove('hidden');
+          saveState();
+      } else if (missed > 0 && state.isCatchingUp) {
+          state.catchUpYearsRemaining = missed;
+          document.getElementById('catchUpTurns').textContent = state.catchUpYearsRemaining;
+          const nextBtn = document.getElementById('simNextBtn');
+          if (nextBtn && !document.getElementById('simActionContainer').classList.contains('hidden') && state.catchUpYearsRemaining > 0) {
+              nextBtn.textContent = `Play Year ${state.day} (Age ${24 + state.day})`;
+              nextBtn.onclick = () => { document.getElementById('simActionContainer').classList.add('hidden'); window.executeYearConclusion(true); };
+          }
+      }
+    }
+
+    window.startCatchUpSequence = function() {
+      document.getElementById('catchUpModal').classList.add('hidden');
+      window.executeYearConclusion(true); 
+    }
+
+    window.finishCatchUp = function() {
+      document.getElementById('simulationModal').classList.add('hidden');
+      state.isCatchingUp = false;
+      saveState();
+      render(); 
+    }
+
+    window.executeYearConclusion = function(isCatchUp = false) {
+      if (!isCatchUp) closeConfirmModal();
+
+      let s, m, l, c;
+      if (isCatchUp) {
+        s = parseFloat(state.lastAllocations.short) || 0;
+        m = parseFloat(state.lastAllocations.mid) || 0;
+        l = parseFloat(state.lastAllocations.long) || 0;
+        c = parseFloat(state.lastAllocations.charity) || 0;
+      } else {
+        s = Math.max(0, parseFloat(document.getElementById('allocShort').value) || 0);
+        m = Math.max(0, parseFloat(document.getElementById('allocMid').value) || 0);
+        l = Math.max(0, parseFloat(document.getElementById('allocLong').value) || 0);
+        c = Math.max(0, parseFloat(document.getElementById('allocCharity').value) || 0);
+        state.lastAllocations = { short: s, mid: m, long: l, charity: c };
+        state.settingsLastUpdatedYear = state.day;
+      }
+
+      const effectiveIncome = state.currentYearShock ? Math.max(0, 500 - state.currentYearShock.monthlyCost) : 500;
+      const checkingNetMonthly = effectiveIncome - (s + m + l + c);
+      const monthlySavingsDeposit = s + m + l;
+
+      const currentAge = 24 + state.day;
+      document.getElementById('simYear').textContent = state.day;
+      document.getElementById('simAge').textContent = currentAge;
+      document.getElementById('simMonthlyDep').textContent = `$${monthlySavingsDeposit.toFixed(2)}`;
+      document.getElementById('simCrossoverBadge').classList.add('hidden');
+      document.getElementById('simActionContainer').classList.add('hidden');
+      document.getElementById('simulationModal').classList.remove('hidden');
+
+      let month = 1, sIntTot = 0, mIntTot = 0, lIntTot = 0, debtTot = 0, crossover = false;
+      const rS = 0.05/12, rM = 0.08/12, rL = 0.11/12, dM = 0.20/12, dL = 0.10/12;
+      const speed = isCatchUp ? 150 : 480; 
+
+      const timer = setInterval(() => {
+        state.checking += checkingNetMonthly; state.short += s; state.mid += m; state.long += l; state.charity += c;
+        let debtMsg = "";
+        if (state.checking < 0) { state.checking -= 10; debtTot += 10; debtMsg = " ⚠️ -$10 Fee."; }
+        let tMsg = `Mo ${month}: Net flow ${checkingNetMonthly>=0?'+':''}$${checkingNetMonthly.toFixed(2)}.${debtMsg}`;
+        if (Math.random() < (0.05/12)) {
+          state.mid -= state.mid * dM; state.long -= state.long * dL;
+          tMsg = `Mo ${month}: ⚠️ Market drop! Mid -1.6%, Long -0.8%`;
+        }
+        const sI = state.short * rS, mI = state.mid * rM, lI = state.long * rL;
+        state.short += sI; state.mid += mI; state.long += lI;
+        sIntTot += sI; mIntTot += mI; lIntTot += lI;
+
+        if ((sI+mI+lI) > (s+m+l) && (s+m+l) > 0) { crossover = true; document.getElementById('simCrossoverBadge').classList.remove('hidden'); }
+
+        document.getElementById('simMonthBadge').textContent = `Month ${month} / 12`;
+        document.getElementById('simProgressBar').style.width = `${(month/12)*100}%`;
+        document.getElementById('simMonthlyInt').textContent = `+$${(sI+mI+lI).toFixed(2)}`;
+        document.getElementById('simShortMoInt').textContent = `+$${sI.toFixed(2)}/mo`;
+        document.getElementById('simMidMoInt').textContent = `+$${mI.toFixed(2)}/mo`;
+        document.getElementById('simLongMoInt').textContent = `+$${lI.toFixed(2)}/mo`;
+        document.getElementById('simChecking').textContent = `$${state.checking.toFixed(2)}`;
+        document.getElementById('simShort').textContent = `$${state.short.toFixed(2)}`;
+        document.getElementById('simMid').textContent = `$${state.mid.toFixed(2)}`;
+        document.getElementById('simLong').textContent = `$${state.long.toFixed(2)}`;
+        document.getElementById('simTicker').textContent = tMsg;
+
+        month++;
+        if (month > 12) {
+          clearInterval(timer);
+          
+          if (isCatchUp) {
+            applyYearEndLogic(s, m, l, c, sIntTot, mIntTot, lIntTot, debtTot, currentAge, crossover);
+            state.catchUpYearsRemaining--;
+            
+            const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
+            if (sNameCheck === 'T=1') state.nextTurnTime += (1 * 60 * 1000);
+            else if (sNameCheck === 'T=2') state.nextTurnTime += (2 * 60 * 1000);
+            else if (sNameCheck === 'T=5') state.nextTurnTime += (5 * 60 * 1000);
+            else {
+              let d = new Date(state.nextTurnTime); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0);
+              state.nextTurnTime = d.getTime();
+            }
+
+            const actionContainer = document.getElementById('simActionContainer');
+            const nextBtn = document.getElementById('simNextBtn');
+            actionContainer.classList.remove('hidden');
+
+            if (state.isGameOver || state.day > 30) {
+              nextBtn.textContent = "Finish & View Results";
+              nextBtn.onclick = window.finishCatchUp;
+            } else if (state.catchUpYearsRemaining > 0) {
+              nextBtn.textContent = `Play Year ${state.day} (Age ${24 + state.day})`;
+              nextBtn.onclick = () => { actionContainer.classList.add('hidden'); window.executeYearConclusion(true); };
+            } else {
+              nextBtn.textContent = "Return to Dashboard";
+              nextBtn.onclick = window.finishCatchUp;
+            }
+          } else {
+            setTimeout(() => {
+              document.getElementById('simulationModal').classList.add('hidden');
+              applyYearEndLogic(s, m, l, c, sIntTot, mIntTot, lIntTot, debtTot, currentAge, crossover);
+              isDirty = false;
+              render(); 
+            }, 600);
+          }
+        }
+      }, speed);
+    }
+
+    function applyYearEndLogic(s, m, l, c, sIntTotal, mIntTotal, lIntTotal, debtFeesTotal, currentAge, crossover) {
+      if (s*12 > 0) state.shortDeposits.push({ day: state.day, amount: s*12 });
+      if (m*12 > 0) state.midDeposits.push({ day: state.day, amount: m*12 });
+
+      state.cumulativeSavingsDeposits += ((s+m+l)*12);
+      state.accountStats.short.totalDeposited += s*12; state.accountStats.mid.totalDeposited += m*12;
+      state.accountStats.long.totalDeposited += l*12; state.accountStats.charity.totalDeposited += c*12;
+      state.accountStats.short.lastInterest = sIntTotal; state.accountStats.short.totalInterest += sIntTotal;
+      state.accountStats.mid.lastInterest = mIntTotal; state.accountStats.mid.totalInterest += mIntTotal;
+      state.accountStats.long.lastInterest = lIntTotal; state.accountStats.long.totalInterest += lIntTotal;
+
+      const shock = state.currentYearShock;
+      const cNote = crossover ? " [CROSSOVER ACHIEVED!]" : "";
+      if (shock) logTx(`Yr ${state.day} Complete w/ ${shock.title}. Growth: +$${(sIntTotal+mIntTotal+lIntTotal).toFixed(2)}. Fees: -$${debtFeesTotal.toFixed(2)}${cNote}`);
+      else logTx(`Yr ${state.day} Complete. Growth: +$${(sIntTotal+mIntTotal+lIntTotal).toFixed(2)}. Fees: -$${debtFeesTotal.toFixed(2)}${cNote}`);
+
+      state.history.labels.push(`Yr ${state.day} (Age ${currentAge})`);
+      state.history.checking.push(state.checking); state.history.short.push(state.short); state.history.mid.push(state.mid);
+      state.history.long.push(state.long); state.history.charity.push(state.charity); state.history.cumulativeDeposits.push(state.cumulativeSavingsDeposits);
+
+      if (state.day >= 30) {
+        state.isGameOver = true;
+        setPersistentStatus("Congratulations! You completed Year 30 (Age 55) and finalized your wealth journey.");
+        saveState(); return;
+      }
+
+      state.day += 1;
+      state.hasConvertedThisYear = false; state.hasConvertedCheckToShortThisYear = false; state.hasConvertedShortToMidThisYear = false;
+
+      rollYearShock();
+      setPersistentStatus(`Completed Year ${state.day - 1}! Welcome to Year ${state.day} (Age ${24 + state.day}). Plan your budget.`);
+      captureDaySnapshot();
+      saveState();
+    }
+
+    window.resumeGame = function() {
+      document.getElementById('entrySplashModal').classList.add('hidden');
+      populateInputs();
+      updateLiveAllocationTotals(false);
+      render();
+      checkAutoAdvance();
+    }
+
+    window.closeAcceleratorModal = function() { document.getElementById('acceleratorModal').classList.add('hidden'); }
+    window.closeShockModal = function() { 
+      state.shockAcknowledged = true; 
+      document.getElementById('shockModal').classList.add('hidden'); 
+      saveState(); 
+    }
+    window.closeCertificateModal = function() { document.getElementById('certificateModal').classList.add('hidden'); }
+
+    window.openCertificateModal = function() {
+      const netGamePortfolio = state.checking + state.short + state.mid + state.long;
+      const ratio = state.cashConversionRatio || 2000;
+      document.getElementById('certStudentName').textContent = state.playerName || "Student";
+      document.getElementById('certSponsorSignature').textContent = state.sponsorName || "Dad";
+      document.getElementById('certTotalSaved').textContent = `$${netGamePortfolio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('certTaxFree').textContent = `$${state.long.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('certLifetimeDeposited').textContent = `$${state.cumulativeSavingsDeposits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('certRealCash').textContent = `$${(Math.max(0, netGamePortfolio)/ratio).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('certRatioText').textContent = ratio;
+      document.getElementById('certDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('certificateModal').classList.remove('hidden');
+    }
+
+    window.openComparisonModal = function() {
+      const labels = Array.from({ length: 30 }, (_, i) => `Yr ${i + 1}`);
+      let sA=0, lA=0, sAHist=[], lAHist=[], tAHist=[];
+      let sB=0, lB=0, sBHist=[], lBHist=[], tBHist=[];
+      const m8 = 0.08/12, m11 = 0.11/12;
+      for (let y=1; y<=30; y++) {
+        for (let m=0; m<12; m++) { sA=(sA+100)*(1+m8); lA=(lA+100)*(1+m11); sB=(sB+100)*(1+m8); lB=(lB+100)*(1+m11); }
+        if (y>=20) { const shift=sB*0.10; sB-=shift; lB+=shift; }
+        sAHist.push(sA); lAHist.push(lA); tAHist.push(sA+lA);
+        sBHist.push(sB); lBHist.push(lB); tBHist.push(sB+lB);
+      }
+      document.getElementById('scenATotal').textContent = `$${tAHist[29].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('scenBTotal').textContent = `$${tBHist[29].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('scenDifference').textContent = `+$${(tBHist[29]-tAHist[29]).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      if (compChartAInstance) compChartAInstance.destroy();
+      compChartAInstance = new Chart(document.getElementById('compChartA').getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'Total Portfolio', data: tAHist, borderColor: '#10b981', tension: 0.2, borderWidth: 2 }, { label: 'Long-Term (11%)', data: lAHist, borderColor: '#34d399', borderDash: [3, 3], tension: 0.2 }, { label: 'Short/Mid (8%)', data: sAHist, borderColor: '#6366f1', borderDash: [3, 3], tension: 0.2 } ] }, options: { plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 } } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } } });
+      if (compChartBInstance) compChartBInstance.destroy();
+      compChartBInstance = new Chart(document.getElementById('compChartB').getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'Total Portfolio', data: tBHist, borderColor: '#818cf8', tension: 0.2, borderWidth: 2 }, { label: 'Long-Term (11%)', data: lBHist, borderColor: '#34d399', borderDash: [3, 3], tension: 0.2 }, { label: 'Short/Mid (8%)', data: sBHist, borderColor: '#6366f1', borderDash: [3, 3], tension: 0.2 } ] }, options: { plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 } } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } } });
+      document.getElementById('comparisonModal').classList.remove('hidden');
+    }
+    window.closeComparisonModal = function() { document.getElementById('comparisonModal').classList.add('hidden'); }
+    window.openEndDashboardModal = function() { document.getElementById('endDashboardModal').classList.remove('hidden'); buildChart(); }
+    window.closeEndDashboardModal = function() { document.getElementById('endDashboardModal').classList.add('hidden'); }
+    window.openReviewModal = function() {
+      document.getElementById('reportYear').textContent = state.day;
+      document.getElementById('reportAge').textContent = 24 + state.day;
+      const rows = [
+        { name: 'Short-Term Savings (5%)', data: state.accountStats.short },
+        { name: 'Mid-Term Savings (8%)', data: state.accountStats.mid },
+        { name: 'Long-Term Growth (11%)', data: state.accountStats.long },
+        { name: `Charity (${state.sponsorName} Match)`, data: state.accountStats.charity }
+      ];
+      document.getElementById('reviewTableBody').innerHTML = rows.map(r => `
+        <tr class="hover:bg-slate-700/30"><td class="p-3 font-medium text-white">${r.name}</td><td class="p-3 text-right text-emerald-400 font-semibold">$${r.data.totalDeposited.toFixed(2)}</td><td class="p-3 text-right text-amber-300 font-semibold">$${r.data.lastInterest.toFixed(2)}</td><td class="p-3 text-right text-indigo-300 font-semibold">$${r.data.totalInterest.toFixed(2)}</td></tr>
+      `).join('');
+      document.getElementById('reviewModal').classList.remove('hidden');
+    }
+    window.closeReviewModal = function() { document.getElementById('reviewModal').classList.add('hidden'); }
+
+    function buildChart() {
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(document.getElementById('growthChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: state.history.labels,
+          datasets: [
+            { label: 'Cumulative Deposits', data: state.history.cumulativeDeposits, borderColor: '#f59e0b', borderDash: [4, 4], tension: 0.2, borderWidth: 1.5 },
+            { label: 'Long-Term (11%)', data: state.history.long, borderColor: '#10b981', tension: 0.2 },
+            { label: 'Mid-Term (8%)', data: state.history.mid, borderColor: '#6366f1', tension: 0.2 },
+            { label: 'Short-Term (5%)', data: state.history.short, borderColor: '#3b82f6', tension: 0.2 },
+            { label: 'Checking Hub', data: state.history.checking, borderColor: '#94a3b8', tension: 0.2 },
+            { label: 'Charity Pool', data: state.history.charity, borderColor: '#f43f5e', tension: 0.2 }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } } }, scales: { x: { ticks: { color: '#94a3b8', font: { size: 8 } }, grid: { color: '#334155' } }, y: { ticks: { color: '#94a3b8', font: { size: 8 } }, grid: { color: '#334155' } } } }
+      });
+    }
+
+    function populateInputs() {
+      ['short', 'mid', 'long', 'charity'].forEach(b => {
+        const input = document.getElementById(`alloc${b.charAt(0).toUpperCase() + b.slice(1)}`);
+        if (input) input.value = state.lastAllocations[b] || '';
+      });
+    }
+
+    function updateLiveAllocationTotals(fromUserInput = true) {
+      if (fromUserInput && state.onboardingCompleted) { isDirty = true; }
+      
+      const s = Math.max(0, parseFloat(document.getElementById('allocShort').value) || 0);
+      const m = Math.max(0, parseFloat(document.getElementById('allocMid').value) || 0);
+      const l = Math.max(0, parseFloat(document.getElementById('allocLong').value) || 0);
+      const c = Math.max(0, parseFloat(document.getElementById('allocCharity').value) || 0);
+      const tot = s + m + l + c;
+      const inc = state.currentYearShock ? Math.max(0, 500 - state.currentYearShock.monthlyCost) : 500;
+      const net = inc - tot;
+
+      document.getElementById('liveTotalAllocated').textContent = `$${tot.toFixed(2)}`;
+      document.getElementById('liveAnnualTotal').textContent = `$${(tot * 12).toFixed(2)}`;
+      const imp = document.getElementById('liveCheckingImpact');
+      if (net >= 0) { imp.textContent = `+$${net.toFixed(2)}`; imp.className = "text-sm font-black text-emerald-400"; } 
+      else { imp.textContent = `-$${Math.abs(net).toFixed(2)}`; imp.className = "text-sm font-black text-rose-400"; }
+
+      if (fromUserInput) render();
+    }
+
+    window.handleMainAction = function() {
+      if (state.isGameOver || state.day > 30) return;
+      const s = Math.max(0, parseFloat(document.getElementById('allocShort').value) || 0);
+      const m = Math.max(0, parseFloat(document.getElementById('allocMid').value) || 0);
+      const l = Math.max(0, parseFloat(document.getElementById('allocLong').value) || 0);
+      const c = Math.max(0, parseFloat(document.getElementById('allocCharity').value) || 0);
+      const tot = s + m + l + c;
+      const inc = state.currentYearShock ? Math.max(0, 500 - state.currentYearShock.monthlyCost) : 500;
+      const max = inc + 100;
+
+      if (l > 125) return setPersistentStatus("Long-Term plan cannot exceed $125.00/mo ($1,500/yr).", true);
+
+      if (state.gameMode === 'fast') {
+        if (tot > max) return setPersistentStatus(`Monthly plan ($${tot.toFixed(2)}/mo) cannot exceed discretionary pay + $100 buffer ($${max.toFixed(2)}/mo).`, true);
+        prepareYearConclusion(s, m, l, c, tot, inc);
+      } else {
+        const btn = document.getElementById('mainActionBtn');
+        const actionText = document.getElementById('mainActionText');
+        const origText = actionText.textContent;
+        const origClass = btn.className;
+
+        if (tot > max) setPersistentStatus(`WARNING: Plan exceeds income! Checking will drop into debt. Plan saved.`, true);
+        else setPersistentStatus(`Plan Saved! Will be used for auto-processing from Year ${state.day}.`);
+        
+        state.lastAllocations = { short: s, mid: m, long: l, charity: c };
+        state.settingsLastUpdatedYear = state.day;
+        
+        isDirty = false;
+        saveState();
+
+        actionText.textContent = "✅ PLAN COMMITTED!";
+        btn.className = "flex-1 bg-emerald-400 text-slate-950 font-black py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition shadow-lg flex flex-col items-center justify-center min-h-[60px]";
+        setTimeout(() => { actionText.textContent = origText; btn.className = origClass; }, 2500);
+      }
+    }
+
+    function prepareYearConclusion(s, m, l, c, totalMonthly, effectiveIncome) {
+      document.getElementById('confirmYearNum').textContent = state.day;
+      document.getElementById('confShort').textContent = `$${s.toFixed(2)}/mo`;
+      document.getElementById('confMid').textContent = `$${m.toFixed(2)}/mo`;
+      document.getElementById('confLong').textContent = `$${l.toFixed(2)}/mo`;
+      document.getElementById('confCharity').textContent = `$${c.toFixed(2)}/mo`;
+      document.getElementById('confTotalAllocated').textContent = `$${totalMonthly.toFixed(2)}/mo`;
+      
+      const netCheckingMonthly = effectiveIncome - totalMonthly;
+      const confRemEl = document.getElementById('confRemainingChecking');
+      const confOverdraftEl = document.getElementById('confOverdraftNotice');
+
+      if (netCheckingMonthly >= 0) {
+        confRemEl.textContent = `+$${netCheckingMonthly.toFixed(2)}/mo`;
+        confRemEl.className = "font-bold text-emerald-400";
+        confOverdraftEl.classList.add('hidden');
+      } else {
+        confRemEl.textContent = `-$${Math.abs(netCheckingMonthly).toFixed(2)}/mo`;
+        confRemEl.className = "font-bold text-rose-400";
+        confOverdraftEl.classList.remove('hidden');
+      }
+      document.getElementById('confirmCommitModal').classList.remove('hidden');
+    }
+
+    window.closeConfirmModal = function() { document.getElementById('confirmCommitModal').classList.add('hidden'); }
+
+    function updateAutoTimer() {
+      const timerEl = document.getElementById('autoTimerText');
+      if (state.gameMode !== 'normal' || state.isGameOver || state.day > 30 || state.isCatchingUp) {
+        timerEl.classList.add('hidden');
+        return;
+      }
+      const diff = state.nextTurnTime - Date.now();
+      if (diff > 0) {
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
+        let timeStr = "";
+        if (sNameCheck === 'T=1' || sNameCheck === 'T=2' || sNameCheck === 'T=5') {
+            timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        } else {
+            timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        timerEl.textContent = `Auto-advances in: ${timeStr}`;
+        timerEl.classList.remove('hidden');
+      } else {
+        timerEl.textContent = `Processing...`;
+      }
+    }
+
+    window.resetCurrentDay = function() {
+      if (!state.daySnapshot) return;
+      if (!confirm(`Revert today's actions back to start of Year ${state.day}?`)) return;
+      const snap = state.daySnapshot;
+      state.playerName = snap.playerName; state.sponsorName = snap.sponsorName; state.gameMode = snap.gameMode;
+      state.nextTurnTime = snap.nextTurnTime; state.settingsLastUpdatedYear = snap.settingsLastUpdatedYear;
+      state.checking = snap.checking; state.short = snap.short; state.mid = snap.mid; state.long = snap.long; state.charity = snap.charity;
+      state.shortDeposits = JSON.parse(JSON.stringify(snap.shortDeposits)); state.midDeposits = JSON.parse(JSON.stringify(snap.midDeposits));
+      state.hasConvertedThisYear = snap.hasConvertedThisYear; state.hasConvertedCheckToShortThisYear = snap.hasConvertedCheckToShortThisYear;
+      state.hasConvertedShortToMidThisYear = snap.hasConvertedShortToMidThisYear;
+      state.acceleratorModalShown = snap.acceleratorModalShown; state.onboardingCompleted = snap.onboardingCompleted;
+      state.currentYearShock = snap.currentYearShock ? { ...snap.currentYearShock } : null;
+      state.currentStatusMessage = snap.currentStatusMessage; state.currentStatusIsError = snap.currentStatusIsError;
+      state.cashedOutRealDollars = snap.cashedOutRealDollars; state.cumulativeSavingsDeposits = snap.cumulativeSavingsDeposits;
+      state.accountStats = JSON.parse(JSON.stringify(snap.accountStats)); state.lastAllocations = { ...snap.lastAllocations };
+      state.transactions = state.transactions.slice(state.transactions.length - snap.txCount);
+      state.shockAcknowledged = snap.shockAcknowledged;
+      
+      logTx(`Reverted decisions back to start of Year ${state.day}`);
+      isDirty = false;
+      saveState(); populateInputs(); updateLiveAllocationTotals(false);
+      setPersistentStatus(`Year ${state.day} inputs reset to baseline.`);
+    }
+
+    window.fullResetGame = async function() {
+      if (confirm("Hard Reset: Are you sure you want to completely erase your cloud save and start over?")) {
+        if (window.deleteStateFromCloud) {
+          await window.deleteStateFromCloud();
+        }
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload(); 
+      }
+    }
+
+    function render() {
+      const ratio = state.cashConversionRatio || 2000;
+      const multiplier = state.charityMultiplier || 5;
+      const netGamePortfolio = state.checking + state.short + state.mid + state.long;
+      const realSavings = Math.max(0, netGamePortfolio) / ratio;
+      const realDadCharityMatch = (state.charity / ratio) * multiplier;
+      const currentAge = 24 + Math.min(state.day, 30);
+
+      document.getElementById('currentDay').textContent = Math.min(state.day, 30);
+      document.getElementById('currentAge').textContent = `Age ${currentAge}`;
+      document.getElementById('totalGameVal').textContent = `$${netGamePortfolio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('totalRealVal').textContent = `$${realSavings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('cashedOutRealVal').textContent = `$${state.cashedOutRealDollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('charityMatchVal').textContent = `$${realDadCharityMatch.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      document.getElementById('uiRatio1').textContent = ratio;
+      document.getElementById('uiRatioBtn').textContent = ratio;
+      document.getElementById('uiMultiplier1').textContent = multiplier;
+
+      const sponsor = state.sponsorName || "Dad";
+      document.getElementById('sponsorCharityLabel').textContent = sponsor;
+      document.getElementById('sponsorCharityTag').textContent = sponsor;
+
+      const pBadge = document.getElementById('playerBadge');
+      if (state.playerName) { pBadge.textContent = `${state.playerName} (Sponsored by ${sponsor})`; pBadge.classList.remove('hidden'); } 
+      else { pBadge.classList.add('hidden'); }
+
+      const modeBadge = document.getElementById('modeBadge');
+      if (state.gameMode === 'normal') {
+        modeBadge.textContent = "Normal Mode";
+        modeBadge.className = "text-xs uppercase font-bold px-2 py-0.5 rounded-sm tracking-wider bg-indigo-900/80 text-indigo-300 border border-indigo-700 hidden xl:inline";
+      } else if (state.gameMode === 'fast') {
+        modeBadge.textContent = "Fast Mode";
+        modeBadge.className = "text-xs uppercase font-bold px-2 py-0.5 rounded-sm tracking-wider bg-emerald-900/80 text-emerald-300 border border-emerald-700 hidden xl:inline";
+      } else {
+        modeBadge.classList.add('hidden');
+      }
+
+      const checkBalEl = document.getElementById('checkingBal');
+      const overdraftBadge = document.getElementById('overdraftBadge');
+      const debtBanner = document.getElementById('debtWarningBanner');
+      const debtBannerAmt = document.getElementById('debtBannerAmount');
+
+      if (state.checking < 0) {
+        checkBalEl.textContent = `-$${Math.abs(state.checking).toFixed(2)}`;
+        checkBalEl.className = "text-rose-400 text-base font-black ml-1";
+        overdraftBadge.classList.remove('hidden');
+        debtBanner.classList.remove('hidden');
+        debtBannerAmt.textContent = `-$${Math.abs(state.checking).toFixed(2)}`;
+      } else {
+        checkBalEl.textContent = `$${state.checking.toFixed(2)}`;
+        checkBalEl.className = "text-emerald-400 text-base font-bold ml-1";
+        overdraftBadge.classList.add('hidden');
+        debtBanner.classList.add('hidden');
+      }
+
+      document.getElementById('shortBal').textContent = `$${state.short.toFixed(2)}`;
+      document.getElementById('midBal').textContent = `$${state.mid.toFixed(2)}`;
+      document.getElementById('longBal').textContent = `$${state.long.toFixed(2)}`;
+      document.getElementById('charityBal').textContent = `$${state.charity.toFixed(2)}`;
+
+      const shock = state.currentYearShock;
+      const effMonthly = shock ? Math.max(0, 500 - shock.monthlyCost) : 500;
+      document.getElementById('effectiveMonthlyIncome').textContent = `$${effMonthly.toFixed(2)}`;
+      document.getElementById('effectiveAnnualIncome').textContent = `($${(effMonthly * 12).toFixed(2)}/yr)`;
+      document.getElementById('maxMonthlyBudgetLabel').textContent = `Max: $${(effMonthly + 100).toFixed(2)}/mo`;
+
+      const shockNoticeEl = document.getElementById('shockDeductionNotice');
+      if (shock) {
+        shockNoticeEl.innerHTML = `<span class="text-rose-400 font-semibold">Active Life Expense:</span> ${shock.title} (-$${shock.monthlyCost.toFixed(2)}/mo &bull; -$${(shock.monthlyCost * 12).toFixed(2)}/yr)`;
+      } else {
+        shockNoticeEl.textContent = "No active life expenses this year. Full discretionary pay available.";
+      }
+
+      const shortLockedVal = getLockedAmount(state.shortDeposits, 2);
+      const shortAvailVal = Math.max(0, state.short - shortLockedVal);
+      document.getElementById('shortAvail').textContent = `$${shortAvailVal.toFixed(2)}`;
+
+      const midLockedVal = getLockedAmount(state.midDeposits, 5);
+      const midAvailVal = Math.max(0, state.mid - midLockedVal);
+      document.getElementById('midAvail').textContent = `$${midAvailVal.toFixed(2)}`;
+
+      const btnCheckShort = document.getElementById('btnConvertCheckShort');
+      if (state.hasConvertedCheckToShortThisYear) {
+        btnCheckShort.disabled = true;
+        btnCheckShort.className = "bg-slate-700 text-slate-500 text-xs px-3 py-2 rounded-lg transition cursor-not-allowed";
+        btnCheckShort.textContent = "Converted Checking (1/day)";
+      } else {
+        btnCheckShort.disabled = false;
+        btnCheckShort.className = "bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium shadow";
+        btnCheckShort.textContent = "Convert 25% to Short (1/day)";
+      }
+
+      const btnShortMid = document.getElementById('btnConvertShortMid');
+      if (state.hasConvertedShortToMidThisYear) {
+        btnShortMid.disabled = true;
+        btnShortMid.className = "bg-slate-700 text-slate-500 text-xs px-3 py-2 rounded-lg transition cursor-not-allowed";
+        btnShortMid.textContent = "Converted to Mid (1/day)";
+      } else {
+        btnShortMid.disabled = false;
+        btnShortMid.className = "bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium";
+        btnShortMid.textContent = "Convert 25% to Mid (1/day)";
+      }
+
+      const convertBtn = document.getElementById('convertBtn');
+      if (state.day >= 20) {
+        convertBtn.classList.remove('hidden');
+        if (state.hasConvertedThisYear) {
+          convertBtn.disabled = true;
+          convertBtn.className = "bg-slate-700 text-slate-500 text-xs px-3 py-2 rounded transition cursor-not-allowed";
+          convertBtn.textContent = "Converted This Yr";
+        } else {
+          convertBtn.disabled = false;
+          convertBtn.className = "bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-2 rounded transition font-medium";
+          convertBtn.textContent = "Convert 10% (1/yr)";
+        }
+      } else {
+        convertBtn.classList.add('hidden');
+      }
+
+      const quickLogsEl = document.getElementById('quickActivityLogs');
+      if (state.transactions && state.transactions.length > 0) {
+        quickLogsEl.innerHTML = state.transactions.map(t => `<div class="border-b border-slate-800 pb-1">${t}</div>`).join('');
+      }
+
+      const statusEl = document.getElementById('statusMsg');
+      if (state.currentStatusMessage) {
+        statusEl.textContent = state.currentStatusMessage;
+        statusEl.className = `text-xs text-center py-2 px-3 rounded-lg font-medium border ${state.currentStatusIsError ? 'bg-rose-950/90 text-rose-300 border-rose-800' : 'bg-slate-700/80 text-slate-200 border-slate-600'}`;
+        statusEl.classList.remove('hidden');
+      } else {
+        statusEl.classList.add('hidden');
+      }
+
+      // Popups
+      if (state.isCatchingUp) {
+        document.getElementById('shockModal').classList.add('hidden');
+        document.getElementById('acceleratorModal').classList.add('hidden');
+      } else {
+        if (state.day >= 20 && !state.acceleratorModalShown) {
+           document.getElementById('acceleratorModal').classList.remove('hidden');
+           state.acceleratorModalShown = true;
+           saveState();
+        }
+        if (state.currentYearShock && state.day <= 30 && !state.isGameOver && !state.shockAcknowledged) {
+          const shk = state.currentYearShock;
+          document.getElementById('shockAge').textContent = 24 + state.day;
+          document.getElementById('shockCategory').textContent = shk.title;
+          document.getElementById('shockMonthlyCost').textContent = `-$${shk.monthlyCost.toFixed(2)} / month`;
+          document.getElementById('shockAnnualCost').textContent = `(-$${(shk.monthlyCost * 12).toFixed(2)} total for year)`;
+          document.getElementById('shockDescription').textContent = shk.desc;
+          document.getElementById('shockResolution').innerHTML = `<div>&bull; Monthly discretionary pay reduced to <strong>$${(500 - shk.monthlyCost).toFixed(2)}/mo</strong>.</div>`;
+          document.getElementById('shockModal').classList.remove('hidden');
+        }
+      }
+
+      const btn = document.getElementById('mainActionBtn');
+      const actionText = document.getElementById('mainActionText');
+      const endStrip = document.getElementById('endGameStrip');
+
+      if (state.isGameOver || state.day > 30) {
+        btn.disabled = true;
+        actionText.textContent = "Horizon Complete (Age 55)";
+        btn.className = "flex-1 bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl text-sm cursor-not-allowed flex flex-col items-center justify-center min-h-[60px]";
+        endStrip.classList.remove('hidden');
+      } else {
+        btn.disabled = false;
+        endStrip.classList.add('hidden');
+        if (state.gameMode === 'normal') {
+          if (actionText.textContent !== "✅ PLAN COMMITTED!") {
+             actionText.textContent = "💾 Save Current Budget Plan";
+             if (isDirty) {
+               btn.className = "flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3 px-4 rounded-xl text-sm uppercase tracking-wider transition shadow-lg shadow-indigo-950/50 flex flex-col items-center justify-center min-h-[60px] border border-indigo-400";
+             } else {
+               btn.className = "flex-1 bg-slate-700 text-slate-400 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wider transition flex flex-col items-center justify-center min-h-[60px] cursor-default border border-slate-600";
+             }
+          }
+        } else {
+          actionText.textContent = "Conclude Year & Simulate 12 Months";
+          btn.className = "flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 px-4 rounded-xl text-sm uppercase tracking-wider transition shadow-lg shadow-emerald-950/50 flex flex-col items-center justify-center min-h-[60px]";
+        }
+      }
+      updateAutoTimer();
+    }
+  </script>
+</body>
+</html>
