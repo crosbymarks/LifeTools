@@ -59,7 +59,6 @@
 
         <div class="text-center text-slate-500 text-xs font-bold uppercase tracking-wider">OR</div>
 
-        <!-- Guest play bypassed from immediate network wait -->
         <button onclick="openOnboarding()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-3.5 rounded-xl transition shadow-lg shadow-emerald-950/50">
           Play as Guest (Offline / Anonymous)
         </button>
@@ -315,7 +314,7 @@
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.02 (Direct Account & Guest Access)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.03 (Login State Control Fixed)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
@@ -728,7 +727,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Make Cloud Save functions globally accessible for the main script
+    // Save to Firestore with error resilience
     window.saveStateToCloud = async function(stateData) {
       if (auth.currentUser) {
         try {
@@ -749,7 +748,6 @@
       }
     };
 
-    // Tab switcher between login and register
     let currentAuthMode = 'login';
     window.switchAuthTab = function(mode) {
       currentAuthMode = mode;
@@ -768,7 +766,6 @@
       }
     };
 
-    // Unified email authentication submit handler
     window.handleAuthSubmit = async function() {
       const email = document.getElementById('authEmail').value.trim();
       const pass = document.getElementById('authPassword').value;
@@ -797,7 +794,6 @@
       }
     };
 
-    // Account Linking for guest sessions
     window.linkWithEmail = async function() {
       const email = document.getElementById('linkEmail').value.trim();
       const pass = document.getElementById('linkPassword').value;
@@ -824,12 +820,11 @@
     window.signOutAndWipe = async function() {
       if (confirm("This will log you out of this browser. Continue?")) {
         await signOut(auth);
-        localStorage.removeItem('tycoon_investGameState_v1202');
+        localStorage.removeItem('tycoon_investGameState_v1203');
         location.reload();
       }
     };
 
-    // Optional silent anonymous session triggered only when guest clicks "Begin"
     window.ensureAnonymousAuth = async function() {
       if (!auth.currentUser) {
         try {
@@ -840,7 +835,7 @@
       }
     };
 
-    // Listen to Firebase auth state changes
+    // Keep user on the splash screen until deliberate user action
     onAuthStateChanged(auth, async (user) => {
       document.getElementById('entryLoading').classList.add('hidden');
       if (user) {
@@ -848,18 +843,20 @@
           const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
           if (docSnap.exists()) {
             window.loadStateFromCloud(docSnap.data());
+            // Show resume UI without auto-dismissing splash
+            document.getElementById('entryNewGame').classList.add('hidden');
+            document.getElementById('entryResumeGame').classList.remove('hidden');
           } else {
-            // Logged in via registration or guest without saved data
-            window.loadStateFromCloud(null);
-            document.getElementById('entrySplashModal').classList.add('hidden');
-            document.getElementById('onboardingModal').classList.remove('hidden');
+            // Logged in without a save; keep login screen ready
+            document.getElementById('entryNewGame').classList.remove('hidden');
+            document.getElementById('entryResumeGame').classList.add('hidden');
           }
         } catch (e) {
           console.error("Firestore Error:", e);
-          window.loadStateFromCloud(null);
+          document.getElementById('entryNewGame').classList.remove('hidden');
+          document.getElementById('entryResumeGame').classList.add('hidden');
         }
       } else {
-        // No active user
         document.getElementById('entryNewGame').classList.remove('hidden');
         document.getElementById('entryResumeGame').classList.add('hidden');
       }
@@ -868,7 +865,7 @@
 
   <!-- MAIN GAME ENGINE LOGIC -->
   <script>
-    const STORAGE_KEY = 'tycoon_investGameState_v1202';
+    const STORAGE_KEY = 'tycoon_investGameState_v1203';
 
     const SHOCK_CATALOG = {
       young: [
@@ -928,19 +925,13 @@
     let onboardingSelectedMode = 'normal'; 
     let isDirty = false; 
 
-    // TRIGGERED BY FIREBASE ONCE AUTHENTICATED OR LOGGED IN
     window.loadStateFromCloud = function(cloudData) {
       if (cloudData) {
         state = mergeStateSafely(getFreshState(), cloudData);
       } else {
-        // Fall back to local storage if available, else fresh state
         try {
           const localSaved = localStorage.getItem(STORAGE_KEY);
-          if (localSaved) {
-            state = mergeStateSafely(getFreshState(), JSON.parse(localSaved));
-          } else {
-            state = getFreshState();
-          }
+          state = localSaved ? mergeStateSafely(getFreshState(), JSON.parse(localSaved)) : getFreshState();
         } catch(e) {
           state = getFreshState();
         }
@@ -1154,7 +1145,6 @@
       rollYearShock();
       captureDaySnapshot();
 
-      // Authenticate anonymously only now in background if not logged in
       if (window.ensureAnonymousAuth) {
         await window.ensureAnonymousAuth();
       }
@@ -1350,16 +1340,7 @@
       state.day += 1;
       state.hasConvertedThisYear = false; state.hasConvertedCheckToShortThisYear = false; state.hasConvertedShortToMidThisYear = false;
 
-      // Roll shock for the NEW year
-      state.shockAcknowledged = false; 
-      if (Math.random() <= 0.60) {
-        let bracket = state.day <= 10 ? 'young' : (state.day <= 20 ? 'mid' : 'mature');
-        const pool = SHOCK_CATALOG[bracket];
-        state.currentYearShock = pool[Math.floor(Math.random() * pool.length)];
-      } else {
-        state.currentYearShock = null;
-      }
-
+      rollYearShock();
       setPersistentStatus(`Completed Year ${state.day - 1}! Welcome to Year ${state.day} (Age ${24 + state.day}). Plan your budget.`);
       captureDaySnapshot();
       saveState();
