@@ -18,38 +18,60 @@
 <body class="bg-slate-900 text-slate-100 h-screen w-screen p-3 lg:p-4 flex flex-col justify-between font-sans select-none overflow-x-hidden">
 
   <!-- ==================== ENTRY SPLASH SCREEN ==================== -->
-  <div id="entrySplashModal" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-4">
-    <div class="text-center space-y-8 max-w-md w-full">
+  <div id="entrySplashModal" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-4 overflow-y-auto">
+    <div class="text-center space-y-6 max-w-md w-full my-auto py-8">
       
-      <div>
-        <span class="text-6xl block mb-4">🏛️</span>
-        <h1 class="text-5xl font-black text-emerald-400 tracking-tight">Tycoon</h1>
-        <p class="text-slate-400 text-base mt-2 font-medium tracking-wide uppercase">30-Year Wealth Journey</p>
-      </div>
-
       <!-- Cloud Connection State -->
       <div id="entryLoading" class="space-y-4">
         <div class="text-emerald-400 font-bold animate-pulse text-2xl">Connecting to Cloud...</div>
         <p class="text-slate-500 text-sm">Authenticating your profile...</p>
       </div>
       
-      <div id="entryNewGame" class="hidden space-y-4">
-        <button onclick="openOnboarding()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xl py-5 rounded-xl transition shadow-lg shadow-emerald-950/50">
-          Open New Account
+      <div>
+        <span class="text-6xl block mb-4">🏛️</span>
+        <h1 class="text-5xl font-black text-emerald-400 tracking-tight">Tycoon</h1>
+        <p class="text-slate-400 text-base mt-2 font-medium tracking-wide uppercase">30-Year Wealth Journey</p>
+      </div>
+      
+      <!-- Show if NO game is running -->
+      <div id="entryNewGame" class="hidden space-y-5">
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3 shadow-inner">
+          <h3 class="text-sm font-bold text-slate-300">Log In to Existing Account</h3>
+          <input type="email" id="loginEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-emerald-400">
+          <input type="password" id="loginPassword" placeholder="Password" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-emerald-400">
+          <button onclick="loginWithEmail()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3.5 rounded-lg transition shadow">Log In & Resume</button>
+        </div>
+
+        <div class="text-center text-slate-500 text-xs font-bold uppercase tracking-wider">OR</div>
+
+        <button onclick="openOnboarding()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-lg py-4 rounded-xl transition shadow-lg shadow-emerald-950/50">
+          Play as Guest (Create New Save)
         </button>
       </div>
 
+      <!-- Show if a game IS running -->
       <div id="entryResumeGame" class="hidden space-y-4">
-        <div class="bg-slate-800 border border-slate-700 p-6 rounded-xl text-left shadow-inner">
+        <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl text-left shadow-inner">
           <h3 class="text-emerald-400 font-bold text-xl">Welcome back, <span id="entryPlayerName">Player</span>!</h3>
           <p class="text-base text-slate-400 mt-2">Current Status: Year <span id="entryYear" class="text-white font-bold">1</span> (Age <span id="entryAge" class="text-white font-bold">25</span>)</p>
           <p class="text-sm text-indigo-300 mt-2 font-medium">Mode: <span id="entryMode">Normal</span></p>
         </div>
-        <button onclick="resumeGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xl py-5 rounded-xl transition shadow-lg shadow-indigo-950/50">
+        <button onclick="resumeGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xl py-4 rounded-xl transition shadow-lg shadow-indigo-950/50">
           Access Account
         </button>
-        <button onclick="fullResetGame()" class="text-sm font-bold text-rose-500 hover:text-rose-400 mt-4 underline decoration-rose-900 underline-offset-4 transition">
-          Wipe Cloud Save & Start Over
+        
+        <!-- Account Linking Widget -->
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 mt-4 text-left shadow-inner">
+          <h3 class="text-sm font-bold text-slate-300">Secure this save to play anywhere:</h3>
+          <input type="email" id="linkEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-400">
+          <input type="password" id="linkPassword" placeholder="Create Password" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-400">
+          <button onclick="linkWithEmail()" class="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-800 text-sm font-bold py-3 rounded-lg transition">
+            🔗 Create Permanent Login
+          </button>
+        </div>
+
+        <button onclick="signOutAndWipe()" class="text-sm font-bold text-rose-500 hover:text-rose-400 mt-4 underline decoration-rose-900 underline-offset-4 transition">
+          Sign Out / Clear Device
         </button>
       </div>
     </div>
@@ -240,7 +262,7 @@
           </div>
         </div>
 
-        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-rose-900/40 flex justify-between items-center gap-3">
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-700/60 flex justify-between items-center gap-3">
           <div>
             <div class="flex items-center gap-2">
               <h3 class="font-bold text-rose-300 text-sm">Charity & Giving</h3>
@@ -277,7 +299,7 @@
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 2.0 (Firebase Cloud Save)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.01 (Email/Password Auth Edition)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
@@ -322,7 +344,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button id="modeSelectNormal" onclick="selectMode('normal')" class="bg-indigo-900/60 border-2 border-indigo-500 p-5 rounded-xl text-left transition group">
             <span class="block text-base font-black text-indigo-300 mb-1.5">🕒 Normal Mode (Default)</span>
-            <span class="block text-xs text-slate-300 leading-relaxed">1 Calendar Day = 1 Year (Advances at Midnight). Plan your budget, and changes save. (Test overrides: Set Sponsor to T=1, T=2, or T=5)</span>
+            <span class="block text-xs text-slate-300 leading-relaxed">1 Calendar Day = 1 Year. Plan your budget, and changes save automatically. (Test overrides: Set Sponsor to T=1, T=2, or T=5)</span>
           </button>
           <button id="modeSelectFast" onclick="selectMode('fast')" class="bg-slate-900 border-2 border-slate-700 hover:border-emerald-500/50 p-5 rounded-xl text-left transition group">
             <span class="block text-base font-black text-slate-400 mb-1.5 group-hover:text-emerald-400">⚡ Fast Mode</span>
@@ -446,7 +468,7 @@
         Month 1: Discretionary income deposited. Plan applied.
       </div>
       
-      <!-- Catch-Up Next Button Container (Hidden by default) -->
+      <!-- Catch-Up Next Button Container -->
       <div id="simActionContainer" class="hidden mt-3 pt-3 border-t border-slate-700">
         <button id="simNextBtn" class="w-full bg-indigo-500 hover:bg-indigo-400 text-slate-950 font-black text-sm py-3.5 rounded-xl transition shadow-lg shadow-indigo-950/50">
           Play Next Year
@@ -674,7 +696,7 @@
   <!-- FIREBASE CLOUD SAVE SCRIPT (Module) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -703,13 +725,64 @@
       }
     };
 
-    // Authenticate silently
-    signInAnonymously(auth).catch((error) => {
-      console.error("Auth Error:", error);
-      alert("Failed to connect to Firebase. Falling back to temporary session.");
-      window.loadStateFromCloud(null);
-    });
+    // Account Logging In & Linking
+    window.loginWithEmail = async function() {
+      const email = document.getElementById('loginEmail').value;
+      const pass = document.getElementById('loginPassword').value;
+      if (!email || !pass) return alert("Please enter both email and password.");
+      
+      try {
+        document.getElementById('entryLoading').classList.remove('hidden');
+        document.getElementById('entryNewGame').classList.add('hidden');
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (error) {
+        document.getElementById('entryLoading').classList.add('hidden');
+        document.getElementById('entryNewGame').classList.remove('hidden');
+        alert("Login failed: Check your email and password.");
+      }
+    };
 
+    window.linkWithEmail = async function() {
+      const email = document.getElementById('linkEmail').value;
+      const pass = document.getElementById('linkPassword').value;
+      if (!email || !pass) return alert("Please enter an email and password to secure your account.");
+      
+      try {
+        const credential = EmailAuthProvider.credential(email, pass);
+        await linkWithCredential(auth.currentUser, credential);
+        alert("Account successfully secured! You can now log into this account from any device.");
+        document.getElementById('linkEmail').value = "";
+        document.getElementById('linkPassword').value = "";
+      } catch (error) {
+        if (error.code === 'auth/email-already-in-use') {
+          alert("This email is already registered to another save file. You must sign out first to log into it.");
+        } else if (error.code === 'auth/weak-password') {
+          alert("Password is too weak. Please use at least 6 characters.");
+        } else {
+          alert("Error securing account: " + error.message);
+        }
+      }
+    };
+
+    window.signOutAndWipe = async function() {
+      if (confirm("This will log you out and clear the current local session. Continue?")) {
+        await signOut(auth);
+        localStorage.removeItem('tycoon_investGameState_v1201');
+        location.reload();
+      }
+    };
+
+    window.startGuestSession = function() {
+      document.getElementById('entryLoading').classList.remove('hidden');
+      document.getElementById('entryNewGame').classList.add('hidden');
+      signInAnonymously(auth).catch((error) => {
+        console.error("Auth Error:", error);
+        alert("Failed to connect to Firebase. Falling back to temporary session.");
+        window.loadStateFromCloud(null);
+      });
+    };
+
+    // Background Authentication Bootloader
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
@@ -719,12 +792,19 @@
           console.error("Firestore Error:", e);
           window.loadStateFromCloud(null);
         }
+      } else {
+         // Show New Game login UI when nobody is logged in
+         document.getElementById('entryLoading').classList.add('hidden');
+         document.getElementById('entryNewGame').classList.remove('hidden');
+         document.getElementById('entryResumeGame').classList.add('hidden');
       }
     });
   </script>
 
   <!-- MAIN GAME ENGINE LOGIC -->
   <script>
+    const STORAGE_KEY = 'tycoon_investGameState_v1201';
+
     const SHOCK_CATALOG = {
       young: [
         { title: "Career Relocation & Lease Commitment", monthlyCost: 50, desc: "Moving loan repayment, storage, and higher rental premiums." },
@@ -778,13 +858,12 @@
       return saved;
     }
 
-    // Temporarily load fresh state until Firebase pulls the cloud file
     let state = getFreshState(); 
     let chartInstance = null, compChartAInstance = null, compChartBInstance = null;
     let onboardingSelectedMode = 'normal'; 
     let isDirty = false; 
 
-    // TRIGGERED BY FIREBASE ONCE AUTHENTICATED
+    // TRIGGERED BY FIREBASE ONCE AUTHENTICATED OR LOGGED IN
     window.loadStateFromCloud = function(cloudData) {
       if (cloudData) {
         state = mergeStateSafely(getFreshState(), cloudData);
@@ -823,6 +902,7 @@
     }
 
     function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
       if (window.saveStateToCloud) window.saveStateToCloud(state);
       render();
     }
@@ -837,7 +917,7 @@
       state.currentStatusIsError = isError;
       const el = document.getElementById('statusMsg');
       el.textContent = text;
-      el.className = `text-xs text-center py-2 px-3 rounded-lg font-medium border ${isError ? 'bg-rose-950/90 text-rose-300 border-rose-800' : 'bg-slate-700/80 text-slate-200 border-slate-600'}`;
+      el.className = `text-[11px] text-center py-1.5 px-3 rounded-lg font-medium border ${isError ? 'bg-rose-950/90 text-rose-300 border-rose-800' : 'bg-slate-700/80 text-slate-200 border-slate-600'}`;
       el.classList.remove('hidden');
     }
 
@@ -846,19 +926,7 @@
       return deposits.filter(d => (state.day - d.day) < lockYears).reduce((sum, d) => sum + d.amount, 0);
     }
 
-    function rollYearShock() {
-      state.shockAcknowledged = false; 
-      if (state.day > 30) { state.currentYearShock = null; return; }
-      if (Math.random() <= 0.60) {
-        let bracket = state.day <= 10 ? 'young' : (state.day <= 20 ? 'mid' : 'mature');
-        const pool = SHOCK_CATALOG[bracket];
-        state.currentYearShock = pool[Math.floor(Math.random() * pool.length)];
-      } else {
-        state.currentYearShock = null;
-      }
-    }
-
-    function convertCheckingToShort() {
+    window.convertCheckingToShort = function() {
       if (state.hasConvertedCheckToShortThisYear) return setPersistentStatus("Conversion limited to 1/year.", true);
       if (state.checking <= 0) return setPersistentStatus("No available funds in Checking to convert.", true);
       const amt = state.checking * 0.25;
@@ -871,7 +939,7 @@
       saveState(); updateLiveAllocationTotals(false);
     }
 
-    function convertShortToMid() {
+    window.convertShortToMid = function() {
       if (state.hasConvertedShortToMidThisYear) return setPersistentStatus("Conversion limited to 1/year.", true);
       const avail = Math.max(0, state.short - getLockedAmount(state.shortDeposits, 2));
       if (avail <= 0) return setPersistentStatus(`No unlocked funds in Short-Term.`, true);
@@ -885,7 +953,7 @@
       saveState(); updateLiveAllocationTotals(false);
     }
 
-    function withdrawShort() {
+    window.withdrawShort = function() {
       const avail = Math.max(0, state.short - getLockedAmount(state.shortDeposits, 2));
       if (avail <= 0) return setPersistentStatus(`No unlocked funds in Short-Term.`, true);
       state.checking += avail; state.short -= avail;
@@ -896,7 +964,7 @@
       saveState();
     }
 
-    function withdrawMid() {
+    window.withdrawMid = function() {
       const avail = Math.max(0, state.mid - getLockedAmount(state.midDeposits, 5));
       if (avail <= 0) return setPersistentStatus(`No unlocked funds in Mid-Term.`, true);
       state.checking += avail; state.mid -= avail;
@@ -907,7 +975,7 @@
       saveState();
     }
 
-    function convertMidToLong() {
+    window.convertMidToLong = function() {
       if (state.day < 20) return setPersistentStatus("Accelerator unlocks at Year 20.", true);
       if (state.hasConvertedThisYear) return setPersistentStatus("Conversion limited to 1/year.", true);
       if (state.mid <= 0) return setPersistentStatus("No Mid-Term funds available.", true);
@@ -942,7 +1010,14 @@
       saveState();
     }
 
-    window.openOnboarding = function() { document.getElementById('entrySplashModal').classList.add('hidden'); document.getElementById('onboardingModal').classList.remove('hidden'); }
+    window.openOnboarding = function() {
+      if (window.startGuestSession) {
+         window.startGuestSession();
+      } else {
+         document.getElementById('entrySplashModal').classList.add('hidden'); 
+         document.getElementById('onboardingModal').classList.remove('hidden'); 
+      }
+    }
     window.openSponsorInfoModal = function() { 
       document.getElementById('infoRatio').textContent = state.cashConversionRatio || 2000;
       document.getElementById('infoMultiplier').textContent = state.charityMultiplier || 5;
@@ -1120,13 +1195,14 @@
             state.catchUpYearsRemaining--;
             
             const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
-            if (sNameCheck === 'T=1') state.nextTurnTime += (1 * 60 * 1000);
-            else if (sNameCheck === 'T=2') state.nextTurnTime += (2 * 60 * 1000);
-            else if (sNameCheck === 'T=5') state.nextTurnTime += (5 * 60 * 1000);
+            if (sNameCheck === 'T=1') { state.nextTurnTime += (1 * 60 * 1000); }
+            else if (sNameCheck === 'T=2') { state.nextTurnTime += (2 * 60 * 1000); } 
+            else if (sNameCheck === 'T=5') { state.nextTurnTime += (5 * 60 * 1000); } 
             else {
               let d = new Date(state.nextTurnTime); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0);
               state.nextTurnTime = d.getTime();
             }
+            state.catchUpYearsRemaining = getMissedTurns();
 
             const actionContainer = document.getElementById('simActionContainer');
             const nextBtn = document.getElementById('simNextBtn');
@@ -1243,6 +1319,7 @@
     window.closeComparisonModal = function() { document.getElementById('comparisonModal').classList.add('hidden'); }
     window.openEndDashboardModal = function() { document.getElementById('endDashboardModal').classList.remove('hidden'); buildChart(); }
     window.closeEndDashboardModal = function() { document.getElementById('endDashboardModal').classList.add('hidden'); }
+    
     window.openReviewModal = function() {
       document.getElementById('reportYear').textContent = state.day;
       document.getElementById('reportAge').textContent = 24 + state.day;
@@ -1285,7 +1362,7 @@
       });
     }
 
-    function updateLiveAllocationTotals(fromUserInput = true) {
+    window.updateLiveAllocationTotals = function(fromUserInput = true) {
       if (fromUserInput && state.onboardingCompleted) { isDirty = true; }
       
       const s = Math.max(0, parseFloat(document.getElementById('allocShort').value) || 0);
@@ -1295,6 +1372,11 @@
       const tot = s + m + l + c;
       const inc = state.currentYearShock ? Math.max(0, 500 - state.currentYearShock.monthlyCost) : 500;
       const net = inc - tot;
+
+      if (state.onboardingCompleted) {
+        state.lastAllocations = { short: document.getElementById('allocShort').value, mid: document.getElementById('allocMid').value, long: document.getElementById('allocLong').value, charity: document.getElementById('allocCharity').value };
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+      }
 
       document.getElementById('liveTotalAllocated').textContent = `$${tot.toFixed(2)}`;
       document.getElementById('liveAnnualTotal').textContent = `$${(tot * 12).toFixed(2)}`;
@@ -1417,16 +1499,6 @@
       setPersistentStatus(`Year ${state.day} inputs reset to baseline.`);
     }
 
-    window.fullResetGame = async function() {
-      if (confirm("Hard Reset: Are you sure you want to completely erase your cloud save and start over?")) {
-        if (window.deleteStateFromCloud) {
-          await window.deleteStateFromCloud();
-        }
-        localStorage.removeItem(STORAGE_KEY);
-        location.reload(); 
-      }
-    }
-
     function render() {
       const ratio = state.cashConversionRatio || 2000;
       const multiplier = state.charityMultiplier || 5;
@@ -1445,14 +1517,19 @@
       document.getElementById('uiRatio1').textContent = ratio;
       document.getElementById('uiRatioBtn').textContent = ratio;
       document.getElementById('uiMultiplier1').textContent = multiplier;
+      document.getElementById('uiMultiplier2').textContent = multiplier;
 
       const sponsor = state.sponsorName || "Dad";
       document.getElementById('sponsorCharityLabel').textContent = sponsor;
       document.getElementById('sponsorCharityTag').textContent = sponsor;
 
       const pBadge = document.getElementById('playerBadge');
-      if (state.playerName) { pBadge.textContent = `${state.playerName} (Sponsored by ${sponsor})`; pBadge.classList.remove('hidden'); } 
-      else { pBadge.classList.add('hidden'); }
+      if (state.playerName) {
+        pBadge.textContent = `${state.playerName} (Sponsored by ${sponsor})`;
+        pBadge.classList.remove('hidden');
+      } else {
+        pBadge.classList.add('hidden');
+      }
 
       const modeBadge = document.getElementById('modeBadge');
       if (state.gameMode === 'normal') {
@@ -1611,6 +1688,13 @@
       }
       updateAutoTimer();
     }
+
+    document.querySelectorAll('.alloc-input').forEach(input => {
+      input.addEventListener('input', () => updateLiveAllocationTotals(true));
+    });
+
+    setInterval(checkAutoAdvance, 1000); 
+    setInterval(updateAutoTimer, 1000);
   </script>
 </body>
 </html>
