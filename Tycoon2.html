@@ -21,56 +21,72 @@
   <div id="entrySplashModal" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-4 overflow-y-auto">
     <div class="text-center space-y-6 max-w-md w-full my-auto py-8">
       
-      <!-- Cloud Connection State -->
-      <div id="entryLoading" class="space-y-4">
-        <div class="text-emerald-400 font-bold animate-pulse text-2xl">Connecting to Cloud...</div>
-        <p class="text-slate-500 text-sm">Authenticating your profile...</p>
+      <!-- Cloud Connection State Indicator -->
+      <div id="entryLoading" class="hidden space-y-2">
+        <div class="text-emerald-400 font-bold animate-pulse text-xl">Connecting to Cloud...</div>
+        <p class="text-slate-400 text-xs">Authenticating your profile...</p>
       </div>
       
       <div>
-        <span class="text-6xl block mb-4">🏛️</span>
-        <h1 class="text-5xl font-black text-emerald-400 tracking-tight">Tycoon</h1>
-        <p class="text-slate-400 text-base mt-2 font-medium tracking-wide uppercase">30-Year Wealth Journey</p>
+        <span class="text-6xl block mb-3">🏛️</span>
+        <h1 class="text-4xl md:text-5xl font-black text-emerald-400 tracking-tight">Tycoon</h1>
+        <p class="text-slate-400 text-sm mt-1 font-medium tracking-wide uppercase">30-Year Wealth Journey</p>
       </div>
       
-      <!-- Show if NO game is running -->
-      <div id="entryNewGame" class="hidden space-y-5">
-        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3 shadow-inner">
-          <h3 class="text-sm font-bold text-slate-300">Log In to Existing Account</h3>
-          <input type="email" id="loginEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-emerald-400">
-          <input type="password" id="loginPassword" placeholder="Password" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-emerald-400">
-          <button onclick="loginWithEmail()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3.5 rounded-lg transition shadow">Log In & Resume</button>
+      <!-- New Account / Login Interface -->
+      <div id="entryNewGame" class="space-y-4">
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3 shadow-inner text-left">
+          
+          <!-- Mode Tabs -->
+          <div class="flex border-b border-slate-700 pb-2 mb-2 gap-2 text-xs font-bold">
+            <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition">Log In</button>
+            <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:text-white transition">Create Cloud Account</button>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Email:</label>
+            <input type="email" id="authEmail" placeholder="you@example.com" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Password:</label>
+            <input type="password" id="authPassword" placeholder="Minimum 6 characters" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
+          </div>
+
+          <button id="authSubmitBtn" onclick="handleAuthSubmit()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3 rounded-lg transition shadow mt-1">
+            Log In & Resume
+          </button>
         </div>
 
         <div class="text-center text-slate-500 text-xs font-bold uppercase tracking-wider">OR</div>
 
-        <button onclick="openOnboarding()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-lg py-4 rounded-xl transition shadow-lg shadow-emerald-950/50">
-          Play as Guest (Create New Save)
+        <!-- Guest play bypassed from immediate network wait -->
+        <button onclick="openOnboarding()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-3.5 rounded-xl transition shadow-lg shadow-emerald-950/50">
+          Play as Guest (Offline / Anonymous)
         </button>
       </div>
 
       <!-- Show if a game IS running -->
       <div id="entryResumeGame" class="hidden space-y-4">
         <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl text-left shadow-inner">
-          <h3 class="text-emerald-400 font-bold text-xl">Welcome back, <span id="entryPlayerName">Player</span>!</h3>
-          <p class="text-base text-slate-400 mt-2">Current Status: Year <span id="entryYear" class="text-white font-bold">1</span> (Age <span id="entryAge" class="text-white font-bold">25</span>)</p>
-          <p class="text-sm text-indigo-300 mt-2 font-medium">Mode: <span id="entryMode">Normal</span></p>
+          <h3 class="text-emerald-400 font-bold text-lg">Welcome back, <span id="entryPlayerName">Player</span>!</h3>
+          <p class="text-sm text-slate-400 mt-1">Current Status: Year <span id="entryYear" class="text-white font-bold">1</span> (Age <span id="entryAge" class="text-white font-bold">25</span>)</p>
+          <p class="text-xs text-indigo-300 mt-1 font-medium">Mode: <span id="entryMode">Normal</span></p>
         </div>
-        <button onclick="resumeGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xl py-4 rounded-xl transition shadow-lg shadow-indigo-950/50">
+        <button onclick="resumeGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg py-3.5 rounded-xl transition shadow-lg shadow-indigo-950/50">
           Access Account
         </button>
         
         <!-- Account Linking Widget -->
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 mt-4 text-left shadow-inner">
-          <h3 class="text-sm font-bold text-slate-300">Secure this save to play anywhere:</h3>
-          <input type="email" id="linkEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-400">
-          <input type="password" id="linkPassword" placeholder="Create Password" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-400">
-          <button onclick="linkWithEmail()" class="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-800 text-sm font-bold py-3 rounded-lg transition">
-            🔗 Create Permanent Login
+        <div id="accountLinkWidget" class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2.5 text-left shadow-inner">
+          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wide">Secure this save to play anywhere:</h3>
+          <input type="email" id="linkEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-400">
+          <input type="password" id="linkPassword" placeholder="Create Password" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-400">
+          <button onclick="linkWithEmail()" class="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-800 text-xs font-bold py-2 rounded-lg transition">
+            🔗 Link to Permanent Cloud Account
           </button>
         </div>
 
-        <button onclick="signOutAndWipe()" class="text-sm font-bold text-rose-500 hover:text-rose-400 mt-4 underline decoration-rose-900 underline-offset-4 transition">
+        <button onclick="signOutAndWipe()" class="text-xs font-bold text-rose-500 hover:text-rose-400 underline decoration-rose-900 underline-offset-4 transition block mx-auto">
           Sign Out / Clear Device
         </button>
       </div>
@@ -262,7 +278,7 @@
           </div>
         </div>
 
-        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-700/60 flex justify-between items-center gap-3">
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-rose-900/40 flex justify-between items-center gap-3">
           <div>
             <div class="flex items-center gap-2">
               <h3 class="font-bold text-rose-300 text-sm">Charity & Giving</h3>
@@ -299,7 +315,7 @@
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.01 (Email/Password Auth Edition)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.02 (Direct Account & Guest Access)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
@@ -409,7 +425,7 @@
     </div>
   </div>
 
-  <!-- Monthly Simulation Modal (Used for Fast Mode AND Interactive Catch-Up) -->
+  <!-- Monthly Simulation Modal -->
   <div id="simulationModal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[85]">
     <div class="bg-slate-800 border-2 border-emerald-500 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
@@ -696,7 +712,7 @@
   <!-- FIREBASE CLOUD SAVE SCRIPT (Module) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, EmailAuthProvider, linkWithCredential, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -715,47 +731,88 @@
     // Make Cloud Save functions globally accessible for the main script
     window.saveStateToCloud = async function(stateData) {
       if (auth.currentUser) {
-        await setDoc(doc(db, "tycoon_saves", auth.currentUser.uid), stateData);
+        try {
+          await setDoc(doc(db, "tycoon_saves", auth.currentUser.uid), stateData);
+        } catch (e) {
+          console.warn("Could not sync to cloud:", e);
+        }
       }
     };
 
     window.deleteStateFromCloud = async function() {
       if (auth.currentUser) {
-        await deleteDoc(doc(db, "tycoon_saves", auth.currentUser.uid));
+        try {
+          await deleteDoc(doc(db, "tycoon_saves", auth.currentUser.uid));
+        } catch (e) {
+          console.warn("Could not delete from cloud:", e);
+        }
       }
     };
 
-    // Account Logging In & Linking
-    window.loginWithEmail = async function() {
-      const email = document.getElementById('loginEmail').value;
-      const pass = document.getElementById('loginPassword').value;
+    // Tab switcher between login and register
+    let currentAuthMode = 'login';
+    window.switchAuthTab = function(mode) {
+      currentAuthMode = mode;
+      const tabLogin = document.getElementById('tabLogin');
+      const tabRegister = document.getElementById('tabRegister');
+      const submitBtn = document.getElementById('authSubmitBtn');
+
+      if (mode === 'login') {
+        tabLogin.className = "flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition";
+        tabRegister.className = "flex-1 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:text-white transition";
+        submitBtn.textContent = "Log In & Resume";
+      } else {
+        tabRegister.className = "flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition";
+        tabLogin.className = "flex-1 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:text-white transition";
+        submitBtn.textContent = "Register & Start Fresh";
+      }
+    };
+
+    // Unified email authentication submit handler
+    window.handleAuthSubmit = async function() {
+      const email = document.getElementById('authEmail').value.trim();
+      const pass = document.getElementById('authPassword').value;
       if (!email || !pass) return alert("Please enter both email and password.");
       
+      const loadEl = document.getElementById('entryLoading');
+      loadEl.classList.remove('hidden');
+
       try {
-        document.getElementById('entryLoading').classList.remove('hidden');
-        document.getElementById('entryNewGame').classList.add('hidden');
-        await signInWithEmailAndPassword(auth, email, pass);
+        if (currentAuthMode === 'login') {
+          await signInWithEmailAndPassword(auth, email, pass);
+        } else {
+          await createUserWithEmailAndPassword(auth, email, pass);
+        }
       } catch (error) {
-        document.getElementById('entryLoading').classList.add('hidden');
-        document.getElementById('entryNewGame').classList.remove('hidden');
-        alert("Login failed: Check your email and password.");
+        loadEl.classList.add('hidden');
+        if (error.code === 'auth/email-already-in-use') {
+          alert("This email is already registered. Please click 'Log In' instead.");
+        } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+          alert("Invalid email or password. Please verify and try again.");
+        } else if (error.code === 'auth/weak-password') {
+          alert("Password should be at least 6 characters.");
+        } else {
+          alert("Authentication error: " + error.message);
+        }
       }
     };
 
+    // Account Linking for guest sessions
     window.linkWithEmail = async function() {
-      const email = document.getElementById('linkEmail').value;
+      const email = document.getElementById('linkEmail').value.trim();
       const pass = document.getElementById('linkPassword').value;
       if (!email || !pass) return alert("Please enter an email and password to secure your account.");
       
       try {
         const credential = EmailAuthProvider.credential(email, pass);
         await linkWithCredential(auth.currentUser, credential);
-        alert("Account successfully secured! You can now log into this account from any device.");
+        alert("Account successfully secured! You can now log into this save from any device.");
         document.getElementById('linkEmail').value = "";
         document.getElementById('linkPassword').value = "";
+        document.getElementById('accountLinkWidget').classList.add('hidden');
       } catch (error) {
         if (error.code === 'auth/email-already-in-use') {
-          alert("This email is already registered to another save file. You must sign out first to log into it.");
+          alert("This email is already registered to another save file.");
         } else if (error.code === 'auth/weak-password') {
           alert("Password is too weak. Please use at least 6 characters.");
         } else {
@@ -765,45 +822,53 @@
     };
 
     window.signOutAndWipe = async function() {
-      if (confirm("This will log you out and clear the current local session. Continue?")) {
+      if (confirm("This will log you out of this browser. Continue?")) {
         await signOut(auth);
-        localStorage.removeItem('tycoon_investGameState_v1201');
+        localStorage.removeItem('tycoon_investGameState_v1202');
         location.reload();
       }
     };
 
-    window.startGuestSession = function() {
-      document.getElementById('entryLoading').classList.remove('hidden');
-      document.getElementById('entryNewGame').classList.add('hidden');
-      signInAnonymously(auth).catch((error) => {
-        console.error("Auth Error:", error);
-        alert("Failed to connect to Firebase. Falling back to temporary session.");
-        window.loadStateFromCloud(null);
-      });
+    // Optional silent anonymous session triggered only when guest clicks "Begin"
+    window.ensureAnonymousAuth = async function() {
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.warn("Anonymous sign-in unavailable, running locally:", e);
+        }
+      }
     };
 
-    // Background Authentication Bootloader
+    // Listen to Firebase auth state changes
     onAuthStateChanged(auth, async (user) => {
+      document.getElementById('entryLoading').classList.add('hidden');
       if (user) {
         try {
           const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
-          window.loadStateFromCloud(docSnap.exists() ? docSnap.data() : null);
+          if (docSnap.exists()) {
+            window.loadStateFromCloud(docSnap.data());
+          } else {
+            // Logged in via registration or guest without saved data
+            window.loadStateFromCloud(null);
+            document.getElementById('entrySplashModal').classList.add('hidden');
+            document.getElementById('onboardingModal').classList.remove('hidden');
+          }
         } catch (e) {
           console.error("Firestore Error:", e);
           window.loadStateFromCloud(null);
         }
       } else {
-         // Show New Game login UI when nobody is logged in
-         document.getElementById('entryLoading').classList.add('hidden');
-         document.getElementById('entryNewGame').classList.remove('hidden');
-         document.getElementById('entryResumeGame').classList.add('hidden');
+        // No active user
+        document.getElementById('entryNewGame').classList.remove('hidden');
+        document.getElementById('entryResumeGame').classList.add('hidden');
       }
     });
   </script>
 
   <!-- MAIN GAME ENGINE LOGIC -->
   <script>
-    const STORAGE_KEY = 'tycoon_investGameState_v1201';
+    const STORAGE_KEY = 'tycoon_investGameState_v1202';
 
     const SHOCK_CATALOG = {
       young: [
@@ -868,7 +933,17 @@
       if (cloudData) {
         state = mergeStateSafely(getFreshState(), cloudData);
       } else {
-        state = getFreshState();
+        // Fall back to local storage if available, else fresh state
+        try {
+          const localSaved = localStorage.getItem(STORAGE_KEY);
+          if (localSaved) {
+            state = mergeStateSafely(getFreshState(), JSON.parse(localSaved));
+          } else {
+            state = getFreshState();
+          }
+        } catch(e) {
+          state = getFreshState();
+        }
       }
       initApp();
     };
@@ -924,6 +999,18 @@
     function getLockedAmount(deposits, lockYears) {
       if (!deposits) return 0;
       return deposits.filter(d => (state.day - d.day) < lockYears).reduce((sum, d) => sum + d.amount, 0);
+    }
+
+    function rollYearShock() {
+      state.shockAcknowledged = false; 
+      if (state.day > 30) { state.currentYearShock = null; return; }
+      if (Math.random() <= 0.60) {
+        let bracket = state.day <= 10 ? 'young' : (state.day <= 20 ? 'mid' : 'mature');
+        const pool = SHOCK_CATALOG[bracket];
+        state.currentYearShock = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        state.currentYearShock = null;
+      }
     }
 
     window.convertCheckingToShort = function() {
@@ -1010,14 +1097,11 @@
       saveState();
     }
 
-    window.openOnboarding = function() {
-      if (window.startGuestSession) {
-         window.startGuestSession();
-      } else {
-         document.getElementById('entrySplashModal').classList.add('hidden'); 
-         document.getElementById('onboardingModal').classList.remove('hidden'); 
-      }
-    }
+    window.openOnboarding = function() { 
+      document.getElementById('entrySplashModal').classList.add('hidden'); 
+      document.getElementById('onboardingModal').classList.remove('hidden'); 
+    };
+
     window.openSponsorInfoModal = function() { 
       document.getElementById('infoRatio').textContent = state.cashConversionRatio || 2000;
       document.getElementById('infoMultiplier').textContent = state.charityMultiplier || 5;
@@ -1040,7 +1124,7 @@
       }
     }
 
-    window.saveOnboardingAndStart = function() {
+    window.saveOnboardingAndStart = async function() {
       state.playerName = document.getElementById('playerNameInput').value.trim() || "Young Tycoon";
       state.sponsorName = document.getElementById('sponsorNameInput').value.trim() || "Dad";
       state.cashConversionRatio = parseInt(document.getElementById('cashRatioInput').value) || 2000;
@@ -1049,7 +1133,7 @@
       state.onboardingCompleted = true;
       
       if (state.gameMode === 'normal') {
-        const sNameCheck = state.sponsorName.toUpperCase().replace(/\s/g, '');
+        const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
         if (sNameCheck === 'T=1') { state.nextTurnTime = Date.now() + (1 * 60 * 1000); setPersistentStatus(`Normal Mode: 1 Min = 1 Year.`); }
         else if (sNameCheck === 'T=2') { state.nextTurnTime = Date.now() + (2 * 60 * 1000); setPersistentStatus(`Normal Mode: 2 Min = 1 Year.`); } 
         else if (sNameCheck === 'T=5') { state.nextTurnTime = Date.now() + (5 * 60 * 1000); setPersistentStatus(`Normal Mode: 5 Min = 1 Year.`); } 
@@ -1066,12 +1150,19 @@
       logTx(`Started Journey. Mode: ${state.gameMode === 'normal' ? 'Normal' : 'Fast (Manual)'}`);
       document.getElementById('onboardingModal').classList.add('hidden');
       document.getElementById('entrySplashModal').classList.add('hidden');
+      
       rollYearShock();
       captureDaySnapshot();
+
+      // Authenticate anonymously only now in background if not logged in
+      if (window.ensureAnonymousAuth) {
+        await window.ensureAnonymousAuth();
+      }
+
       saveState();
       populateInputs();
       updateLiveAllocationTotals(false);
-    }
+    };
 
     function getMissedTurns() {
       let missed = 0;
@@ -1259,7 +1350,16 @@
       state.day += 1;
       state.hasConvertedThisYear = false; state.hasConvertedCheckToShortThisYear = false; state.hasConvertedShortToMidThisYear = false;
 
-      rollYearShock();
+      // Roll shock for the NEW year
+      state.shockAcknowledged = false; 
+      if (Math.random() <= 0.60) {
+        let bracket = state.day <= 10 ? 'young' : (state.day <= 20 ? 'mid' : 'mature');
+        const pool = SHOCK_CATALOG[bracket];
+        state.currentYearShock = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        state.currentYearShock = null;
+      }
+
       setPersistentStatus(`Completed Year ${state.day - 1}! Welcome to Year ${state.day} (Age ${24 + state.day}). Plan your budget.`);
       captureDaySnapshot();
       saveState();
