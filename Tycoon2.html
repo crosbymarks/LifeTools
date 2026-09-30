@@ -105,6 +105,7 @@
       <div class="flex items-center gap-3">
         <button type="button" onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600 text-sm px-3 py-1.5 rounded-lg transition font-medium">ℹ️ Sponsor Info & Goals</button>
         <button type="button" onclick="openReviewModal()" class="bg-slate-700 hover:bg-slate-600 text-indigo-300 border border-indigo-500/40 text-sm px-3 py-1.5 rounded-lg transition font-medium">📊 Year Report</button>
+        <button type="button" onclick="openCloseAccountModal()" class="bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/60 text-sm px-3 py-1.5 rounded-lg transition font-semibold">🚪 Close Account</button>
         <span class="inline-block bg-slate-900 border border-slate-700 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider text-slate-300 ml-2">
           Year <span id="currentDay">1</span> / 30 &bull; <span id="currentAge">Age 25</span>
         </span>
@@ -189,7 +190,7 @@
         <div class="space-y-3 flex-shrink-0">
           <div id="statusMsg" class="text-xs text-center py-2 px-3 rounded-lg font-medium border bg-slate-700/80 text-slate-200 border-slate-600">Awaiting Year 1 plan.</div>
           <div class="flex gap-3">
-            <button type="button" onclick="resetCurrentDay()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-3 px-4 rounded-xl text-sm transition">Reset Inputs</button>
+            <button type="button" onclick="resetCurrentDay()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-3 px-4 rounded-xl text-sm transition">Clear Inputs</button>
             <button type="button" id="mainActionBtn" onclick="handleMainAction()" class="flex-1 bg-slate-700 text-slate-400 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wider transition flex flex-col items-center justify-center min-h-[60px] border border-slate-600">
               <span id="mainActionText">Conclude Year & Simulate 12 Months</span>
               <span id="autoTimerText" class="text-base font-black text-amber-300 hidden mt-1">Auto-advances in: 00:00:00</span>
@@ -314,10 +315,60 @@
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.03 (Input Reset Bug Fix)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.04 (Early Account Closure & Immediate Limit Enforcement)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
+
+  <!-- Close Account / Early Exit Modal -->
+  <div id="closeAccountModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[95] overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-rose-500 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl my-auto text-left">
+      <div class="flex items-center gap-3 border-b border-slate-700 pb-3">
+        <div class="bg-rose-950/80 p-2.5 rounded-xl border border-rose-800 text-2xl">🚪</div>
+        <div>
+          <h3 class="text-xl font-bold text-rose-400">Close Account & Terminate Simulation</h3>
+          <p class="text-xs text-slate-400">Early Departure Financial Audit (No Completion Certificate Earned)</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-700 p-4 rounded-xl space-y-2 text-sm text-slate-300">
+        <p class="text-xs text-amber-300 font-semibold mb-2">
+          Closing your account ends the 30-year journey at Year <span id="closeAuditYear">1</span> (Age <span id="closeAuditAge">25</span>). Here is your performance up to this point:
+        </p>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+            <span class="text-slate-400 block text-[10px] uppercase">Net Game Value</span>
+            <strong id="closeAuditNet" class="text-sm font-bold text-white">$0.00</strong>
+          </div>
+          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+            <span class="text-slate-400 block text-[10px] uppercase">Cumulative Savings</span>
+            <strong id="closeAuditSaved" class="text-sm font-bold text-emerald-400">$0.00</strong>
+          </div>
+          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+            <span class="text-slate-400 block text-[10px] uppercase">Real Cash Value</span>
+            <strong id="closeAuditReal" class="text-sm font-bold text-amber-400">$0.00</strong>
+          </div>
+          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+            <span class="text-slate-400 block text-[10px] uppercase">Charity Match</span>
+            <strong id="closeAuditCharity" class="text-sm font-bold text-rose-400">$0.00</strong>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Terminating this session will completely wipe your current save and restart the simulation from the beginning. Are you sure you wish to exit early?
+      </p>
+
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeCloseAccountModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold py-2.5 rounded-lg transition">
+          Return to Game
+        </button>
+        <button type="button" onclick="confirmEarlyTermination()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold py-2.5 rounded-lg transition shadow">
+          Confirm Close & Reset
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Onboarding Setup Modal -->
   <div id="onboardingModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[90] overflow-y-auto">
@@ -819,7 +870,7 @@
     window.signOutAndWipe = async function() {
       if (confirm("This will log you out of this browser. Continue?")) {
         await signOut(auth);
-        localStorage.removeItem('tycoon_investGameState_v1203');
+        localStorage.removeItem('tycoon_investGameState_v1204');
         location.reload();
       }
     };
@@ -841,8 +892,10 @@
           const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
           if (docSnap.exists()) {
             window.loadStateFromCloud(docSnap.data());
+            document.getElementById('entryNewGame').classList.add('hidden');
+            document.getElementById('entryResumeGame').classList.remove('hidden');
           } else {
-            // New user account created with no save yet -> dismiss splash, open setup
+            // New account authenticated with no save data yet -> immediately transition to setup
             document.getElementById('entrySplashModal').classList.add('hidden');
             document.getElementById('onboardingModal').classList.remove('hidden');
           }
@@ -860,7 +913,7 @@
 
   <!-- MAIN GAME ENGINE LOGIC -->
   <script>
-    const STORAGE_KEY = 'tycoon_investGameState_v1203';
+    const STORAGE_KEY = 'tycoon_investGameState_v1204';
 
     const SHOCK_CATALOG = {
       young: [
@@ -1031,7 +1084,9 @@
       if (avail <= 0) return setPersistentStatus(`No unlocked funds in Short-Term.`, true);
       state.checking += avail; state.short -= avail;
       state.shortDeposits = state.shortDeposits.filter(d => (state.day - d.day) < 2);
-      document.getElementById('allocShort').value = ''; state.lastAllocations.short = ''; updateLiveAllocationTotals(true);
+      document.getElementById('allocShort').value = ''; 
+      isDirty = true;
+      updateLiveAllocationTotals(true);
       logTx(`Returned unlocked $${avail.toFixed(2)} from Short-Term to Checking`);
       setPersistentStatus(`Withdrew unlocked $${avail.toFixed(2)} to Checking.`);
       saveState();
@@ -1042,7 +1097,9 @@
       if (avail <= 0) return setPersistentStatus(`No unlocked funds in Mid-Term.`, true);
       state.checking += avail; state.mid -= avail;
       state.midDeposits = state.midDeposits.filter(d => (state.day - d.day) < 5);
-      document.getElementById('allocMid').value = ''; state.lastAllocations.mid = ''; updateLiveAllocationTotals(true);
+      document.getElementById('allocMid').value = ''; 
+      isDirty = true;
+      updateLiveAllocationTotals(true);
       logTx(`Returned unlocked $${avail.toFixed(2)} from Mid-Term to Checking`);
       setPersistentStatus(`Withdrew unlocked $${avail.toFixed(2)} to Checking.`);
       saveState();
@@ -1094,6 +1151,36 @@
       document.getElementById('sponsorInfoModal').classList.remove('hidden'); 
     }
     window.closeSponsorInfoModal = function() { document.getElementById('sponsorInfoModal').classList.add('hidden'); }
+
+    window.openCloseAccountModal = function() {
+      const netGamePortfolio = state.checking + state.short + state.mid + state.long;
+      const ratio = state.cashConversionRatio || 2000;
+      const multiplier = state.charityMultiplier || 5;
+      const realSavings = Math.max(0, netGamePortfolio) / ratio;
+      const realCharityMatch = (state.charity / ratio) * multiplier;
+
+      document.getElementById('closeAuditYear').textContent = state.day;
+      document.getElementById('closeAuditAge').textContent = 24 + state.day;
+      document.getElementById('closeAuditNet').textContent = `$${netGamePortfolio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('closeAuditSaved').textContent = `$${state.cumulativeSavingsDeposits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('closeAuditReal').textContent = `$${realSavings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('closeAuditCharity').textContent = `$${realCharityMatch.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      document.getElementById('closeAccountModal').classList.remove('hidden');
+    };
+
+    window.closeCloseAccountModal = function() {
+      document.getElementById('closeAccountModal').classList.add('hidden');
+    };
+
+    window.confirmEarlyTermination = async function() {
+      closeCloseAccountModal();
+      if (window.deleteStateFromCloud) {
+        await window.deleteStateFromCloud();
+      }
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    };
 
     window.selectMode = function(mode) {
       onboardingSelectedMode = mode;
@@ -1204,20 +1291,10 @@
     window.executeYearConclusion = function(isCatchUp = false) {
       if (!isCatchUp) closeConfirmModal();
 
-      let s, m, l, c;
-      if (isCatchUp) {
-        s = parseFloat(state.lastAllocations.short) || 0;
-        m = parseFloat(state.lastAllocations.mid) || 0;
-        l = parseFloat(state.lastAllocations.long) || 0;
-        c = parseFloat(state.lastAllocations.charity) || 0;
-      } else {
-        s = Math.max(0, parseFloat(document.getElementById('allocShort').value) || 0);
-        m = Math.max(0, parseFloat(document.getElementById('allocMid').value) || 0);
-        l = Math.max(0, parseFloat(document.getElementById('allocLong').value) || 0);
-        c = Math.max(0, parseFloat(document.getElementById('allocCharity').value) || 0);
-        state.lastAllocations = { short: s, mid: m, long: l, charity: c };
-        state.settingsLastUpdatedYear = state.day;
-      }
+      let s = parseFloat(state.lastAllocations.short) || 0;
+      let m = parseFloat(state.lastAllocations.mid) || 0;
+      let l = parseFloat(state.lastAllocations.long) || 0;
+      let c = parseFloat(state.lastAllocations.charity) || 0;
 
       const effectiveIncome = state.currentYearShock ? Math.max(0, 500 - state.currentYearShock.monthlyCost) : 500;
       const checkingNetMonthly = effectiveIncome - (s + m + l + c);
@@ -1436,7 +1513,7 @@
             { label: 'Charity Pool', data: state.history.charity, borderColor: '#f43f5e', tension: 0.2 }
           ]
         },
-        options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } } }, scales: { x: { ticks: { color: '#94a3b8', font: { size: 8 } }, grid: { color: '#334155' } }, y: { ticks: { color: '#94a3b8', font: { size: 8 } }, grid: { color: '#334155' } } } }
+        options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
       });
     }
 
@@ -1448,20 +1525,25 @@
     }
 
     window.updateLiveAllocationTotals = function(fromUserInput = true) {
-      if (fromUserInput && state.onboardingCompleted) { isDirty = true; }
-      
       const s = Math.max(0, parseFloat(document.getElementById('allocShort').value) || 0);
       const m = Math.max(0, parseFloat(document.getElementById('allocMid').value) || 0);
       const l = Math.max(0, parseFloat(document.getElementById('allocLong').value) || 0);
       const c = Math.max(0, parseFloat(document.getElementById('allocCharity').value) || 0);
+
+      // Immediate $125/mo Long-Term limit notification
+      if (l > 125) {
+        setPersistentStatus("⚠️ Long-Term plan limit exceeded! Max allowed is $125.00/mo ($1,500/yr).", true);
+      } else if (state.currentStatusIsError && state.currentStatusMessage.includes("Long-Term plan limit")) {
+        setPersistentStatus(`Awaiting Year ${state.day} plan.`);
+      }
+
+      if (fromUserInput && state.onboardingCompleted) {
+        isDirty = true;
+      }
+      
       const tot = s + m + l + c;
       const inc = state.currentYearShock ? Math.max(0, 500 - state.currentYearShock.monthlyCost) : 500;
       const net = inc - tot;
-
-      if (state.onboardingCompleted) {
-        state.lastAllocations = { short: document.getElementById('allocShort').value, mid: document.getElementById('allocMid').value, long: document.getElementById('allocLong').value, charity: document.getElementById('allocCharity').value };
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
-      }
 
       document.getElementById('liveTotalAllocated').textContent = `$${tot.toFixed(2)}`;
       document.getElementById('liveAnnualTotal').textContent = `$${(tot * 12).toFixed(2)}`;
@@ -1484,6 +1566,12 @@
 
       if (l > 125) return setPersistentStatus("Long-Term plan cannot exceed $125.00/mo ($1,500/yr).", true);
 
+      // Lock in settings ONLY on click
+      state.lastAllocations = { short: s, mid: m, long: l, charity: c };
+      state.settingsLastUpdatedYear = state.day;
+      isDirty = false;
+      saveState();
+
       if (state.gameMode === 'fast') {
         if (tot > max) return setPersistentStatus(`Monthly plan ($${tot.toFixed(2)}/mo) cannot exceed discretionary pay + $100 buffer ($${max.toFixed(2)}/mo).`, true);
         prepareYearConclusion(s, m, l, c, tot, inc);
@@ -1495,12 +1583,6 @@
 
         if (tot > max) setPersistentStatus(`WARNING: Plan exceeds income! Checking will drop into debt. Plan saved.`, true);
         else setPersistentStatus(`Plan Saved! Will be used for auto-processing from Year ${state.day}.`);
-        
-        state.lastAllocations = { short: s, mid: m, long: l, charity: c };
-        state.settingsLastUpdatedYear = state.day;
-        
-        isDirty = false;
-        saveState();
 
         actionText.textContent = "✅ PLAN COMMITTED!";
         btn.className = "flex-1 bg-emerald-400 text-slate-950 font-black py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition shadow-lg flex flex-col items-center justify-center min-h-[60px]";
@@ -1560,18 +1642,16 @@
       }
     }
 
-    // Fixed: Purely resets the inputs on screen back to zero, no balance recalculation
+    // Purely clears the inputs on screen back to zero, no balance alteration
     window.resetCurrentDay = function() {
-      if (!confirm("Clear your planned monthly allocations back to zero? (Your account balances will not be altered)")) return;
+      if (!confirm("Clear your uncommitted inputs back to zero? (Your balances will remain unchanged)")) return;
       document.getElementById('allocShort').value = '';
       document.getElementById('allocMid').value = '';
       document.getElementById('allocLong').value = '';
       document.getElementById('allocCharity').value = '';
-      state.lastAllocations = { short: '', mid: '', long: '', charity: '' };
       isDirty = true;
-      saveState();
       updateLiveAllocationTotals(false);
-      setPersistentStatus("Inputs cleared. Adjust your monthly plan.");
+      setPersistentStatus("Inputs cleared. Click Save to lock in new allocations.");
     };
 
     function render() {
