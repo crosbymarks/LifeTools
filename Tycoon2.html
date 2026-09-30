@@ -39,8 +39,8 @@
           
           <!-- Mode Tabs -->
           <div class="flex border-b border-slate-700 pb-2 mb-2 gap-2 text-xs font-bold">
-            <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition">Log In</button>
-            <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:text-white transition">Create Cloud Account</button>
+            <button id="tabLogin" type="button" onclick="switchAuthTab('login')" class="flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition">Log In</button>
+            <button id="tabRegister" type="button" onclick="switchAuthTab('register')" class="flex-1 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:text-white transition">Create Cloud Account</button>
           </div>
 
           <div>
@@ -52,26 +52,26 @@
             <input type="password" id="authPassword" placeholder="Minimum 6 characters" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
           </div>
 
-          <button id="authSubmitBtn" onclick="handleAuthSubmit()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3 rounded-lg transition shadow mt-1">
+          <button id="authSubmitBtn" type="button" onclick="handleAuthSubmit()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3 rounded-lg transition shadow mt-1">
             Log In & Resume
           </button>
         </div>
 
         <div class="text-center text-slate-500 text-xs font-bold uppercase tracking-wider">OR</div>
 
-        <button onclick="openOnboarding()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-3.5 rounded-xl transition shadow-lg shadow-emerald-950/50">
+        <button type="button" onclick="openOnboarding()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-3.5 rounded-xl transition shadow-lg shadow-emerald-950/50">
           Play as Guest (Offline / Anonymous)
         </button>
       </div>
 
-      <!-- Show if a game IS running -->
+      <!-- Show if an account is already authenticated -->
       <div id="entryResumeGame" class="hidden space-y-4">
         <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl text-left shadow-inner">
           <h3 class="text-emerald-400 font-bold text-lg">Welcome back, <span id="entryPlayerName">Player</span>!</h3>
           <p class="text-sm text-slate-400 mt-1">Current Status: Year <span id="entryYear" class="text-white font-bold">1</span> (Age <span id="entryAge" class="text-white font-bold">25</span>)</p>
           <p class="text-xs text-indigo-300 mt-1 font-medium">Mode: <span id="entryMode">Normal</span></p>
         </div>
-        <button onclick="resumeGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg py-3.5 rounded-xl transition shadow-lg shadow-indigo-950/50">
+        <button type="button" onclick="resumeGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg py-3.5 rounded-xl transition shadow-lg shadow-indigo-950/50">
           Access Account
         </button>
         
@@ -80,12 +80,12 @@
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wide">Secure this save to play anywhere:</h3>
           <input type="email" id="linkEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-400">
           <input type="password" id="linkPassword" placeholder="Create Password" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-400">
-          <button onclick="linkWithEmail()" class="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-800 text-xs font-bold py-2 rounded-lg transition">
+          <button type="button" onclick="linkWithEmail()" class="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-800 text-xs font-bold py-2 rounded-lg transition">
             🔗 Link to Permanent Cloud Account
           </button>
         </div>
 
-        <button onclick="signOutAndWipe()" class="text-xs font-bold text-rose-500 hover:text-rose-400 underline decoration-rose-900 underline-offset-4 transition block mx-auto">
+        <button type="button" onclick="signOutAndWipe()" class="text-xs font-bold text-rose-500 hover:text-rose-400 underline decoration-rose-900 underline-offset-4 transition block mx-auto">
           Sign Out / Clear Device
         </button>
       </div>
@@ -103,8 +103,8 @@
         <span id="modeBadge" class="hidden text-xs uppercase font-bold px-2 py-0.5 rounded-sm tracking-wider"></span>
       </div>
       <div class="flex items-center gap-3">
-        <button onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600 text-sm px-3 py-1.5 rounded-lg transition font-medium">ℹ️ Sponsor Info & Goals</button>
-        <button onclick="openReviewModal()" class="bg-slate-700 hover:bg-slate-600 text-indigo-300 border border-indigo-500/40 text-sm px-3 py-1.5 rounded-lg transition font-medium">📊 Year Report</button>
+        <button type="button" onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600 text-sm px-3 py-1.5 rounded-lg transition font-medium">ℹ️ Sponsor Info & Goals</button>
+        <button type="button" onclick="openReviewModal()" class="bg-slate-700 hover:bg-slate-600 text-indigo-300 border border-indigo-500/40 text-sm px-3 py-1.5 rounded-lg transition font-medium">📊 Year Report</button>
         <span class="inline-block bg-slate-900 border border-slate-700 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider text-slate-300 ml-2">
           Year <span id="currentDay">1</span> / 30 &bull; <span id="currentAge">Age 25</span>
         </span>
@@ -189,9 +189,9 @@
         <div class="space-y-3 flex-shrink-0">
           <div id="statusMsg" class="text-xs text-center py-2 px-3 rounded-lg font-medium border bg-slate-700/80 text-slate-200 border-slate-600">Awaiting Year 1 plan.</div>
           <div class="flex gap-3">
-            <button onclick="resetCurrentDay()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-3 px-4 rounded-xl text-sm transition">Reset Inputs</button>
-            <button id="mainActionBtn" onclick="handleMainAction()" class="flex-1 bg-slate-700 text-slate-400 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wider transition flex flex-col items-center justify-center min-h-[60px] border border-slate-600">
-              <span id="mainActionText">Budget Saved</span>
+            <button type="button" onclick="resetCurrentDay()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-3 px-4 rounded-xl text-sm transition">Reset Inputs</button>
+            <button type="button" id="mainActionBtn" onclick="handleMainAction()" class="flex-1 bg-slate-700 text-slate-400 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wider transition flex flex-col items-center justify-center min-h-[60px] border border-slate-600">
+              <span id="mainActionText">Conclude Year & Simulate 12 Months</span>
               <span id="autoTimerText" class="text-base font-black text-amber-300 hidden mt-1">Auto-advances in: 00:00:00</span>
             </button>
           </div>
@@ -222,8 +222,8 @@
             <p class="text-xs text-slate-400 mt-1">Available: <span id="checkingBal" class="text-emerald-400 font-bold ml-1">$0.00</span></p>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="convertCheckingToShort()" id="btnConvertCheckShort" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium shadow" title="Convert 25% of positive checking balance into short-term">Convert 25% to Short (1/day)</button>
-            <button onclick="openCashoutModal()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition shadow">💵 Cash Out (<span id="uiRatioBtn">2000</span>:1)</button>
+            <button type="button" onclick="convertCheckingToShort()" id="btnConvertCheckShort" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium shadow" title="Convert 25% of positive checking balance into short-term">Convert 25% to Short (1/day)</button>
+            <button type="button" onclick="openCashoutModal()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition shadow">💵 Cash Out (<span id="uiRatioBtn">2000</span>:1)</button>
           </div>
         </div>
 
@@ -237,10 +237,10 @@
             <p class="text-xs text-slate-400 mt-1">Total: <span id="shortBal" class="text-emerald-400 font-semibold">$0.00</span> | Avail: <span id="shortAvail" class="text-indigo-300 font-semibold">$0.00</span></p>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="convertShortToMid()" id="btnConvertShortMid" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">Convert 25% to Mid (1/day)</button>
+            <button type="button" onclick="convertShortToMid()" id="btnConvertShortMid" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">Convert 25% to Mid (1/day)</button>
             <label class="text-xs text-slate-400 ml-1">Plan /mo:</label>
             <input type="number" id="allocShort" min="0" step="10" placeholder="0" class="alloc-input w-24 bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-right focus:outline-none focus:border-blue-400">
-            <button onclick="withdrawShort()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded transition">Withdraw</button>
+            <button type="button" onclick="withdrawShort()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded transition">Withdraw</button>
           </div>
         </div>
 
@@ -254,10 +254,10 @@
             <p class="text-xs text-slate-400 mt-1">Total: <span id="midBal" class="text-emerald-400 font-semibold">$0.00</span> | Avail: <span id="midAvail" class="text-indigo-300 font-semibold">$0.00</span></p>
           </div>
           <div class="flex items-center gap-2 flex-wrap justify-end">
-            <button onclick="convertMidToLong()" id="convertBtn" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">Convert 10% (1/yr)</button>
+            <button type="button" onclick="convertMidToLong()" id="convertBtn" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">Convert 10% (1/yr)</button>
             <label class="text-xs text-slate-400 ml-1">Plan /mo:</label>
             <input type="number" id="allocMid" min="0" step="10" placeholder="0" class="alloc-input w-24 bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-right focus:outline-none focus:border-indigo-400">
-            <button onclick="withdrawMid()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded transition">Withdraw</button>
+            <button type="button" onclick="withdrawMid()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded transition">Withdraw</button>
           </div>
         </div>
 
@@ -305,16 +305,16 @@
         </div>
       </div>
       <div class="flex gap-3">
-        <button onclick="openCertificateModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm px-4 py-2 rounded-lg transition shadow">📜 Certificate</button>
-        <button onclick="openComparisonModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-4 py-2 rounded-lg transition shadow">📊 Compare Graphs</button>
-        <button onclick="openEndDashboardModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition">Full Audit & Charts</button>
+        <button type="button" onclick="openCertificateModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm px-4 py-2 rounded-lg transition shadow">📜 Certificate</button>
+        <button type="button" onclick="openComparisonModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-4 py-2 rounded-lg transition shadow">📊 Compare Graphs</button>
+        <button type="button" onclick="openEndDashboardModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition">Full Audit & Charts</button>
       </div>
     </section>
 
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.03 (Login State Control Fixed)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.03 (Input Reset Bug Fix)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
@@ -330,7 +330,7 @@
             <p class="text-sm text-slate-400">Configure your 30-Year Wealth & Cash-Flow Defense Simulation</p>
           </div>
         </div>
-        <button onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-emerald-300 border border-slate-600 text-sm px-4 py-2 rounded-lg transition font-bold shadow-lg">
+        <button type="button" onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-emerald-300 border border-slate-600 text-sm px-4 py-2 rounded-lg transition font-bold shadow-lg">
           ℹ️ View Sponsor Goals
         </button>
       </div>
@@ -357,18 +357,18 @@
       <div class="pt-3 border-t border-slate-700 space-y-4">
         <h3 class="text-base font-bold text-white text-center">Select Your Game Mode</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button id="modeSelectNormal" onclick="selectMode('normal')" class="bg-indigo-900/60 border-2 border-indigo-500 p-5 rounded-xl text-left transition group">
+          <button type="button" id="modeSelectNormal" onclick="selectMode('normal')" class="bg-indigo-900/60 border-2 border-indigo-500 p-5 rounded-xl text-left transition group">
             <span class="block text-base font-black text-indigo-300 mb-1.5">🕒 Normal Mode (Default)</span>
             <span class="block text-xs text-slate-300 leading-relaxed">1 Calendar Day = 1 Year. Plan your budget, and changes save automatically. (Test overrides: Set Sponsor to T=1, T=2, or T=5)</span>
           </button>
-          <button id="modeSelectFast" onclick="selectMode('fast')" class="bg-slate-900 border-2 border-slate-700 hover:border-emerald-500/50 p-5 rounded-xl text-left transition group">
+          <button type="button" id="modeSelectFast" onclick="selectMode('fast')" class="bg-slate-900 border-2 border-slate-700 hover:border-emerald-500/50 p-5 rounded-xl text-left transition group">
             <span class="block text-base font-black text-slate-400 mb-1.5 group-hover:text-emerald-400">⚡ Fast Mode</span>
             <span class="block text-xs text-slate-400 leading-relaxed">You manually control time. Instantly conclude the year and simulate the next 12 months on your click.</span>
           </button>
         </div>
       </div>
 
-      <button onclick="saveOnboardingAndStart()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-4 rounded-xl transition shadow-lg shadow-emerald-950/50 mt-3">
+      <button type="button" onclick="saveOnboardingAndStart()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-4 rounded-xl transition shadow-lg shadow-emerald-950/50 mt-3">
         Begin 30-Year Wealth Journey
       </button>
     </div>
@@ -405,7 +405,7 @@
           </ul>
         </div>
       </div>
-      <button onclick="closeSponsorInfoModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm py-3 rounded-lg transition shadow mt-2">Got it!</button>
+      <button type="button" onclick="closeSponsorInfoModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm py-3 rounded-lg transition shadow mt-2">Got it!</button>
     </div>
   </div>
 
@@ -418,7 +418,7 @@
         The game continued running based on calendar time. You have <strong id="catchUpTurns" class="text-white text-xl px-1">0</strong> simulated years to review.<br><br>
         Your portfolio will now compound visually using your last saved budget settings from <strong>Year <span id="catchUpSettingsYear">1</span></strong>. 
       </p>
-      <button onclick="startCatchUpSequence()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg py-4 rounded-xl transition shadow-lg mt-5">
+      <button type="button" onclick="startCatchUpSequence()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg py-4 rounded-xl transition shadow-lg mt-5">
         Play Through Missed Years
       </button>
     </div>
@@ -485,7 +485,7 @@
       
       <!-- Catch-Up Next Button Container -->
       <div id="simActionContainer" class="hidden mt-3 pt-3 border-t border-slate-700">
-        <button id="simNextBtn" class="w-full bg-indigo-500 hover:bg-indigo-400 text-slate-950 font-black text-sm py-3.5 rounded-xl transition shadow-lg shadow-indigo-950/50">
+        <button type="button" id="simNextBtn" class="w-full bg-indigo-500 hover:bg-indigo-400 text-slate-950 font-black text-sm py-3.5 rounded-xl transition shadow-lg shadow-indigo-950/50">
           Play Next Year
         </button>
       </div>
@@ -516,7 +516,7 @@
         <p class="text-slate-300 font-semibold text-xs">Impact on This Year's Discretionary Pay:</p>
         <div id="shockResolution" class="bg-slate-900 p-3 rounded-lg text-slate-300 text-xs space-y-1"></div>
       </div>
-      <button onclick="closeShockModal()" class="w-full bg-rose-600 hover:bg-rose-500 text-slate-950 font-bold text-sm py-3 rounded-lg transition shadow">Acknowledge & Adjust Plan</button>
+      <button type="button" onclick="closeShockModal()" class="w-full bg-rose-600 hover:bg-rose-500 text-slate-950 font-bold text-sm py-3 rounded-lg transition shadow">Acknowledge & Adjust Plan</button>
     </div>
   </div>
 
@@ -533,7 +533,7 @@
       <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
         <p>You have reached <strong>Year 20 (Age 44)</strong>. You can now convert <strong>10% of your Mid-Term funds once each year</strong> into Long-Term Growth (11% APY).</p>
       </div>
-      <button onclick="closeAcceleratorModal()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm py-3 rounded-lg transition shadow">I Understand &bull; Continue</button>
+      <button type="button" onclick="closeAcceleratorModal()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm py-3 rounded-lg transition shadow">I Understand &bull; Continue</button>
     </div>
   </div>
 
@@ -556,8 +556,8 @@
         </div>
       </div>
       <div class="flex gap-3 pt-2">
-        <button onclick="closeConfirmModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold py-2.5 rounded-lg transition">Go Back</button>
-        <button onclick="executeYearConclusion()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold py-2.5 rounded-lg transition shadow">Simulate 12 Months</button>
+        <button type="button" onclick="closeConfirmModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold py-2.5 rounded-lg transition">Go Back</button>
+        <button type="button" onclick="executeYearConclusion()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold py-2.5 rounded-lg transition shadow">Simulate 12 Months</button>
       </div>
     </div>
   </div>
@@ -573,8 +573,8 @@
         <p class="text-xs text-amber-300 mt-1.5">You will receive: <span id="realConversionPreview">$0.00</span> in real cash</p>
       </div>
       <div class="flex gap-3 pt-2">
-        <button onclick="closeCashoutModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-semibold py-2.5 rounded-lg transition">Cancel</button>
-        <button onclick="executeCashout()" class="flex-1 bg-amber-600 hover:bg-amber-500 text-slate-950 text-sm font-bold py-2.5 rounded-lg transition">Convert & Payout</button>
+        <button type="button" onclick="closeCashoutModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-semibold py-2.5 rounded-lg transition">Cancel</button>
+        <button type="button" onclick="executeCashout()" class="flex-1 bg-amber-600 hover:bg-amber-500 text-slate-950 text-sm font-bold py-2.5 rounded-lg transition">Convert & Payout</button>
       </div>
     </div>
   </div>
@@ -584,7 +584,7 @@
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
         <h3 class="text-xl font-bold text-emerald-400">Annual Account Report (Year <span id="reportYear">1</span> &bull; Age <span id="reportAge">25</span>)</h3>
-        <button onclick="closeReviewModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+        <button type="button" onclick="closeReviewModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left text-slate-300">
@@ -600,7 +600,7 @@
         </table>
       </div>
       <div class="text-right pt-2">
-        <button onclick="closeReviewModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition">Close</button>
+        <button type="button" onclick="closeReviewModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition">Close</button>
       </div>
     </div>
   </div>
@@ -612,7 +612,7 @@
         <div>
           <h2 class="text-base md:text-lg font-black text-indigo-300">Side-by-Side Strategy Comparison: $100/mo for 30 Years</h2>
         </div>
-        <button onclick="closeComparisonModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+        <button type="button" onclick="closeComparisonModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -633,11 +633,11 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700">
+        <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-700">
           <h4 class="text-[11px] font-bold text-slate-300 text-center mb-1">Scenario A: Pure Parallel</h4>
           <canvas id="compChartA" height="190"></canvas>
         </div>
-        <div class="bg-slate-900 p-2.5 rounded-xl border border-indigo-700/60">
+        <div class="bg-slate-900 p-3.5 rounded-xl border border-indigo-700/60">
           <h4 class="text-[11px] font-bold text-indigo-300 text-center mb-1">Scenario B: Accelerated</h4>
           <canvas id="compChartB" height="190"></canvas>
         </div>
@@ -647,7 +647,7 @@
         <strong>Lesson:</strong> Rebalancing capital into higher compounding vehicles in the final decade produces <strong id="scenDifference" class="text-emerald-400">+$0.00</strong> more.
       </div>
       <div class="text-right">
-        <button onclick="closeComparisonModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition">Close Comparison</button>
+        <button type="button" onclick="closeComparisonModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition">Close Comparison</button>
       </div>
     </div>
   </div>
@@ -657,7 +657,7 @@
     <div class="bg-slate-800 border-2 border-emerald-500 rounded-2xl max-w-5xl w-full p-6 space-y-5 shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
         <h3 class="text-xl font-black text-emerald-400">Lifetime Audit & Growth Charts</h3>
-        <button onclick="closeEndDashboardModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+        <button type="button" onclick="closeEndDashboardModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
       </div>
       <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
         <canvas id="growthChart" height="200"></canvas>
@@ -671,7 +671,7 @@
       <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
         <div class="flex justify-between items-center">
           <h4 class="text-sm font-bold text-slate-300 uppercase">Audit Ledger</h4>
-          <button onclick="fullResetGame()" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-sm px-4 py-1.5 rounded transition">Start New Game at Year 1</button>
+          <button type="button" onclick="fullResetGame()" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-sm px-4 py-1.5 rounded transition">Start New Game at Year 1</button>
         </div>
         <div id="transactionLogs" class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-300 pr-2"></div>
       </div>
@@ -702,8 +702,8 @@
         </div>
       </div>
       <div class="flex gap-3 pt-2">
-        <button onclick="closeCertificateModal()" class="flex-1 bg-slate-700 text-slate-200 text-sm font-bold py-3 rounded-lg">Close</button>
-        <button onclick="window.print()" class="flex-1 bg-amber-500 text-slate-950 text-sm font-bold py-3 rounded-lg">🖨️ Print Certificate</button>
+        <button type="button" onclick="closeCertificateModal()" class="flex-1 bg-slate-700 text-slate-200 text-sm font-bold py-3 rounded-lg">Close</button>
+        <button type="button" onclick="window.print()" class="flex-1 bg-amber-500 text-slate-950 text-sm font-bold py-3 rounded-lg">🖨️ Print Certificate</button>
       </div>
     </div>
   </div>
@@ -727,7 +727,6 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Save to Firestore with error resilience
     window.saveStateToCloud = async function(stateData) {
       if (auth.currentUser) {
         try {
@@ -835,7 +834,6 @@
       }
     };
 
-    // Keep user on the splash screen until deliberate user action
     onAuthStateChanged(auth, async (user) => {
       document.getElementById('entryLoading').classList.add('hidden');
       if (user) {
@@ -843,18 +841,15 @@
           const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
           if (docSnap.exists()) {
             window.loadStateFromCloud(docSnap.data());
-            // Show resume UI without auto-dismissing splash
-            document.getElementById('entryNewGame').classList.add('hidden');
-            document.getElementById('entryResumeGame').classList.remove('hidden');
           } else {
-            // Logged in without a save; keep login screen ready
-            document.getElementById('entryNewGame').classList.remove('hidden');
-            document.getElementById('entryResumeGame').classList.add('hidden');
+            // New user account created with no save yet -> dismiss splash, open setup
+            document.getElementById('entrySplashModal').classList.add('hidden');
+            document.getElementById('onboardingModal').classList.remove('hidden');
           }
         } catch (e) {
           console.error("Firestore Error:", e);
-          document.getElementById('entryNewGame').classList.remove('hidden');
-          document.getElementById('entryResumeGame').classList.add('hidden');
+          document.getElementById('entrySplashModal').classList.add('hidden');
+          document.getElementById('onboardingModal').classList.remove('hidden');
         }
       } else {
         document.getElementById('entryNewGame').classList.remove('hidden');
@@ -1340,7 +1335,16 @@
       state.day += 1;
       state.hasConvertedThisYear = false; state.hasConvertedCheckToShortThisYear = false; state.hasConvertedShortToMidThisYear = false;
 
-      rollYearShock();
+      // Roll shock for the NEW year
+      state.shockAcknowledged = false; 
+      if (Math.random() <= 0.60) {
+        let bracket = state.day <= 10 ? 'young' : (state.day <= 20 ? 'mid' : 'mature');
+        const pool = SHOCK_CATALOG[bracket];
+        state.currentYearShock = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        state.currentYearShock = null;
+      }
+
       setPersistentStatus(`Completed Year ${state.day - 1}! Welcome to Year ${state.day} (Age ${24 + state.day}). Plan your budget.`);
       captureDaySnapshot();
       saveState();
@@ -1519,11 +1523,11 @@
       if (netCheckingMonthly >= 0) {
         confRemEl.textContent = `+$${netCheckingMonthly.toFixed(2)}/mo`;
         confRemEl.className = "font-bold text-emerald-400";
-        confOverdraftEl.classList.add('hidden');
+        if (confOverdraftEl) confOverdraftEl.classList.add('hidden');
       } else {
         confRemEl.textContent = `-$${Math.abs(netCheckingMonthly).toFixed(2)}/mo`;
         confRemEl.className = "font-bold text-rose-400";
-        confOverdraftEl.classList.remove('hidden');
+        if (confOverdraftEl) confOverdraftEl.classList.remove('hidden');
       }
       document.getElementById('confirmCommitModal').classList.remove('hidden');
     }
@@ -1556,29 +1560,19 @@
       }
     }
 
+    // Fixed: Purely resets the inputs on screen back to zero, no balance recalculation
     window.resetCurrentDay = function() {
-      if (!state.daySnapshot) return;
-      if (!confirm(`Revert today's actions back to start of Year ${state.day}?`)) return;
-      const snap = state.daySnapshot;
-      state.playerName = snap.playerName; state.sponsorName = snap.sponsorName; state.gameMode = snap.gameMode;
-      state.nextTurnTime = snap.nextTurnTime; state.settingsLastUpdatedYear = snap.settingsLastUpdatedYear;
-      state.checking = snap.checking; state.short = snap.short; state.mid = snap.mid; state.long = snap.long; state.charity = snap.charity;
-      state.shortDeposits = JSON.parse(JSON.stringify(snap.shortDeposits)); state.midDeposits = JSON.parse(JSON.stringify(snap.midDeposits));
-      state.hasConvertedThisYear = snap.hasConvertedThisYear; state.hasConvertedCheckToShortThisYear = snap.hasConvertedCheckToShortThisYear;
-      state.hasConvertedShortToMidThisYear = snap.hasConvertedShortToMidThisYear;
-      state.acceleratorModalShown = snap.acceleratorModalShown; state.onboardingCompleted = snap.onboardingCompleted;
-      state.currentYearShock = snap.currentYearShock ? { ...snap.currentYearShock } : null;
-      state.currentStatusMessage = snap.currentStatusMessage; state.currentStatusIsError = snap.currentStatusIsError;
-      state.cashedOutRealDollars = snap.cashedOutRealDollars; state.cumulativeSavingsDeposits = snap.cumulativeSavingsDeposits;
-      state.accountStats = JSON.parse(JSON.stringify(snap.accountStats)); state.lastAllocations = { ...snap.lastAllocations };
-      state.transactions = state.transactions.slice(state.transactions.length - snap.txCount);
-      state.shockAcknowledged = snap.shockAcknowledged;
-      
-      logTx(`Reverted decisions back to start of Year ${state.day}`);
-      isDirty = false;
-      saveState(); populateInputs(); updateLiveAllocationTotals(false);
-      setPersistentStatus(`Year ${state.day} inputs reset to baseline.`);
-    }
+      if (!confirm("Clear your planned monthly allocations back to zero? (Your account balances will not be altered)")) return;
+      document.getElementById('allocShort').value = '';
+      document.getElementById('allocMid').value = '';
+      document.getElementById('allocLong').value = '';
+      document.getElementById('allocCharity').value = '';
+      state.lastAllocations = { short: '', mid: '', long: '', charity: '' };
+      isDirty = true;
+      saveState();
+      updateLiveAllocationTotals(false);
+      setPersistentStatus("Inputs cleared. Adjust your monthly plan.");
+    };
 
     function render() {
       const ratio = state.cashConversionRatio || 2000;
