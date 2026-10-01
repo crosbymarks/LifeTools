@@ -29,10 +29,10 @@
 
   <!-- ==================== ENTRY SPLASH SCREEN ==================== -->
   <div id="entrySplashModal" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-4 overflow-y-auto">
-    <div class="text-center space-y-6 max-w-md w-full my-auto py-8">
+    <div class="text-center space-y-6 max-w-md w-full my-auto py-8 relative">
       
       <!-- Cloud Connection State Indicator -->
-      <div id="entryLoading" class="space-y-2">
+      <div id="entryLoading" class="hidden space-y-2">
         <div class="text-emerald-400 font-bold animate-pulse text-xl">Connecting to Cloud...</div>
         <p class="text-slate-400 text-xs">Authenticating your profile...</p>
       </div>
@@ -99,7 +99,10 @@
           Sign Out / Clear Device
         </button>
       </div>
+
     </div>
+    <!-- Version Tag -->
+    <div class="absolute bottom-4 w-full text-center text-slate-600 text-[10px] font-mono tracking-widest uppercase">Version 12.07</div>
   </div>
 
   <!-- Main Container -->
@@ -145,7 +148,7 @@
     <!-- Overdraft Banner -->
     <div id="debtWarningBanner" class="hidden bg-rose-950/90 border border-rose-600 px-4 py-2.5 rounded-lg flex justify-between items-center text-sm">
       <div class="flex items-center gap-2 text-rose-200">
-        <span class="font-bold text-rose-300">⚠️ OVERDRAFT DEBT ACTIVE:</span>
+        <span class="font-bold text-rose-300">⚠️️ OVERDRAFT DEBT ACTIVE:</span>
         <span>Checking is negative. $10.00/month ($120.00/yr) fee being assessed until repaid.</span>
       </div>
       <span id="debtBannerAmount" class="font-black text-white text-base">-$0.00</span>
@@ -326,7 +329,7 @@
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.06 (Cloud Sync Patch & Final UX Polish)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.07 (Setup UI & Auth Flow Adjustments)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
@@ -403,21 +406,23 @@
 
   <!-- Onboarding Setup Modal -->
   <div id="onboardingModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[90] overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-emerald-500/80 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-auto">
-      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+    <div class="bg-slate-800 border-2 border-emerald-500/80 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl my-auto">
+      
+      <!-- Header Row with flexible wrapping -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-700 pb-4 gap-4">
         <div class="flex items-center gap-4">
-          <div class="bg-emerald-950 p-2.5 rounded-xl border border-emerald-700 text-2xl">🏛️</div>
+          <div class="bg-emerald-950 p-2.5 rounded-xl border border-emerald-700 text-2xl shrink-0">🏛️</div>
           <div>
-            <h2 class="text-2xl font-black text-emerald-400">Tycoon - Wealth Journey Setup</h2>
-            <p class="text-sm text-slate-400">Configure your 30-Year Wealth & Cash-Flow Defense Simulation</p>
+            <h2 class="text-xl md:text-2xl font-black text-emerald-400">Tycoon - Wealth Journey Setup</h2>
+            <p class="text-xs md:text-sm text-slate-400">Configure your 30-Year Wealth & Cash-Flow Defense Simulation</p>
           </div>
         </div>
-        <button type="button" onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-emerald-300 border border-slate-600 text-sm px-4 py-2 rounded-lg transition font-bold shadow-lg">
+        <button type="button" onclick="openSponsorInfoModal()" class="shrink-0 bg-slate-700 hover:bg-slate-600 text-emerald-300 border border-slate-600 text-sm px-4 py-2 rounded-lg transition font-bold shadow-lg">
           ℹ️ View Sponsor Goals
         </button>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 gap-4 pt-1">
         <div>
           <label class="block text-sm font-semibold text-slate-300 mb-1">Player Name:</label>
           <input type="text" id="playerNameInput" placeholder="Enter your name" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
@@ -450,9 +455,16 @@
         </div>
       </div>
 
-      <button type="button" onclick="saveOnboardingAndStart()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-4 rounded-xl transition shadow-lg shadow-emerald-950/50 mt-3">
-        Begin 30-Year Wealth Journey
-      </button>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="cancelOnboarding()" class="w-1/3 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold py-4 rounded-xl transition shadow">
+          Cancel & Exit
+        </button>
+        <button type="button" onclick="saveOnboardingAndStart()" class="w-2/3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-4 rounded-xl transition shadow-lg shadow-emerald-950/50">
+          Begin 30-Year Wealth Journey
+        </button>
+      </div>
+      
+      <div class="text-center text-slate-600 text-[10px] font-mono uppercase tracking-widest pt-1">Version 12.07</div>
     </div>
   </div>
 
@@ -734,6 +746,62 @@
     </div>
   </div>
 
+  <!-- Full End Game Dashboard Modal -->
+  <div id="endDashboardModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 z-50 overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-emerald-500 rounded-2xl max-w-5xl w-full p-6 space-y-5 shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="text-xl font-black text-emerald-400">Lifetime Audit & Growth Charts</h3>
+        <button type="button" onclick="closeEndDashboardModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+        <canvas id="growthChart" height="200"></canvas>
+      </div>
+      <div class="bg-slate-900/90 border border-emerald-500/40 rounded-xl p-4 space-y-2 text-xs">
+        <strong class="text-emerald-400 uppercase block text-sm">🛡️ Real-World Cash Flow Defense Strategy</strong>
+        <p class="text-slate-300 leading-relaxed">
+          Maintain 3–6 months in high-yield cash at Ally or Marcus, automate sinking funds for home & auto, and max your HSA at Fidelity to absorb recurring lifecycle shocks without interrupting index investing (VOO).
+        </p>
+      </div>
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+        <div class="flex justify-between items-center">
+          <h4 class="text-sm font-bold text-slate-300 uppercase">Audit Ledger</h4>
+          <button type="button" onclick="fullResetGame()" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-sm px-4 py-1.5 rounded transition">Start New Game at Year 1</button>
+        </div>
+        <div id="transactionLogs" class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-300 pr-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certificate Modal -->
+  <div id="certificateModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-slate-800 border-2 border-amber-400/80 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl my-auto">
+      <div id="certificatePrintArea" class="bg-amber-50 text-slate-900 p-8 rounded-xl border-4 border-double border-amber-600 space-y-4 text-center font-serif shadow-inner">
+        <div class="border-b-2 border-amber-700 pb-3">
+          <span class="text-xs tracking-widest uppercase font-bold text-amber-800">Certificate of Completion</span>
+          <h2 class="text-3xl font-black text-amber-950 mt-1">Tycoon Wealth Journey</h2>
+        </div>
+        <h3 id="certStudentName" class="text-3xl font-bold text-emerald-900 underline decoration-amber-600 underline-offset-4 pt-3">Student</h3>
+        <p class="text-sm text-slate-800 max-w-lg mx-auto leading-relaxed pt-3">For diligently completing the 30-day perseverance course in personal finance.</p>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left bg-white/80 p-3.5 rounded-lg border border-amber-300 text-sm font-sans mt-5">
+          <div><span class="text-[10px] text-slate-500 block">Total Overall Savings:</span><strong id="certTotalSaved" class="text-slate-900">$0.00</strong></div>
+          <div><span class="text-[10px] text-slate-500 block">Tax-Free Growth:</span><strong id="certTaxFree" class="text-emerald-700">$0.00</strong></div>
+          <div><span class="text-[10px] text-slate-500 block">Total Income Saved:</span><strong id="certLifetimeDeposited" class="text-slate-900">$0.00</strong></div>
+          <div><span class="text-[10px] text-slate-500 block">Real Cash Payout (<span id="certRatioText">2000</span>:1):</span><strong id="certRealCash" class="text-amber-800">$0.00</strong></div>
+        </div>
+
+        <div class="pt-4 flex justify-between items-end border-t border-amber-300 text-sm text-slate-700 mt-5">
+          <div><span id="certSponsorSignature" class="font-bold font-sans block text-base border-b border-slate-500 pb-1">Dad</span><span class="text-[10px] text-slate-500">Sponsor</span></div>
+          <div class="text-right"><span id="certDate" class="font-sans block text-sm font-semibold"></span><span class="text-[10px] text-slate-500">Date of Graduation</span></div>
+        </div>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeCertificateModal()" class="flex-1 bg-slate-700 text-slate-200 text-sm font-bold py-3 rounded-lg">Close</button>
+        <button type="button" onclick="window.print()" class="flex-1 bg-amber-500 text-slate-950 text-sm font-bold py-3 rounded-lg">🖨️ Print Certificate</button>
+      </div>
+    </div>
+  </div>
+
   <!-- FIREBASE CLOUD SAVE SCRIPT (Module) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -791,6 +859,8 @@
       }
     };
 
+    let isRegistering = false;
+
     window.handleAuthSubmit = async function() {
       const email = document.getElementById('authEmail').value.trim();
       const pass = document.getElementById('authPassword').value;
@@ -800,34 +870,19 @@
       loadEl.classList.remove('hidden');
       document.getElementById('entryNewGame').classList.add('hidden');
 
+      isRegistering = true;
       try {
-        let userCredential;
         if (currentAuthMode === 'login') {
-          userCredential = await signInWithEmailAndPassword(auth, email, pass);
+          await signInWithEmailAndPassword(auth, email, pass);
         } else {
-          userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+          await createUserWithEmailAndPassword(auth, email, pass);
         }
-
-        const user = userCredential.user;
-        const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
-        
-        loadEl.classList.add('hidden');
-        
-        if (docSnap.exists()) {
-          window.loadStateFromCloud(docSnap.data());
-          document.getElementById('entrySplashModal').classList.add('hidden');
-          window.resumeGame();
-        } else {
-          window.loadStateFromCloud(null);
-          document.getElementById('entrySplashModal').classList.add('hidden');
-          document.getElementById('onboardingModal').classList.remove('hidden');
-        }
-
       } catch (error) {
+        isRegistering = false;
         loadEl.classList.add('hidden');
         document.getElementById('entryNewGame').classList.remove('hidden');
-        if (error.code === 'auth/email-already-in-use') alert("This email is already registered. Please log in.");
-        else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') alert("Invalid email or password.");
+        if (error.code === 'auth/email-already-in-use') alert("This email is already registered. Please click 'Log In' instead.");
+        else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') alert("Invalid email or password. Please verify and try again.");
         else if (error.code === 'auth/weak-password') alert("Password should be at least 6 characters.");
         else alert("Authentication error: " + error.message);
       }
@@ -858,7 +913,7 @@
 
     window.executeSignOut = async function() {
       await signOut(auth);
-      localStorage.removeItem('tycoon_investGameState_v1206');
+      localStorage.removeItem('tycoon_investGameState_v1207');
       location.reload();
     };
 
@@ -880,43 +935,50 @@
 
     let isInitialBoot = true;
     onAuthStateChanged(auth, async (user) => {
-      if (isInitialBoot) {
-        isInitialBoot = false;
-        document.getElementById('entryLoading').classList.add('hidden');
-        
-        if (user) {
-          try {
-            const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
-            if (docSnap.exists()) {
-              window.loadStateFromCloud(docSnap.data());
-              document.getElementById('entryNewGame').classList.add('hidden');
-              document.getElementById('entryResumeGame').classList.remove('hidden');
+      document.getElementById('entryLoading').classList.add('hidden');
+      
+      if (user) {
+        try {
+          const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
+          if (docSnap.exists()) {
+            window.loadStateFromCloud(docSnap.data());
+            document.getElementById('entryNewGame').classList.add('hidden');
+            document.getElementById('entryResumeGame').classList.remove('hidden');
+            document.getElementById('entrySplashModal').classList.remove('hidden');
+            document.getElementById('onboardingModal').classList.add('hidden');
+          } else {
+            // User authenticated but no save data found.
+            if (isInitialBoot && !isRegistering) {
+              // They refreshed the browser before finishing setup. Wipe ghost session.
+              await signOut(auth);
+              return;
             } else {
+              // Newly registered user currently stepping through the flow.
               window.loadStateFromCloud(null);
               document.getElementById('entrySplashModal').classList.add('hidden');
               document.getElementById('onboardingModal').classList.remove('hidden');
             }
-          } catch (e) {
-            console.error("Firestore Error:", e);
-            window.loadStateFromCloud(null);
-            document.getElementById('entrySplashModal').classList.add('hidden');
-            document.getElementById('onboardingModal').classList.remove('hidden');
           }
-        } else {
-          document.getElementById('entryNewGame').classList.remove('hidden');
-          document.getElementById('entryResumeGame').classList.add('hidden');
+        } catch (e) {
+          console.error("Firestore Error:", e);
+          await signOut(auth);
         }
       } else {
-        if (user && typeof state !== 'undefined' && state.onboardingCompleted) {
-          window.saveStateToCloud(state);
+        // Not logged in. Only show Splash Screen, never auto-show Onboarding.
+        if (!isRegistering) {
+          document.getElementById('entryNewGame').classList.remove('hidden');
+          document.getElementById('entryResumeGame').classList.add('hidden');
+          document.getElementById('entrySplashModal').classList.remove('hidden');
+          document.getElementById('onboardingModal').classList.add('hidden');
         }
       }
+      isInitialBoot = false;
     });
   </script>
 
   <!-- MAIN GAME ENGINE LOGIC -->
   <script>
-    const STORAGE_KEY = 'tycoon_investGameState_v1206';
+    const STORAGE_KEY = 'tycoon_investGameState_v1207';
 
     const SHOCK_CATALOG = {
       young: [
@@ -999,8 +1061,11 @@
       document.getElementById('entryLoading').classList.add('hidden');
 
       if (!state.onboardingCompleted) {
-        document.getElementById('entryNewGame').classList.remove('hidden');
-        document.getElementById('entryResumeGame').classList.add('hidden');
+        // Ensure UI doesn't automatically drop into setup on refresh
+        if (typeof isRegistering !== 'undefined' && !isRegistering) {
+          document.getElementById('entryNewGame').classList.remove('hidden');
+          document.getElementById('entryResumeGame').classList.add('hidden');
+        }
       } else {
         document.getElementById('entryPlayerName').textContent = state.playerName;
         document.getElementById('entryYear').textContent = state.day;
@@ -1144,8 +1209,17 @@
     }
 
     window.openOnboarding = function() { 
+      if (typeof isRegistering !== 'undefined') isRegistering = true;
       document.getElementById('entrySplashModal').classList.add('hidden'); 
       document.getElementById('onboardingModal').classList.remove('hidden'); 
+    };
+
+    window.cancelOnboarding = async function() {
+      if (window.executeSignOut) {
+         await window.executeSignOut();
+      } else {
+         location.reload();
+      }
     };
 
     window.openSponsorInfoModal = function() { 
@@ -1345,7 +1419,7 @@
         let tMsg = `Mo ${month}: Net flow ${checkingNetMonthly>=0?'+':''}$${checkingNetMonthly.toFixed(2)}.${debtMsg}`;
         if (Math.random() < (0.05/12)) {
           state.mid -= state.mid * dM; state.long -= state.long * dL;
-          tMsg = `Mo ${month}: ⚠️ Market drop! Mid -1.6%, Long -0.8%`;
+          tMsg = `Mo ${month}: ⚠️️ Market drop! Mid -1.6%, Long -0.8%`;
         }
         const sI = state.short * rS, mI = state.mid * rM, lI = state.long * rL;
         state.short += sI; state.mid += mI; state.long += lI;
@@ -1591,7 +1665,6 @@
 
       if (l > 125) return setPersistentStatus("Long-Term plan cannot exceed $125.00/mo ($1,500/yr).", true);
 
-      // Lock in settings ONLY on click
       state.lastAllocations = { short: s, mid: m, long: l, charity: c };
       state.settingsLastUpdatedYear = state.day;
       isDirty = false;
