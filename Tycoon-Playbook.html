@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Tycoon Playbook</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    @media print {
+      body { background-color: white; color: black; }
+      .no-print { display: none !important; }
+      .print-border { border: 2px solid #e2e8f0; border-radius: 12px; padding: 24px; }
+      .page-break { page-break-before: always; }
+      canvas { max-width: 100% !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 p-6 md:p-12">
+
+  <div class="max-w-4xl mx-auto space-y-8 print-border bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
+    
+    <!-- Header & Print Button -->
+    <div class="flex justify-between items-start border-b-4 border-emerald-500 pb-6">
+      <div>
+        <span class="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-100 px-2 py-1 rounded">Official Strategy Guide</span>
+        <h1 class="text-4xl md:text-5xl font-black text-slate-900 mt-2 tracking-tight">The Tycoon Playbook</h1>
+        <p class="text-lg text-slate-500 font-medium mt-1">How to Turn a $2,000 Paycheck into Real Wealth</p>
+      </div>
+      <button onclick="window.print()" class="no-print bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition flex items-center gap-2">
+        <span>🖨️</span> Save as PDF
+      </button>
+    </div>
+
+    <!-- Intro -->
+    <p class="text-lg leading-relaxed text-slate-700">
+      Welcome to the wealth simulation. Your character earns <strong>$2,000 every month</strong> ($24,000 a year). Over the next 30 simulated years, your mission is not to spend every dollar you get, but to build a financial fortress, survive surprise emergencies, and let compound interest do the heavy lifting.
+    </p>
+
+    <!-- Step 1 -->
+    <div class="bg-slate-100 p-6 rounded-xl border border-slate-200">
+      <h2 class="text-2xl font-extrabold text-slate-800 mb-2 flex items-center gap-2">🛡️ Step 1: Build Your Cash Shield</h2>
+      <p class="text-slate-600 mb-4">Before investing into high-growth assets, build an emergency shield. If a sudden expense hits and you have zero cash, you will go into overdraft debt and get hit with penalty fees.</p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-4 rounded-lg border-l-4 border-blue-500 shadow-sm">
+          <strong class="block text-blue-700 uppercase text-xs tracking-wider mb-1">Target Moat</strong>
+          <span class="text-2xl font-black text-slate-800">$6,000 - $12,000</span>
+          <p class="text-xs text-slate-500 mt-1">Keep this spread between Checking and Short-Term Savings.</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-600">
+          <ul class="list-disc pl-4 space-y-2">
+            <li><strong>$6,000 (3 Months):</strong> Covers minor emergencies like a flat tire or laptop repair.</li>
+            <li><strong>$12,000 (6 Months):</strong> Covers major disruptions like a broken AC or lost job.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h2 class="text-2xl font-extrabold text-slate-800 mb-3 flex items-center gap-2">⚙️ Step 2: Activate the Wealth Engine</h2>
+      <p class="text-slate-700 leading-relaxed mb-4">
+        Once your shield is active, automate your savings by paying yourself first. To reach financial freedom, aim to save <strong>15% to 25%</strong> of your monthly paycheck (between $300 and $500 a month). Use the 3-Bucket System:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 p-5 rounded-xl border border-blue-200">
+          <h3 class="font-bold text-blue-900 mb-1">1. Short-Term (5%)</h3>
+          <p class="text-sm text-blue-800/80">Keeps your emergency shield topped up and earns safe, steady interest.</p>
+        </div>
+        <div class="bg-indigo-50 p-5 rounded-xl border border-indigo-200">
+          <h3 class="font-bold text-indigo-900 mb-1">2. Mid-Tier (8%)</h3>
+          <p class="text-sm text-indigo-800/80">Offers balanced growth for medium-term milestones without locking your money away forever.</p>
+        </div>
+        <div class="bg-emerald-50 p-5 rounded-xl border border-emerald-200">
+          <h3 class="font-bold text-emerald-900 mb-1">3. Long-Term (11%)</h3>
+          <p class="text-sm text-emerald-800/80">Massive compound growth! <strong>Limit: $125/month.</strong> The government limits tax-free accounts, so max this out first!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 & 4 (Grid) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 page-break">
+      
+      <div class="space-y-3">
+        <h2 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">📉 Step 3: Hiccups & Crashes</h2>
+        <p class="text-sm text-slate-700 leading-relaxed">
+          Building wealth is not a straight line. The market will crash 10% to 20% sometimes. 
+          <br><br>
+          <strong>What Beginners Do:</strong> Panic and sell at the bottom to lock in a loss. <br>
+          <strong>What Tycoons Do:</strong> Stay calm and do nothing. Let your cash shield pay for the broken AC and let your investments ride back up to new highs.
+        </p>
+      </div>
+
+      <div class="space-y-3 bg-purple-50 p-5 rounded-xl border border-purple-200">
+        <h2 class="text-xl font-extrabold text-purple-900 flex items-center gap-2">🚀 Step 4: The Catch-Up Rule</h2>
+        <p class="text-sm text-purple-800 leading-relaxed">
+          When you hit <strong>Year 20 (Age 45)</strong>, the government lets you bend the rules. The "Catch-Up Accelerator" unlocks.
+          <br><br>
+          You can now transfer <strong>10% of your Mid-Tier funds directly into Long-Term Growth</strong> every year. Moving money from 8% to 11% adds tens of thousands to your final score.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- The Graph -->
+    <div class="bg-slate-900 p-6 rounded-2xl shadow-xl print:bg-white print:border print:border-slate-300">
+      <div class="text-center mb-4">
+        <h3 class="text-xl font-black text-emerald-400 print:text-emerald-700">The Power of Compounding</h3>
+        <p class="text-sm text-slate-400 print:text-slate-600">What happens if you save $400/month (20%) at an 8% return for 30 years?</p>
+      </div>
+      <div class="relative h-[300px] w-full">
+        <canvas id="growthChart"></canvas>
+      </div>
+      <div class="mt-4 grid grid-cols-2 gap-4 text-center">
+        <div class="bg-slate-800 print:bg-slate-100 p-3 rounded-lg">
+          <span class="block text-xs uppercase text-slate-400 print:text-slate-500 font-bold">Total Cash You Put In</span>
+          <span class="block text-xl font-black text-white print:text-slate-800">$144,000</span>
+        </div>
+        <div class="bg-emerald-900/50 print:bg-emerald-100 p-3 rounded-lg border border-emerald-500/30 print:border-emerald-300">
+          <span class="block text-xs uppercase text-emerald-300 print:text-emerald-700 font-bold">Final Wealth (With 8% Growth)</span>
+          <span class="block text-xl font-black text-emerald-400 print:text-emerald-800">$595,745</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Golden Rules -->
+    <div class="border-t-2 border-slate-200 pt-6">
+      <h2 class="text-2xl font-black text-slate-800 mb-4 text-center">The 4 Golden Rules for the Win</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-semibold text-slate-700">
+        <div class="flex gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+          <span class="text-2xl">1️⃣</span>
+          <p><strong>Never let Checking drop below $0.</strong> Overdraft fees steal your compounding gains.</p>
+        </div>
+        <div class="flex gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+          <span class="text-2xl">2️⃣</span>
+          <p><strong>Max out Long-Term Growth first.</strong> That 11% account must receive its $125/mo maximum.</p>
+        </div>
+        <div class="flex gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+          <span class="text-2xl">3️⃣</span>
+          <p><strong>Protect the Buffer.</strong> If a life shock drains your checking, pause investing to refill your $6,000 shield.</p>
+        </div>
+        <div class="flex gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+          <span class="text-2xl">4️⃣</span>
+          <p><strong>Hit the Accelerator.</strong> When Year 20 hits, use the 10% Mid-to-Long transfer rule immediately.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Generate data for 30 years at $400/mo ($4800/yr) at 8% interest
+    const years = Array.from({length: 31}, (_, i) => i);
+    const principal = [];
+    const growth = [];
+    
+    let currentPrincipal = 0;
+    let currentBalance = 0;
+    
+    for(let i = 0; i <= 30; i++) {
+      if(i === 0) {
+        principal.push(0);
+        growth.push(0);
+      } else {
+        currentPrincipal += 4800;
+        currentBalance = (currentBalance + 4800) * 1.08;
+        principal.push(currentPrincipal);
+        growth.push(currentBalance);
+      }
+    }
+
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: years.map(y => `Yr ${y}`),
+        datasets: [
+          {
+            label: 'Total Wealth (With Compound Growth)',
+            data: growth,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: 'Actual Cash You Saved',
+            data: principal,
+            borderColor: '#3b82f6',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            fill: false,
+            tension: 0.1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { font: { family: 'Inter', weight: 'bold' } }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) { return '$' + value.toLocaleString(); }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
