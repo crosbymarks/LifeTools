@@ -10,8 +10,18 @@
     @media (min-height: 820px) and (min-width: 1200px) { body { overflow: hidden; } }
     @media print {
       body * { visibility: hidden; }
-      #certificatePrintArea, #certificatePrintArea * { visibility: visible; }
-      #certificatePrintArea { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; background: white !important; color: black !important; }
+      #certificatePrintArea, #certificatePrintArea *,
+      #receiptPrintArea, #receiptPrintArea * { visibility: visible; }
+      #certificatePrintArea, #receiptPrintArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 24px;
+        background: white !important;
+        color: black !important;
+      }
     }
   </style>
 </head>
@@ -315,446 +325,77 @@
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.04 (Early Account Closure & Immediate Limit Enforcement)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.05 (Printable Receipt & Instant Logout)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
 
-  <!-- Close Account / Early Exit Modal -->
+  <!-- Close Account & Printable Receipt Modal -->
   <div id="closeAccountModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[95] overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-rose-500 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl my-auto text-left">
-      <div class="flex items-center gap-3 border-b border-slate-700 pb-3">
-        <div class="bg-rose-950/80 p-2.5 rounded-xl border border-rose-800 text-2xl">🚪</div>
-        <div>
-          <h3 class="text-xl font-bold text-rose-400">Close Account & Terminate Simulation</h3>
-          <p class="text-xs text-slate-400">Early Departure Financial Audit (No Completion Certificate Earned)</p>
-        </div>
-      </div>
-
-      <div class="bg-slate-900/90 border border-slate-700 p-4 rounded-xl space-y-2 text-sm text-slate-300">
-        <p class="text-xs text-amber-300 font-semibold mb-2">
-          Closing your account ends the 30-year journey at Year <span id="closeAuditYear">1</span> (Age <span id="closeAuditAge">25</span>). Here is your performance up to this point:
-        </p>
-        <div class="grid grid-cols-2 gap-2 text-xs">
-          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-            <span class="text-slate-400 block text-[10px] uppercase">Net Game Value</span>
-            <strong id="closeAuditNet" class="text-sm font-bold text-white">$0.00</strong>
-          </div>
-          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-            <span class="text-slate-400 block text-[10px] uppercase">Cumulative Savings</span>
-            <strong id="closeAuditSaved" class="text-sm font-bold text-emerald-400">$0.00</strong>
-          </div>
-          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-            <span class="text-slate-400 block text-[10px] uppercase">Real Cash Value</span>
-            <strong id="closeAuditReal" class="text-sm font-bold text-amber-400">$0.00</strong>
-          </div>
-          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-            <span class="text-slate-400 block text-[10px] uppercase">Charity Match</span>
-            <strong id="closeAuditCharity" class="text-sm font-bold text-rose-400">$0.00</strong>
-          </div>
-        </div>
-      </div>
-
-      <p class="text-xs text-slate-400 leading-relaxed">
-        Terminating this session will completely wipe your current save and restart the simulation from the beginning. Are you sure you wish to exit early?
-      </p>
-
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeCloseAccountModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold py-2.5 rounded-lg transition">
-          Return to Game
-        </button>
-        <button type="button" onclick="confirmEarlyTermination()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold py-2.5 rounded-lg transition shadow">
-          Confirm Close & Reset
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Onboarding Setup Modal -->
-  <div id="onboardingModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[90] overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-emerald-500/80 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-auto">
-      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-        <div class="flex items-center gap-4">
-          <div class="bg-emerald-950 p-2.5 rounded-xl border border-emerald-700 text-2xl">🏛️</div>
-          <div>
-            <h2 class="text-2xl font-black text-emerald-400">Tycoon - Wealth Journey Setup</h2>
-            <p class="text-sm text-slate-400">Configure your 30-Year Wealth & Cash-Flow Defense Simulation</p>
-          </div>
-        </div>
-        <button type="button" onclick="openSponsorInfoModal()" class="bg-slate-700 hover:bg-slate-600 text-emerald-300 border border-slate-600 text-sm px-4 py-2 rounded-lg transition font-bold shadow-lg">
-          ℹ️ View Sponsor Goals
-        </button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-300 mb-1">Player Name:</label>
-          <input type="text" id="playerNameInput" placeholder="Enter your name" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-300 mb-1">Sponsor Name:</label>
-          <input type="text" id="sponsorNameInput" value="Dad" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-300 mb-1">Cash Conversion Ratio (Game $ : 1 Real $):</label>
-          <input type="number" id="cashRatioInput" value="2000" min="1" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-300 mb-1">Charity Match Multiplier (x):</label>
-          <input type="number" id="charityMultiplierInput" value="5" min="0" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
-        </div>
-      </div>
-
-      <div class="pt-3 border-t border-slate-700 space-y-4">
-        <h3 class="text-base font-bold text-white text-center">Select Your Game Mode</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button type="button" id="modeSelectNormal" onclick="selectMode('normal')" class="bg-indigo-900/60 border-2 border-indigo-500 p-5 rounded-xl text-left transition group">
-            <span class="block text-base font-black text-indigo-300 mb-1.5">🕒 Normal Mode (Default)</span>
-            <span class="block text-xs text-slate-300 leading-relaxed">1 Calendar Day = 1 Year. Plan your budget, and changes save automatically. (Test overrides: Set Sponsor to T=1, T=2, or T=5)</span>
-          </button>
-          <button type="button" id="modeSelectFast" onclick="selectMode('fast')" class="bg-slate-900 border-2 border-slate-700 hover:border-emerald-500/50 p-5 rounded-xl text-left transition group">
-            <span class="block text-base font-black text-slate-400 mb-1.5 group-hover:text-emerald-400">⚡ Fast Mode</span>
-            <span class="block text-xs text-slate-400 leading-relaxed">You manually control time. Instantly conclude the year and simulate the next 12 months on your click.</span>
-          </button>
-        </div>
-      </div>
-
-      <button type="button" onclick="saveOnboardingAndStart()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base py-4 rounded-xl transition shadow-lg shadow-emerald-950/50 mt-3">
-        Begin 30-Year Wealth Journey
-      </button>
-    </div>
-  </div>
-
-  <!-- Sponsor Info & Goals Modal -->
-  <div id="sponsorInfoModal" class="hidden fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-[110] overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-slate-500 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
-      <div class="flex items-center gap-3 border-b border-slate-700 pb-3">
-        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 text-2xl">ℹ️</div>
-        <div>
-          <h3 class="text-xl font-bold text-slate-200">Sponsor Info & Game Goals</h3>
-          <p class="text-sm text-slate-400">Why we play and how the incentives work</p>
-        </div>
-      </div>
-      <div class="space-y-4 text-sm text-slate-300 leading-relaxed max-h-[50vh] overflow-y-auto pr-2">
-        <div class="bg-slate-900/50 border border-slate-700 p-4 rounded-xl">
-          <strong class="text-emerald-400 block mb-1 text-base">🎯 The Core Goal</strong>
-          <p>Learn the timeless power of compound interest, how to build a cash-flow defense against unexpected life storms, and the foundational habit of paying yourself first.</p>
-        </div>
-        <div class="bg-slate-900/50 border border-slate-700 p-4 rounded-xl">
-          <strong class="text-indigo-400 block mb-1 text-base">📜 Rules of the Journey</strong>
-          <ul class="list-disc pl-5 space-y-1.5">
-            <li><strong>Discretionary Pay:</strong> You receive $500/mo ($6,000/yr) after living bills and a modest 10% for entertainment.</li>
-            <li><strong>Life Shocks:</strong> You face a 60% chance each year of a major recurring expense that will reduce your monthly paycheck for that entire year.</li>
-            <li><strong>Debt Consequence:</strong> If you allocate more than you earn, Checking goes negative and bleeds $10/mo in overdraft fees until cleared.</li>
-          </ul>
-        </div>
-        <div class="bg-slate-900/50 border border-slate-700 p-4 rounded-xl">
-          <strong class="text-amber-400 block mb-1 text-base">💰 Sponsor Incentive Structure</strong>
-          <ul class="list-disc pl-5 space-y-1.5">
-            <li><strong>Real Cash Payout:</strong> Final net savings will be converted and paid out in real life at a ratio of <strong><span id="infoRatio">2000</span> game dollars = $1 real dollar</strong>.</li>
-            <li><strong>Charitable Giving:</strong> Any game money donated to Charity is also converted at the same ratio, and then <strong>multiplied by <span id="infoMultiplier">5</span>x</strong> as a real-world donation by your Sponsor!</li>
-          </ul>
-        </div>
-      </div>
-      <button type="button" onclick="closeSponsorInfoModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm py-3 rounded-lg transition shadow mt-2">Got it!</button>
-    </div>
-  </div>
-
-  <!-- Auto Catch-Up Alert Modal -->
-  <div id="catchUpModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[80] overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-indigo-500 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl my-auto text-center">
-      <div class="text-6xl mb-3">⏳</div>
-      <h2 class="text-3xl font-black text-indigo-300">Time Passed While You Were Away!</h2>
-      <p class="text-base text-slate-300 leading-relaxed">
-        The game continued running based on calendar time. You have <strong id="catchUpTurns" class="text-white text-xl px-1">0</strong> simulated years to review.<br><br>
-        Your portfolio will now compound visually using your last saved budget settings from <strong>Year <span id="catchUpSettingsYear">1</span></strong>. 
-      </p>
-      <button type="button" onclick="startCatchUpSequence()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg py-4 rounded-xl transition shadow-lg mt-5">
-        Play Through Missed Years
-      </button>
-    </div>
-  </div>
-
-  <!-- Monthly Simulation Modal -->
-  <div id="simulationModal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[85]">
-    <div class="bg-slate-800 border-2 border-emerald-500 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl flex flex-col">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-        <div>
-          <h3 class="text-lg font-bold text-emerald-400">Simulating Year <span id="simYear">1</span> (Age <span id="simAge">25</span>)</h3>
-          <p class="text-xs text-slate-400">Tracking monthly interest & growth vs. deposits...</p>
-        </div>
-        <span id="simMonthBadge" class="bg-emerald-900/60 text-emerald-300 text-sm px-3 py-1 rounded-full font-bold border border-emerald-700">Month 1 / 12</span>
-      </div>
-
-      <div class="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-700">
-        <div id="simProgressBar" class="bg-emerald-400 h-3 transition-all duration-300" style="width: 8.33%"></div>
-      </div>
-
-      <div class="bg-slate-900/90 border border-slate-700 p-3.5 rounded-xl space-y-2">
-        <div class="flex justify-between items-center text-sm">
-          <span class="text-slate-400">Monthly Deposit: <strong id="simMonthlyDep" class="text-white">$0.00</strong></span>
-          <span class="text-slate-400">Growth This Month: <strong id="simMonthlyInt" class="text-amber-400">$0.00</strong></span>
-        </div>
-        <div id="simCrossoverBadge" class="hidden text-center py-1.5 bg-emerald-950 border border-emerald-700/80 rounded-lg text-sm font-extrabold text-emerald-300 animate-pulse">
-          ✨ CROSSOVER ACHIEVED: Monthly interest & growth exceeds deposits!
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
-          <div class="flex justify-between items-center">
-            <span class="text-slate-400 text-xs">Checking:</span>
-            <span class="text-[10px] text-slate-500">+$0.00/mo</span>
-          </div>
-          <span id="simChecking" class="text-sm font-bold text-white">$0.00</span>
-        </div>
-        <div class="bg-slate-900 p-3 rounded-lg border border-blue-900/40">
-          <div class="flex justify-between items-center">
-            <span class="text-blue-300 text-xs">Short-Term (5%):</span>
-            <span id="simShortMoInt" class="text-[11px] text-amber-300 font-medium">+$0.00/mo</span>
-          </div>
-          <span id="simShort" class="text-sm font-bold text-blue-400">$0.00</span>
-        </div>
-        <div class="bg-slate-900 p-3 rounded-lg border border-indigo-900/40">
-          <div class="flex justify-between items-center">
-            <span class="text-indigo-300 text-xs">Mid-Term (8%):</span>
-            <span id="simMidMoInt" class="text-[11px] text-amber-300 font-medium">+$0.00/mo</span>
-          </div>
-          <span id="simMid" class="text-sm font-bold text-indigo-400">$0.00</span>
-        </div>
-        <div class="bg-slate-900 p-3 rounded-lg border border-emerald-900/40">
-          <div class="flex justify-between items-center">
-            <span class="text-emerald-300 text-xs">Long-Term (11% VOO):</span>
-            <span id="simLongMoInt" class="text-[11px] text-amber-300 font-medium">+$0.00/mo</span>
-          </div>
-          <span id="simLong" class="text-sm font-bold text-emerald-400">$0.00</span>
-        </div>
-      </div>
-      <div id="simTicker" class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 text-slate-300 min-h-[44px] flex items-center justify-center text-center font-mono text-xs">
-        Month 1: Discretionary income deposited. Plan applied.
-      </div>
+    <div class="bg-slate-800 border-2 border-amber-400/80 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl my-auto text-left">
       
-      <!-- Catch-Up Next Button Container -->
-      <div id="simActionContainer" class="hidden mt-3 pt-3 border-t border-slate-700">
-        <button type="button" id="simNextBtn" class="w-full bg-indigo-500 hover:bg-indigo-400 text-slate-950 font-black text-sm py-3.5 rounded-xl transition shadow-lg shadow-indigo-950/50">
-          Play Next Year
+      <!-- Printable Cashout Receipt Canvas -->
+      <div id="receiptPrintArea" class="bg-amber-50 text-slate-900 p-6 rounded-xl border-2 border-dashed border-amber-600 space-y-3 font-sans shadow-inner">
+        <div class="text-center border-b border-amber-300 pb-2">
+          <span class="text-[10px] uppercase tracking-widest font-extrabold text-amber-900 block">Official Voucher</span>
+          <h3 class="text-xl font-black text-amber-950 tracking-tight">Tycoon Wealth Journey Receipt</h3>
+          <p class="text-xs text-slate-600 italic">Early Settlement & Cashout Summary</p>
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-slate-700">
+          <span>Player: <strong id="receiptPlayer" class="text-slate-900">Player</strong></span>
+          <span>Sponsor: <strong id="receiptSponsor" class="text-slate-900">Dad</strong></span>
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-slate-700 border-b border-amber-200 pb-2">
+          <span>Exit Milestone: <strong>Year <span id="receiptYear">1</span> (Age <span id="receiptAge">25</span>)</strong></span>
+          <span id="receiptDate" class="font-medium text-slate-600">Date</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-white/80 p-2.5 rounded border border-amber-200">
+            <span class="text-[10px] text-slate-500 block uppercase">Net Game Portfolio</span>
+            <strong id="receiptGameVal" class="text-sm font-bold text-slate-900">$0.00</strong>
+          </div>
+          <div class="bg-white/80 p-2.5 rounded border border-amber-200">
+            <span class="text-[10px] text-slate-500 block uppercase">Direct Cash Saved</span>
+            <strong id="receiptSavedVal" class="text-sm font-bold text-emerald-800">$0.00</strong>
+          </div>
+          <div class="bg-amber-100/90 p-2.5 rounded border border-amber-300">
+            <span class="text-[10px] text-amber-900 block uppercase font-bold">Real Cash Earned (<span id="receiptRatio">2000</span>:1)</span>
+            <strong id="receiptRealVal" class="text-base font-black text-amber-950">$0.00</strong>
+          </div>
+          <div class="bg-rose-100/90 p-2.5 rounded border border-rose-300">
+            <span class="text-[10px] text-rose-900 block uppercase font-bold">Charity Match (<span id="receiptMult">5</span>x)</span>
+            <strong id="receiptCharityVal" class="text-base font-black text-rose-950">$0.00</strong>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-amber-300 flex justify-between items-end text-xs">
+          <div>
+            <div class="border-b border-slate-600 w-36 mb-1"></div>
+            <span class="text-[10px] text-slate-600 block">Sponsor Signature</span>
+          </div>
+          <div>
+            <div class="border-b border-slate-600 w-36 mb-1"></div>
+            <span class="text-[10px] text-slate-600 block">Player Signature</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <button type="button" onclick="printReceipt()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm py-3 rounded-xl transition shadow flex items-center justify-center gap-2">
+          <span>🖨️</span> Print / Save Receipt Voucher
         </button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Annual Shock Modal -->
-  <div id="shockModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[70] overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-rose-500 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-      <div class="flex items-center gap-4 border-b border-slate-700 pb-3">
-        <div class="bg-rose-950/80 p-2.5 rounded-xl border border-rose-800 text-2xl">⚠️</div>
-        <div>
-          <h3 class="text-lg font-bold text-rose-400 uppercase tracking-wide">Year-Long Financial Burden</h3>
-          <p class="text-sm text-slate-400">Simulated Age <span id="shockAge">25</span> Milestone</p>
+        <div class="flex gap-2">
+          <button type="button" onclick="closeCloseAccountModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold py-2.5 rounded-lg transition">
+            Cancel & Return
+          </button>
+          <button type="button" onclick="confirmEarlyTermination()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold py-2.5 rounded-lg transition shadow">
+            Confirm & Log Out
+          </button>
         </div>
-      </div>
-      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-2">
-        <div class="flex justify-between items-center">
-          <span id="shockCategory" class="text-sm font-semibold uppercase tracking-wider text-rose-300">Emergency Outlay</span>
-          <div class="text-right">
-            <span id="shockMonthlyCost" class="text-sm font-bold text-rose-400 block">-$180.00 / mo</span>
-            <span id="shockAnnualCost" class="text-xs text-slate-400">(-$2,160.00/yr)</span>
-          </div>
-        </div>
-        <p id="shockDescription" class="text-xs text-slate-300 leading-relaxed"></p>
-      </div>
-      <div class="space-y-1 text-sm">
-        <p class="text-slate-300 font-semibold text-xs">Impact on This Year's Discretionary Pay:</p>
-        <div id="shockResolution" class="bg-slate-900 p-3 rounded-lg text-slate-300 text-xs space-y-1"></div>
-      </div>
-      <button type="button" onclick="closeShockModal()" class="w-full bg-rose-600 hover:bg-rose-500 text-slate-950 font-bold text-sm py-3 rounded-lg transition shadow">Acknowledge & Adjust Plan</button>
-    </div>
-  </div>
-
-  <!-- Accelerator Milestone Modal -->
-  <div id="acceleratorModal" class="hidden fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-[75] overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-purple-500 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-      <div class="flex items-center gap-4 border-b border-slate-700 pb-3">
-        <div class="bg-purple-950/80 p-2.5 rounded-xl border border-purple-800 text-2xl">🚀</div>
-        <div>
-          <h3 class="text-lg font-bold text-purple-300">Milestone Unlocked: Catch-Up Accelerator</h3>
-          <p class="text-sm text-slate-400">Portfolio Rebalancing Opportunity</p>
-        </div>
-      </div>
-      <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
-        <p>You have reached <strong>Year 20 (Age 44)</strong>. You can now convert <strong>10% of your Mid-Term funds once each year</strong> into Long-Term Growth (11% APY).</p>
-      </div>
-      <button type="button" onclick="closeAcceleratorModal()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm py-3 rounded-lg transition shadow">I Understand &bull; Continue</button>
-    </div>
-  </div>
-
-  <!-- Plan Confirmation Modal (Fast Mode Only) -->
-  <div id="confirmCommitModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
-      <h3 class="text-base font-bold text-white border-b border-slate-700 pb-2">Confirm Annual Plan (Year <span id="confirmYearNum">1</span>)</h3>
-      <div class="bg-slate-900 p-3 rounded-xl space-y-2 text-sm text-slate-300">
-        <div class="flex justify-between"><span>Short-Term Savings:</span> <strong id="confShort" class="text-white">$0.00/mo</strong></div>
-        <div class="flex justify-between"><span>Mid-Term Savings:</span> <strong id="confMid" class="text-white">$0.00/mo</strong></div>
-        <div class="flex justify-between"><span>Long-Term Growth:</span> <strong id="confLong" class="text-white">$0.00/mo</strong></div>
-        <div class="flex justify-between"><span>Charity & Giving:</span> <strong id="confCharity" class="text-white">$0.00/mo</strong></div>
-        <div class="border-t border-slate-700 pt-1.5 mt-1.5 flex justify-between font-bold">
-          <span class="text-emerald-400">Total Monthly:</span>
-          <span id="confTotalAllocated" class="text-emerald-400">$0.00/mo</span>
-        </div>
-        <div class="flex justify-between text-xs text-slate-400">
-          <span>Net Impact on Checking:</span>
-          <span id="confRemainingChecking" class="font-bold">$0.00/mo</span>
-        </div>
-      </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeConfirmModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold py-2.5 rounded-lg transition">Go Back</button>
-        <button type="button" onclick="executeYearConclusion()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold py-2.5 rounded-lg transition shadow">Simulate 12 Months</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cashout Modal -->
-  <div id="cashoutModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-      <h3 class="text-base font-bold text-white border-b border-slate-700 pb-2">Convert Checking to Real Cash</h3>
-      <p class="text-sm text-slate-400">Exchange game dollars from checking at a <strong id="uiCashoutRatio">2000:1</strong> ratio.</p>
-      <div>
-        <label class="block text-sm font-semibold text-slate-300 mb-1.5">Game Dollars to Cash Out:</label>
-        <input type="number" id="cashoutInput" step="100" min="100" placeholder="100, 500, 2000..." class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
-        <p class="text-xs text-amber-300 mt-1.5">You will receive: <span id="realConversionPreview">$0.00</span> in real cash</p>
-      </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeCashoutModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-semibold py-2.5 rounded-lg transition">Cancel</button>
-        <button type="button" onclick="executeCashout()" class="flex-1 bg-amber-600 hover:bg-amber-500 text-slate-950 text-sm font-bold py-2.5 rounded-lg transition">Convert & Payout</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Review Modal -->
-  <div id="reviewModal" class="hidden fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-        <h3 class="text-xl font-bold text-emerald-400">Annual Account Report (Year <span id="reportYear">1</span> &bull; Age <span id="reportAge">25</span>)</h3>
-        <button type="button" onclick="closeReviewModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-slate-300">
-          <thead class="text-slate-400 uppercase bg-slate-900/60 border-b border-slate-700 text-xs">
-            <tr>
-              <th class="p-3">Account</th>
-              <th class="p-3 text-right">Total Deposited</th>
-              <th class="p-3 text-right">Last Yr Growth</th>
-              <th class="p-3 text-right">Total Growth</th>
-            </tr>
-          </thead>
-          <tbody id="reviewTableBody" class="divide-y divide-slate-700/60 text-sm"></tbody>
-        </table>
-      </div>
-      <div class="text-right pt-2">
-        <button type="button" onclick="closeReviewModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Side-by-Side Comparison Modal -->
-  <div id="comparisonModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 md:p-6 z-50 overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-indigo-500 rounded-2xl max-w-5xl w-full p-4 md:p-5 space-y-3 shadow-2xl my-auto">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-        <div>
-          <h2 class="text-base md:text-lg font-black text-indigo-300">Side-by-Side Strategy Comparison: $100/mo for 30 Years</h2>
-        </div>
-        <button type="button" onclick="closeComparisonModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 space-y-0.5">
-          <div class="flex justify-between items-center">
-            <strong class="text-slate-200 text-xs">Scenario A: Parallel Growth</strong>
-            <span class="text-xs font-black text-emerald-400" id="scenATotal">$0.00</span>
-          </div>
-          <p class="text-[10px] text-slate-400">Fixed $100/mo into 8% & $100/mo into 11% with zero transfers.</p>
-        </div>
-        <div class="bg-indigo-950/60 p-2.5 rounded-xl border border-indigo-700 space-y-0.5">
-          <div class="flex justify-between items-center">
-            <strong class="text-indigo-200 text-xs">Scenario B: Year 20 Accelerator</strong>
-            <span class="text-xs font-black text-indigo-300" id="scenBTotal">$0.00</span>
-          </div>
-          <p class="text-[10px] text-slate-400">10% of short/mid-term converted to long-term annually from Year 20.</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-700">
-          <h4 class="text-[11px] font-bold text-slate-300 text-center mb-1">Scenario A: Pure Parallel</h4>
-          <canvas id="compChartA" height="190"></canvas>
-        </div>
-        <div class="bg-slate-900 p-3.5 rounded-xl border border-indigo-700/60">
-          <h4 class="text-[11px] font-bold text-indigo-300 text-center mb-1">Scenario B: Accelerated</h4>
-          <canvas id="compChartB" height="190"></canvas>
-        </div>
-      </div>
-
-      <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700 text-[10px] text-slate-300">
-        <strong>Lesson:</strong> Rebalancing capital into higher compounding vehicles in the final decade produces <strong id="scenDifference" class="text-emerald-400">+$0.00</strong> more.
-      </div>
-      <div class="text-right">
-        <button type="button" onclick="closeComparisonModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition">Close Comparison</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Full End Game Dashboard Modal -->
-  <div id="endDashboardModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 z-50 overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-emerald-500 rounded-2xl max-w-5xl w-full p-6 space-y-5 shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-        <h3 class="text-xl font-black text-emerald-400">Lifetime Audit & Growth Charts</h3>
-        <button type="button" onclick="closeEndDashboardModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
-      </div>
-      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
-        <canvas id="growthChart" height="200"></canvas>
-      </div>
-      <div class="bg-slate-900/90 border border-emerald-500/40 rounded-xl p-4 space-y-2 text-xs">
-        <strong class="text-emerald-400 uppercase block text-sm">🛡️ Real-World Cash Flow Defense Strategy</strong>
-        <p class="text-slate-300 leading-relaxed">
-          Maintain 3–6 months in high-yield cash at Ally or Marcus, automate sinking funds for home & auto, and max your HSA at Fidelity to absorb recurring lifecycle shocks without interrupting index investing (VOO).
-        </p>
-      </div>
-      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
-        <div class="flex justify-between items-center">
-          <h4 class="text-sm font-bold text-slate-300 uppercase">Audit Ledger</h4>
-          <button type="button" onclick="fullResetGame()" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-sm px-4 py-1.5 rounded transition">Start New Game at Year 1</button>
-        </div>
-        <div id="transactionLogs" class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-300 pr-2"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Certificate Modal -->
-  <div id="certificateModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-amber-400/80 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl my-auto">
-      <div id="certificatePrintArea" class="bg-amber-50 text-slate-900 p-8 rounded-xl border-4 border-double border-amber-600 space-y-4 text-center font-serif shadow-inner">
-        <div class="border-b-2 border-amber-700 pb-3">
-          <span class="text-xs tracking-widest uppercase font-bold text-amber-800">Certificate of Completion</span>
-          <h2 class="text-3xl font-black text-amber-950 mt-1">Tycoon Wealth Journey</h2>
-        </div>
-        <h3 id="certStudentName" class="text-3xl font-bold text-emerald-900 underline decoration-amber-600 underline-offset-4 pt-3">Student</h3>
-        <p class="text-sm text-slate-800 max-w-lg mx-auto leading-relaxed pt-3">For diligently completing the 30-day perseverance course in personal finance.</p>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left bg-white/80 p-3.5 rounded-lg border border-amber-300 text-sm font-sans mt-5">
-          <div><span class="text-[10px] text-slate-500 block">Total Overall Savings:</span><strong id="certTotalSaved" class="text-slate-900">$0.00</strong></div>
-          <div><span class="text-[10px] text-slate-500 block">Tax-Free Growth:</span><strong id="certTaxFree" class="text-emerald-700">$0.00</strong></div>
-          <div><span class="text-[10px] text-slate-500 block">Total Income Saved:</span><strong id="certLifetimeDeposited" class="text-slate-900">$0.00</strong></div>
-          <div><span class="text-[10px] text-slate-500 block">Real Cash Payout (<span id="certRatioText">2000</span>:1):</span><strong id="certRealCash" class="text-amber-800">$0.00</strong></div>
-        </div>
-
-        <div class="pt-4 flex justify-between items-end border-t border-amber-300 text-sm text-slate-700 mt-5">
-          <div><span id="certSponsorSignature" class="font-bold font-sans block text-base border-b border-slate-500 pb-1">Dad</span><span class="text-[10px] text-slate-500">Sponsor</span></div>
-          <div class="text-right"><span id="certDate" class="font-sans block text-sm font-semibold"></span><span class="text-[10px] text-slate-500">Date of Graduation</span></div>
-        </div>
-      </div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="closeCertificateModal()" class="flex-1 bg-slate-700 text-slate-200 text-sm font-bold py-3 rounded-lg">Close</button>
-        <button type="button" onclick="window.print()" class="flex-1 bg-amber-500 text-slate-950 text-sm font-bold py-3 rounded-lg">🖨️ Print Certificate</button>
       </div>
     </div>
   </div>
@@ -867,11 +508,15 @@
       }
     };
 
+    window.executeSignOut = async function() {
+      await signOut(auth);
+      localStorage.removeItem('tycoon_investGameState_v1205');
+      location.reload();
+    };
+
     window.signOutAndWipe = async function() {
       if (confirm("This will log you out of this browser. Continue?")) {
-        await signOut(auth);
-        localStorage.removeItem('tycoon_investGameState_v1204');
-        location.reload();
+        await window.executeSignOut();
       }
     };
 
@@ -895,7 +540,6 @@
             document.getElementById('entryNewGame').classList.add('hidden');
             document.getElementById('entryResumeGame').classList.remove('hidden');
           } else {
-            // New account authenticated with no save data yet -> immediately transition to setup
             document.getElementById('entrySplashModal').classList.add('hidden');
             document.getElementById('onboardingModal').classList.remove('hidden');
           }
@@ -913,7 +557,7 @@
 
   <!-- MAIN GAME ENGINE LOGIC -->
   <script>
-    const STORAGE_KEY = 'tycoon_investGameState_v1204';
+    const STORAGE_KEY = 'tycoon_investGameState_v1205';
 
     const SHOCK_CATALOG = {
       young: [
@@ -1159,12 +803,17 @@
       const realSavings = Math.max(0, netGamePortfolio) / ratio;
       const realCharityMatch = (state.charity / ratio) * multiplier;
 
-      document.getElementById('closeAuditYear').textContent = state.day;
-      document.getElementById('closeAuditAge').textContent = 24 + state.day;
-      document.getElementById('closeAuditNet').textContent = `$${netGamePortfolio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      document.getElementById('closeAuditSaved').textContent = `$${state.cumulativeSavingsDeposits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      document.getElementById('closeAuditReal').textContent = `$${realSavings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      document.getElementById('closeAuditCharity').textContent = `$${realCharityMatch.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('receiptPlayer').textContent = state.playerName || "Player";
+      document.getElementById('receiptSponsor').textContent = state.sponsorName || "Dad";
+      document.getElementById('receiptYear').textContent = state.day;
+      document.getElementById('receiptAge').textContent = 24 + state.day;
+      document.getElementById('receiptDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      document.getElementById('receiptGameVal').textContent = `$${netGamePortfolio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('receiptSavedVal').textContent = `$${state.cumulativeSavingsDeposits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('receiptRatio').textContent = ratio;
+      document.getElementById('receiptRealVal').textContent = `$${realSavings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('receiptMult').textContent = multiplier;
+      document.getElementById('receiptCharityVal').textContent = `$${realCharityMatch.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
       document.getElementById('closeAccountModal').classList.remove('hidden');
     };
@@ -1173,13 +822,20 @@
       document.getElementById('closeAccountModal').classList.add('hidden');
     };
 
+    window.printReceipt = function() {
+      window.print();
+    };
+
     window.confirmEarlyTermination = async function() {
-      closeCloseAccountModal();
       if (window.deleteStateFromCloud) {
         await window.deleteStateFromCloud();
       }
       localStorage.removeItem(STORAGE_KEY);
-      location.reload();
+      if (window.executeSignOut) {
+        await window.executeSignOut();
+      } else {
+        location.reload();
+      }
     };
 
     window.selectMode = function(mode) {
@@ -1642,7 +1298,6 @@
       }
     }
 
-    // Purely clears the inputs on screen back to zero, no balance alteration
     window.resetCurrentDay = function() {
       if (!confirm("Clear your uncommitted inputs back to zero? (Your balances will remain unchanged)")) return;
       document.getElementById('allocShort').value = '';
