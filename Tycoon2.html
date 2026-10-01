@@ -32,7 +32,7 @@
     <div class="text-center space-y-6 max-w-md w-full my-auto py-8 relative">
       
       <!-- Cloud Connection State Indicator -->
-      <div id="entryLoading" class="hidden space-y-2">
+      <div id="entryLoading" class="space-y-2">
         <div class="text-emerald-400 font-bold animate-pulse text-xl">Connecting to Cloud...</div>
         <p class="text-slate-400 text-xs">Authenticating your profile...</p>
       </div>
@@ -102,7 +102,7 @@
 
     </div>
     <!-- Version Tag -->
-    <div class="absolute bottom-4 w-full text-center text-slate-600 text-[10px] font-mono tracking-widest uppercase">Version 12.08</div>
+    <div class="absolute bottom-4 w-full text-center text-slate-600 text-[10px] font-mono tracking-widest uppercase">Version 12.09</div>
   </div>
 
   <!-- Main Container -->
@@ -329,7 +329,7 @@
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.08 (Seamless Catch-Up & Auth State Resolvers)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.09 (Clock & Catch-Up Engine Fix)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
@@ -464,7 +464,7 @@
         </button>
       </div>
       
-      <div class="text-center text-slate-600 text-[10px] font-mono uppercase tracking-widest pt-1">Version 12.08</div>
+      <div class="text-center text-slate-600 text-[10px] font-mono uppercase tracking-widest pt-1">Version 12.09</div>
     </div>
   </div>
 
@@ -870,11 +870,28 @@
 
       window.isRegistering = true;
       try {
+        let userCredential;
         if (currentAuthMode === 'login') {
-          await signInWithEmailAndPassword(auth, email, pass);
+          userCredential = await signInWithEmailAndPassword(auth, email, pass);
         } else {
-          await createUserWithEmailAndPassword(auth, email, pass);
+          userCredential = await createUserWithEmailAndPassword(auth, email, pass);
         }
+
+        const user = userCredential.user;
+        const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
+        
+        loadEl.classList.add('hidden');
+        
+        if (docSnap.exists()) {
+          window.loadStateFromCloud(docSnap.data());
+          document.getElementById('entrySplashModal').classList.add('hidden');
+          window.resumeGame();
+        } else {
+          window.loadStateFromCloud(null);
+          document.getElementById('entrySplashModal').classList.add('hidden');
+          document.getElementById('onboardingModal').classList.remove('hidden');
+        }
+
       } catch (error) {
         window.isRegistering = false;
         loadEl.classList.add('hidden');
@@ -911,7 +928,7 @@
 
     window.executeSignOut = async function() {
       await signOut(auth);
-      localStorage.removeItem('tycoon_investGameState_v1208');
+      localStorage.removeItem('tycoon_investGameState_v1209');
       location.reload();
     };
 
@@ -933,53 +950,43 @@
 
     let isInitialBoot = true;
     onAuthStateChanged(auth, async (user) => {
-      document.getElementById('entryLoading').classList.add('hidden');
-      
-      if (user) {
-        try {
-          const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
-          if (docSnap.exists()) {
-            // Document found, load game state and bypass splash completely
-            window.loadStateFromCloud(docSnap.data());
-            document.getElementById('entryNewGame').classList.add('hidden');
-            document.getElementById('entryResumeGame').classList.remove('hidden');
-            document.getElementById('entrySplashModal').classList.remove('hidden');
-            document.getElementById('onboardingModal').classList.add('hidden');
-          } else {
-            // User authenticated but no save data found in DB.
-            if (!state.onboardingCompleted) {
-              // They haven't finished setup yet. Let them continue setup.
+      if (isInitialBoot) {
+        isInitialBoot = false;
+        document.getElementById('entryLoading').classList.add('hidden');
+        
+        if (user) {
+          try {
+            const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
+            if (docSnap.exists()) {
+              window.loadStateFromCloud(docSnap.data());
+              document.getElementById('entryNewGame').classList.add('hidden');
+              document.getElementById('entryResumeGame').classList.remove('hidden');
+            } else {
               window.loadStateFromCloud(null);
-              if (window.isRegistering) {
-                // If they explicitly hit "Create Cloud Account", push them automatically to setup
-                document.getElementById('entrySplashModal').classList.add('hidden');
-                document.getElementById('onboardingModal').classList.remove('hidden');
-              } else {
-                // Otherwise (e.g. ghost session from refreshing), log them out completely.
-                await signOut(auth);
-              }
+              document.getElementById('entrySplashModal').classList.add('hidden');
+              document.getElementById('onboardingModal').classList.remove('hidden');
             }
+          } catch (e) {
+            console.error("Firestore Error:", e);
+            window.loadStateFromCloud(null);
+            document.getElementById('entrySplashModal').classList.add('hidden');
+            document.getElementById('onboardingModal').classList.remove('hidden');
           }
-        } catch (e) {
-          console.error("Firestore Error:", e);
-          await signOut(auth);
-        }
-      } else {
-        // No user logged in. Show Login block.
-        if (typeof window.isRegistering === 'undefined' || !window.isRegistering) {
+        } else {
           document.getElementById('entryNewGame').classList.remove('hidden');
           document.getElementById('entryResumeGame').classList.add('hidden');
-          document.getElementById('entrySplashModal').classList.remove('hidden');
-          document.getElementById('onboardingModal').classList.add('hidden');
+        }
+      } else {
+        if (user && typeof state !== 'undefined' && state.onboardingCompleted) {
+          window.saveStateToCloud(state);
         }
       }
-      isInitialBoot = false;
     });
   </script>
 
   <!-- MAIN GAME ENGINE LOGIC -->
   <script>
-    const STORAGE_KEY = 'tycoon_investGameState_v1208';
+    const STORAGE_KEY = 'tycoon_investGameState_v1209';
 
     const SHOCK_CATALOG = {
       young: [
@@ -1209,7 +1216,6 @@
     }
 
     window.openOnboarding = function() { 
-      window.isRegistering = true;
       document.getElementById('entrySplashModal').classList.add('hidden'); 
       document.getElementById('onboardingModal').classList.remove('hidden'); 
     };
@@ -1334,7 +1340,7 @@
       let tempTime = state.nextTurnTime;
       const now = Date.now();
       const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
-      while (now >= tempTime && (state.day + missed) <= 30) {
+      while (now >= tempTime && (state.day + missed + state.catchUpYearsRemaining) <= 30) {
         missed++;
         if (sNameCheck === 'T=1') tempTime += (1 * 60 * 1000);
         else if (sNameCheck === 'T=2') tempTime += (2 * 60 * 1000);
@@ -1350,29 +1356,42 @@
 
     function checkAutoAdvance() {
       if (state.gameMode !== 'normal' || state.isGameOver || state.day > 30) return;
-      if (!document.getElementById('simulationModal').classList.contains('hidden')) return;
-
-      const missed = getMissedTurns();
       
-      if (missed === 1 && !state.isCatchingUp) {
-          // Exactly 1 turn missed while screen is active -> simulate smoothly without popup
-          window.executeYearConclusion(false);
-      } else if (missed > 1 && !state.isCatchingUp) {
-          // Multiple turns missed (user left page) -> Throw Catch-Up Modal
-          state.isCatchingUp = true;
-          state.catchUpYearsRemaining = missed;
-          document.getElementById('catchUpTurns').textContent = state.catchUpYearsRemaining;
-          document.getElementById('catchUpSettingsYear').textContent = state.settingsLastUpdatedYear;
-          document.getElementById('catchUpModal').classList.remove('hidden');
-          saveState();
-      } else if (missed > 0 && state.isCatchingUp) {
-          state.catchUpYearsRemaining = missed;
-          document.getElementById('catchUpTurns').textContent = state.catchUpYearsRemaining;
-          const nextBtn = document.getElementById('simNextBtn');
-          if (nextBtn && !document.getElementById('simActionContainer').classList.contains('hidden') && state.catchUpYearsRemaining > 0) {
-              nextBtn.textContent = `Play Year ${state.day} (Age ${24 + state.day})`;
-              nextBtn.onclick = () => { document.getElementById('simActionContainer').classList.add('hidden'); window.executeYearConclusion(true); };
+      const missed = getMissedTurns();
+      if (missed > 0) {
+          // Immediately increment the background clock so UI timer resets seamlessly
+          const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
+          for(let i=0; i<missed; i++) {
+              if (sNameCheck === 'T=1') state.nextTurnTime += (1 * 60 * 1000);
+              else if (sNameCheck === 'T=2') state.nextTurnTime += (2 * 60 * 1000);
+              else if (sNameCheck === 'T=5') state.nextTurnTime += (5 * 60 * 1000);
+              else {
+                  let d = new Date(state.nextTurnTime);
+                  d.setDate(d.getDate() + 1);
+                  d.setHours(0, 0, 0, 0);
+                  state.nextTurnTime = d.getTime();
+              }
           }
+          
+          state.catchUpYearsRemaining += missed;
+          state.isCatchingUp = true;
+          
+          // Show modal immediately ONLY IF not already interacting with menus or animations
+          if (document.getElementById('simulationModal').classList.contains('hidden') && 
+              document.getElementById('catchUpModal').classList.contains('hidden') &&
+              document.getElementById('onboardingModal').classList.contains('hidden') &&
+              document.getElementById('entrySplashModal').classList.contains('hidden')) {
+              
+              document.getElementById('catchUpTurns').textContent = state.catchUpYearsRemaining;
+              document.getElementById('catchUpSettingsYear').textContent = state.settingsLastUpdatedYear;
+              document.getElementById('catchUpModal').classList.remove('hidden');
+          } else {
+              if (!document.getElementById('catchUpModal').classList.contains('hidden')) {
+                  document.getElementById('catchUpTurns').textContent = state.catchUpYearsRemaining;
+              }
+          }
+          
+          saveState();
       }
     }
 
@@ -1456,16 +1475,7 @@
           if (isCatchUp) {
             applyYearEndLogic(s, m, l, c, sIntTot, mIntTot, lIntTot, debtTot, currentAge, crossover);
             state.catchUpYearsRemaining--;
-            
-            const sNameCheck = (state.sponsorName || "").toUpperCase().replace(/\s/g, '');
-            if (sNameCheck === 'T=1') { state.nextTurnTime += (1 * 60 * 1000); }
-            else if (sNameCheck === 'T=2') { state.nextTurnTime += (2 * 60 * 1000); } 
-            else if (sNameCheck === 'T=5') { state.nextTurnTime += (5 * 60 * 1000); } 
-            else {
-              let d = new Date(state.nextTurnTime); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0);
-              state.nextTurnTime = d.getTime();
-            }
-            state.catchUpYearsRemaining = getMissedTurns();
+            saveState(); // Update UI counters
 
             const actionContainer = document.getElementById('simActionContainer');
             const nextBtn = document.getElementById('simNextBtn');
@@ -1640,6 +1650,7 @@
       const l = Math.max(0, parseFloat(document.getElementById('allocLong').value) || 0);
       const c = Math.max(0, parseFloat(document.getElementById('allocCharity').value) || 0);
 
+      // Immediate $125/mo Long-Term limit notification
       if (l > 125) {
         setPersistentStatus("⚠️ Long-Term plan limit exceeded! Max allowed is $125.00/mo ($1,500/yr).", true);
       } else if (state.currentStatusIsError && state.currentStatusMessage.includes("Long-Term plan limit")) {
@@ -1675,6 +1686,7 @@
 
       if (l > 125) return setPersistentStatus("Long-Term plan cannot exceed $125.00/mo ($1,500/yr).", true);
 
+      // Lock in settings ONLY on click
       state.lastAllocations = { short: s, mid: m, long: l, charity: c };
       state.settingsLastUpdatedYear = state.day;
       isDirty = false;
@@ -1726,7 +1738,7 @@
 
     function updateAutoTimer() {
       const timerEl = document.getElementById('autoTimerText');
-      if (state.gameMode !== 'normal' || state.isGameOver || state.day > 30 || state.isCatchingUp) {
+      if (state.gameMode !== 'normal' || state.isGameOver || state.day > 30) {
         timerEl.classList.add('hidden');
         return;
       }
@@ -1930,9 +1942,17 @@
         actionText.textContent = "Horizon Complete (Age 55)";
         btn.className = "flex-1 bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl text-sm cursor-not-allowed flex flex-col items-center justify-center min-h-[60px]";
         endStrip.classList.remove('hidden');
+        btn.onclick = null;
+      } else if (state.isCatchingUp && state.catchUpYearsRemaining > 0) {
+        btn.disabled = false;
+        actionText.textContent = `Process ${state.catchUpYearsRemaining} Missed Year(s)`;
+        btn.className = "flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3 px-4 rounded-xl text-sm uppercase tracking-wider transition shadow-lg shadow-indigo-950/50 flex flex-col items-center justify-center min-h-[60px] border border-indigo-400";
+        endStrip.classList.add('hidden');
+        btn.onclick = window.startCatchUpSequence;
       } else {
         btn.disabled = false;
         endStrip.classList.add('hidden');
+        btn.onclick = window.handleMainAction;
         if (state.gameMode === 'normal') {
           if (actionText.textContent !== "✅ PLAN COMMITTED!") {
              actionText.textContent = "💾 Save Current Budget Plan";
