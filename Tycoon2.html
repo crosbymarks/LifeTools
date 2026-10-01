@@ -102,7 +102,7 @@
 
     </div>
     <!-- Version Tag -->
-    <div class="absolute bottom-4 w-full text-center text-slate-600 text-[10px] font-mono tracking-widest uppercase">Version 12.07</div>
+    <div class="absolute bottom-4 w-full text-center text-slate-600 text-[10px] font-mono tracking-widest uppercase">Version 12.08</div>
   </div>
 
   <!-- Main Container -->
@@ -148,7 +148,7 @@
     <!-- Overdraft Banner -->
     <div id="debtWarningBanner" class="hidden bg-rose-950/90 border border-rose-600 px-4 py-2.5 rounded-lg flex justify-between items-center text-sm">
       <div class="flex items-center gap-2 text-rose-200">
-        <span class="font-bold text-rose-300">⚠️️ OVERDRAFT DEBT ACTIVE:</span>
+        <span class="font-bold text-rose-300">⚠️ OVERDRAFT DEBT ACTIVE:</span>
         <span>Checking is negative. $10.00/month ($120.00/yr) fee being assessed until repaid.</span>
       </div>
       <span id="debtBannerAmount" class="font-black text-white text-base">-$0.00</span>
@@ -329,7 +329,7 @@
   </div>
 
   <footer class="w-full text-center text-xs text-slate-500 py-1.5">
-    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.07 (Setup UI & Auth Flow Adjustments)
+    &copy; 2026 Crosby Marks. All rights reserved. &bull; Version 12.08 (Seamless Catch-Up & Auth State Resolvers)
   </footer>
 
   <!-- ==================== MODALS & OVERLAYS ==================== -->
@@ -406,7 +406,7 @@
 
   <!-- Onboarding Setup Modal -->
   <div id="onboardingModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[90] overflow-y-auto">
-    <div class="bg-slate-800 border-2 border-emerald-500/80 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl my-auto">
+    <div class="bg-slate-800 border-2 border-emerald-500/80 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-auto">
       
       <!-- Header Row with flexible wrapping -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-700 pb-4 gap-4">
@@ -464,7 +464,7 @@
         </button>
       </div>
       
-      <div class="text-center text-slate-600 text-[10px] font-mono uppercase tracking-widest pt-1">Version 12.07</div>
+      <div class="text-center text-slate-600 text-[10px] font-mono uppercase tracking-widest pt-1">Version 12.08</div>
     </div>
   </div>
 
@@ -859,8 +859,6 @@
       }
     };
 
-    let isRegistering = false;
-
     window.handleAuthSubmit = async function() {
       const email = document.getElementById('authEmail').value.trim();
       const pass = document.getElementById('authPassword').value;
@@ -870,7 +868,7 @@
       loadEl.classList.remove('hidden');
       document.getElementById('entryNewGame').classList.add('hidden');
 
-      isRegistering = true;
+      window.isRegistering = true;
       try {
         if (currentAuthMode === 'login') {
           await signInWithEmailAndPassword(auth, email, pass);
@@ -878,7 +876,7 @@
           await createUserWithEmailAndPassword(auth, email, pass);
         }
       } catch (error) {
-        isRegistering = false;
+        window.isRegistering = false;
         loadEl.classList.add('hidden');
         document.getElementById('entryNewGame').classList.remove('hidden');
         if (error.code === 'auth/email-already-in-use') alert("This email is already registered. Please click 'Log In' instead.");
@@ -913,7 +911,7 @@
 
     window.executeSignOut = async function() {
       await signOut(auth);
-      localStorage.removeItem('tycoon_investGameState_v1207');
+      localStorage.removeItem('tycoon_investGameState_v1208');
       location.reload();
     };
 
@@ -941,22 +939,25 @@
         try {
           const docSnap = await getDoc(doc(db, "tycoon_saves", user.uid));
           if (docSnap.exists()) {
+            // Document found, load game state and bypass splash completely
             window.loadStateFromCloud(docSnap.data());
             document.getElementById('entryNewGame').classList.add('hidden');
             document.getElementById('entryResumeGame').classList.remove('hidden');
             document.getElementById('entrySplashModal').classList.remove('hidden');
             document.getElementById('onboardingModal').classList.add('hidden');
           } else {
-            // User authenticated but no save data found.
-            if (isInitialBoot && !isRegistering) {
-              // They refreshed the browser before finishing setup. Wipe ghost session.
-              await signOut(auth);
-              return;
-            } else {
-              // Newly registered user currently stepping through the flow.
+            // User authenticated but no save data found in DB.
+            if (!state.onboardingCompleted) {
+              // They haven't finished setup yet. Let them continue setup.
               window.loadStateFromCloud(null);
-              document.getElementById('entrySplashModal').classList.add('hidden');
-              document.getElementById('onboardingModal').classList.remove('hidden');
+              if (window.isRegistering) {
+                // If they explicitly hit "Create Cloud Account", push them automatically to setup
+                document.getElementById('entrySplashModal').classList.add('hidden');
+                document.getElementById('onboardingModal').classList.remove('hidden');
+              } else {
+                // Otherwise (e.g. ghost session from refreshing), log them out completely.
+                await signOut(auth);
+              }
             }
           }
         } catch (e) {
@@ -964,8 +965,8 @@
           await signOut(auth);
         }
       } else {
-        // Not logged in. Only show Splash Screen, never auto-show Onboarding.
-        if (!isRegistering) {
+        // No user logged in. Show Login block.
+        if (typeof window.isRegistering === 'undefined' || !window.isRegistering) {
           document.getElementById('entryNewGame').classList.remove('hidden');
           document.getElementById('entryResumeGame').classList.add('hidden');
           document.getElementById('entrySplashModal').classList.remove('hidden');
@@ -978,7 +979,7 @@
 
   <!-- MAIN GAME ENGINE LOGIC -->
   <script>
-    const STORAGE_KEY = 'tycoon_investGameState_v1207';
+    const STORAGE_KEY = 'tycoon_investGameState_v1208';
 
     const SHOCK_CATALOG = {
       young: [
@@ -1061,8 +1062,7 @@
       document.getElementById('entryLoading').classList.add('hidden');
 
       if (!state.onboardingCompleted) {
-        // Ensure UI doesn't automatically drop into setup on refresh
-        if (typeof isRegistering !== 'undefined' && !isRegistering) {
+        if (typeof window.isRegistering !== 'undefined' && !window.isRegistering) {
           document.getElementById('entryNewGame').classList.remove('hidden');
           document.getElementById('entryResumeGame').classList.add('hidden');
         }
@@ -1209,7 +1209,7 @@
     }
 
     window.openOnboarding = function() { 
-      if (typeof isRegistering !== 'undefined') isRegistering = true;
+      window.isRegistering = true;
       document.getElementById('entrySplashModal').classList.add('hidden'); 
       document.getElementById('onboardingModal').classList.remove('hidden'); 
     };
@@ -1317,6 +1317,9 @@
       rollYearShock();
       captureDaySnapshot();
 
+      // Lock to local storage immediately so listeners can't wipe it
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+
       if (window.ensureAnonymousAuth) {
         await window.ensureAnonymousAuth();
       }
@@ -1347,8 +1350,15 @@
 
     function checkAutoAdvance() {
       if (state.gameMode !== 'normal' || state.isGameOver || state.day > 30) return;
+      if (!document.getElementById('simulationModal').classList.contains('hidden')) return;
+
       const missed = getMissedTurns();
-      if (missed > 0 && !state.isCatchingUp) {
+      
+      if (missed === 1 && !state.isCatchingUp) {
+          // Exactly 1 turn missed while screen is active -> simulate smoothly without popup
+          window.executeYearConclusion(false);
+      } else if (missed > 1 && !state.isCatchingUp) {
+          // Multiple turns missed (user left page) -> Throw Catch-Up Modal
           state.isCatchingUp = true;
           state.catchUpYearsRemaining = missed;
           document.getElementById('catchUpTurns').textContent = state.catchUpYearsRemaining;
@@ -1419,7 +1429,7 @@
         let tMsg = `Mo ${month}: Net flow ${checkingNetMonthly>=0?'+':''}$${checkingNetMonthly.toFixed(2)}.${debtMsg}`;
         if (Math.random() < (0.05/12)) {
           state.mid -= state.mid * dM; state.long -= state.long * dL;
-          tMsg = `Mo ${month}: ⚠️️ Market drop! Mid -1.6%, Long -0.8%`;
+          tMsg = `Mo ${month}: ⚠️ Market drop! Mid -1.6%, Long -0.8%`;
         }
         const sI = state.short * rS, mI = state.mid * rM, lI = state.long * rL;
         state.short += sI; state.mid += mI; state.long += lI;
@@ -1741,7 +1751,6 @@
     }
 
     window.resetCurrentDay = function() {
-      if (!confirm("Clear your uncommitted inputs back to zero? (Your balances will remain unchanged)")) return;
       document.getElementById('allocShort').value = '';
       document.getElementById('allocMid').value = '';
       document.getElementById('allocLong').value = '';
