@@ -1,10 +1,442 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chooser Page Editor</title>
+    <style>
+        :root { --primary: #007bff; --bg: #f4f6f8; --panel: #ffffff; --border: #ddd; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); overflow: hidden; }
+        .sidebar { width: 500px; background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); background: #fafafa; position: sticky; top: 0; z-index: 10; }
+        .sidebar-content { padding: 20px; flex: 1; }
+        .preview-pane { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+        iframe { flex: 1; border: 1px solid var(--border); border-radius: 8px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h1, h2, h3, h4 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; font-size: 0.9em; margin-bottom: 5px; color: #333; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; }
+        .checkbox-group label { margin: 0; font-weight: normal; cursor: pointer; }
+        .checkbox-group input[type="checkbox"] { cursor: pointer; }
+        input[type="text"], input[type="url"], textarea, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        .color-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .color-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .color-group input[type="color"] { cursor: pointer; }
+        
+        .section-editor { background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .section-editor > h4 { margin: 0 0 15px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; color: #444; font-size: 1.1em;}
+        
+        .cell-editor { background: #f9f9f9; border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 15px; position: relative; }
+        .cell-editor h5 { margin: 0 0 10px 0; display: flex; justify-content: space-between; align-items: center; font-size: 1em; }
+        
+        button { background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background 0.2s; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; padding: 4px 8px; font-size: 0.8em; }
+        button.danger:hover { background: #a71d2a; }
+        button.secondary { background: #6c757d; }
+        button.secondary:hover { background: #5a6268; }
+        .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        hr { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 80%; max-width: 800px; height: 80vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-header h2 { margin: 0; }
+        .modal textarea { flex: 1; width: 100%; resize: none; font-family: monospace; font-size: 14px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 15px; white-space: pre; background: #f9f9f9; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Chooser Editor</h2>
+            <div class="actions">
+                <button onclick="exportHTML()">Export HTML</button>
+                <button class="secondary" onclick="showHTML()">Show HTML 📄</button>
+                <input type="file" id="importFile" accept=".html" style="display: none;" onchange="importHTML(event)">
+                <button class="secondary" onclick="document.getElementById('importFile').click()">Import</button>
+                <button class="secondary" onclick="window.open('https://getemoji.com/', '_blank')" title="Find and copy emojis">Emoji 🔍</button>
+            </div>
+        </div>
+        
+        <div class="sidebar-content" id="form-container">
+            <h3>Top Section (Header)</h3>
+            <div class="form-group">
+                <label>Logo URL (Optional)</label>
+                <input type="text" id="logoUrl" oninput="updateConfig('logoUrl', this.value)" placeholder="https://example.com/logo.png">
+            </div>
+            <div class="form-group">
+                <label>Page Title</label>
+                <input type="text" id="pageTitle" oninput="updateConfig('pageTitle', this.value)">
+            </div>
+            <div class="form-group">
+                <label>Page Subtitle (Optional)</label>
+                <input type="text" id="pageSubtitle" oninput="updateConfig('pageSubtitle', this.value)">
+            </div>
+            <div class="color-row">
+                <div class="color-group"><input type="color" id="headerBgColor" oninput="updateConfig('headerBgColor', this.value)"> <label>Top BG</label></div>
+                <div class="color-group"><input type="color" id="headerTextColor" oninput="updateConfig('headerTextColor', this.value)"> <label>Top Text</label></div>
+            </div>
+
+            <hr>
+
+            <h3>Global Page Settings</h3>
+            <div class="form-group">
+                <label>Page Message</label>
+                <textarea id="pageMessage" oninput="updateConfig('pageMessage', this.value)" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Page Sub-message (Optional)</label>
+                <textarea id="pageSubMessage" oninput="updateConfig('pageSubMessage', this.value)" rows="2"></textarea>
+            </div>
+
+            <div class="color-row">
+                <div class="color-group"><input type="color" id="bgColor" oninput="updateConfig('bgColor', this.value)"> <label>Page BG</label></div>
+                <div class="color-group"><input type="color" id="textColor" oninput="updateConfig('textColor', this.value)"> <label>Page Text</label></div>
+            </div>
+            
+            <hr>
+            
+            <h3>Sections & Cells</h3>
+            <div id="sectionsList"></div>
+            <button onclick="addSection()" style="width: 100%; margin-bottom: 20px; padding: 12px; font-weight: bold;">+ Add New Section</button>
+
+            <hr>
+
+            <h3>Footer</h3>
+            <div class="form-group">
+                <label>Creator</label>
+                <input type="text" id="footerCreator" oninput="updateConfig('footerCreator', this.value)">
+            </div>
+            <div class="form-group">
+                <label>Version</label>
+                <input type="text" id="footerVersion" oninput="updateConfig('footerVersion', this.value)">
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="text" id="footerDate" oninput="updateConfig('footerDate', this.value)" placeholder="e.g., 2026-08-23">
+            </div>
+        </div>
+    </div>
+
+    <div class="preview-pane">
+        <h2 style="color: #555;">Live Preview</h2>
+        <iframe id="previewFrame"></iframe>
+    </div>
+
+    <!-- HTML Export Modal -->
+    <div id="htmlModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Generated HTML</h2>
+                <button class="secondary" onclick="closeModal()">Close</button>
+            </div>
+            <textarea id="htmlOutput" readonly></textarea>
+            <div class="modal-footer">
+                <button class="secondary" onclick="closeModal()">Cancel</button>
+                <button id="copyBtn" onclick="copyHTML()">Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate today's date in YYYY-mm-dd format
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+        let config = {
+            logoUrl: "",
+            pageTitle: "Welcome",
+            pageSubtitle: "Choose your destination",
+            headerBgColor: "#2c3e50",
+            headerTextColor: "#ffffff",
+            pageMessage: "Select an option below to continue.",
+            pageSubMessage: "",
+            bgColor: "#f4f6f8",
+            textColor: "#333333",
+            footerCreator: "",
+            footerVersion: "1.0",
+            footerDate: formattedDate,
+            sections: [
+                {
+                    title: "",
+                    subtitle: "",
+                    cell1Bg: "#ffffff",
+                    cell1Text: "#000000",
+                    cell2Bg: "#007bff",
+                    cell2Text: "#ffffff",
+                    cells: [
+                        { emoji: "🚀", title: "Option 1", description: "This is the first option", link: "https://example.com", newTab: true },
+                        { emoji: "⚙️", title: "Option 2", description: "This is the second option", link: "https://example.com", newTab: true },
+                        { emoji: "📊", title: "Option 3", description: "This is the third option", link: "https://example.com", newTab: true },
+                        { emoji: "💬", title: "Option 4", description: "This is the fourth option", link: "https://example.com", newTab: false }
+                    ]
+                }
+            ]
+        };
+
+        // Backward compatibility handler
+        function ensureConfigVersion(conf) {
+            if (!conf.sections && conf.cells) {
+                conf.sections = [{
+                    title: "",
+                    subtitle: "",
+                    cell1Bg: conf.cell1Bg || "#ffffff",
+                    cell1Text: conf.cell1Text || "#000000",
+                    cell2Bg: conf.cell2Bg || "#007bff",
+                    cell2Text: conf.cell2Text || "#ffffff",
+                    cells: conf.cells || []
+                }];
+                // Clean up old root variables
+                delete conf.cell1Bg; delete conf.cell1Text; 
+                delete conf.cell2Bg; delete conf.cell2Text; 
+                delete conf.cells;
+            }
+            if (!conf.sections) conf.sections = []; // Safety catch
+            return conf;
+        }
+
+        function updateConfig(key, value) {
+            config[key] = value;
+            renderPreview();
+        }
+
+        function updateSection(sIdx, key, value) {
+            config.sections[sIdx][key] = value;
+            renderPreview();
+        }
+
+        function updateCell(sIdx, cIdx, key, value) {
+            config.sections[sIdx].cells[cIdx][key] = value;
+            renderPreview();
+        }
+
+        // Section Operations
+        function addSection() {
+            const lastSec = config.sections[config.sections.length - 1];
+            config.sections.push({
+                title: "New Section",
+                subtitle: "",
+                cell1Bg: lastSec ? lastSec.cell1Bg : "#ffffff",
+                cell1Text: lastSec ? lastSec.cell1Text : "#000000",
+                cell2Bg: lastSec ? lastSec.cell2Bg : "#007bff",
+                cell2Text: lastSec ? lastSec.cell2Text : "#ffffff",
+                cells: []
+            });
+            renderEditor();
+            renderPreview();
+        }
+
+        function removeSection(sIdx) {
+            if(confirm("Are you sure you want to remove this entire section and its cells?")) {
+                config.sections.splice(sIdx, 1);
+                renderEditor();
+                renderPreview();
+            }
+        }
+
+        function moveSection(sIdx, dir) {
+            if (sIdx + dir < 0 || sIdx + dir >= config.sections.length) return;
+            const temp = config.sections[sIdx];
+            config.sections[sIdx] = config.sections[sIdx + dir];
+            config.sections[sIdx + dir] = temp;
+            renderEditor();
+            renderPreview();
+        }
+
+        // Cell Operations
+        function addCell(sIdx) {
+            config.sections[sIdx].cells.push({ emoji: "", title: "New Option", description: "", link: "#", newTab: true });
+            renderEditor();
+            renderPreview();
+        }
+
+        function removeCell(sIdx, cIdx) {
+            if(confirm("Remove this cell?")) {
+                config.sections[sIdx].cells.splice(cIdx, 1);
+                renderEditor();
+                renderPreview();
+            }
+        }
+
+        function moveCell(sIdx, cIdx, dir) {
+            if (cIdx + dir < 0 || cIdx + dir >= config.sections[sIdx].cells.length) return;
+            const temp = config.sections[sIdx].cells[cIdx];
+            config.sections[sIdx].cells[cIdx] = config.sections[sIdx].cells[cIdx + dir];
+            config.sections[sIdx].cells[cIdx + dir] = temp;
+            renderEditor();
+            renderPreview();
+        }
+
+        function moveCellToSection(sIdx, cIdx, targetSIdx) {
+            if (isNaN(targetSIdx) || targetSIdx === sIdx) return;
+            const cell = config.sections[sIdx].cells.splice(cIdx, 1)[0];
+            config.sections[targetSIdx].cells.push(cell);
+            renderEditor();
+            renderPreview();
+        }
+
+        function renderEditor() {
+            // Update global inputs
+            ['logoUrl', 'pageTitle', 'pageSubtitle', 'headerBgColor', 'headerTextColor', 'pageMessage', 'pageSubMessage', 'bgColor', 'textColor', 'footerCreator', 'footerVersion', 'footerDate'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = config[id] || '';
+            });
+
+            // Update Sections
+            const container = document.getElementById('sectionsList');
+            container.innerHTML = '';
+            
+            config.sections.forEach((sec, sIdx) => {
+                // Build section transfer options for cells
+                const sectionOptions = config.sections.map((_, idx) => 
+                    `<option value="${idx}" ${idx === sIdx ? 'disabled selected' : ''}>${idx === sIdx ? 'Move to...' : `Section ${idx + 1}`}</option>`
+                ).join('');
+
+                let cellsHTML = '';
+                sec.cells.forEach((cell, cIdx) => {
+                    const isNewTab = cell.newTab !== false;
+                    cellsHTML += `
+                        <div class="cell-editor">
+                            <h5>
+                                <span>Cell ${cIdx + 1}</span>
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <select onchange="moveCellToSection(${sIdx}, ${cIdx}, parseInt(this.value))" style="width: auto; padding: 2px 4px; font-size: 0.8em; margin-right: 5px;">
+                                        ${sectionOptions}
+                                    </select>
+                                    <button class="secondary" style="padding: 2px 6px;" onclick="moveCell(${sIdx}, ${cIdx}, -1)">↑</button>
+                                    <button class="secondary" style="padding: 2px 6px;" onclick="moveCell(${sIdx}, ${cIdx}, 1)">↓</button>
+                                    <button class="danger" onclick="removeCell(${sIdx}, ${cIdx})">X</button>
+                                </div>
+                            </h5>
+                            <div class="form-group">
+                                <label>Emoji (Optional)</label>
+                                <input type="text" value="${cell.emoji || ''}" oninput="updateCell(${sIdx}, ${cIdx}, 'emoji', this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label>Title</label>
+                                <input type="text" value="${cell.title || ''}" oninput="updateCell(${sIdx}, ${cIdx}, 'title', this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <input type="text" value="${cell.description || ''}" oninput="updateCell(${sIdx}, ${cIdx}, 'description', this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label>Link URL</label>
+                                <input type="url" value="${cell.link || ''}" oninput="updateCell(${sIdx}, ${cIdx}, 'link', this.value)">
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="newTab_${sIdx}_${cIdx}" ${isNewTab ? 'checked' : ''} onchange="updateCell(${sIdx}, ${cIdx}, 'newTab', this.checked)">
+                                <label for="newTab_${sIdx}_${cIdx}">Open in new tab by default</label>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="section-editor">
+                        <h4>
+                            <span>Section ${sIdx + 1}</span>
+                            <div>
+                                <button class="secondary" style="padding: 4px 8px;" onclick="moveSection(${sIdx}, -1)">↑</button>
+                                <button class="secondary" style="padding: 4px 8px;" onclick="moveSection(${sIdx}, 1)">↓</button>
+                                <button class="danger" style="padding: 4px 8px;" onclick="removeSection(${sIdx})">Delete</button>
+                            </div>
+                        </h4>
+                        
+                        <div class="form-group">
+                            <label>Section Title (Optional)</label>
+                            <input type="text" value="${sec.title || ''}" oninput="updateSection(${sIdx}, 'title', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Section Subtitle (Optional)</label>
+                            <input type="text" value="${sec.subtitle || ''}" oninput="updateSection(${sIdx}, 'subtitle', this.value)">
+                        </div>
+                        
+                        <div class="color-row">
+                            <div class="color-group"><input type="color" value="${sec.cell1Bg}" oninput="updateSection(${sIdx}, 'cell1Bg', this.value)"> <label>Color A BG</label></div>
+                            <div class="color-group"><input type="color" value="${sec.cell1Text}" oninput="updateSection(${sIdx}, 'cell1Text', this.value)"> <label>Color A Text</label></div>
+                            <div class="color-group"><input type="color" value="${sec.cell2Bg}" oninput="updateSection(${sIdx}, 'cell2Bg', this.value)"> <label>Color B BG</label></div>
+                            <div class="color-group"><input type="color" value="${sec.cell2Text}" oninput="updateSection(${sIdx}, 'cell2Text', this.value)"> <label>Color B Text</label></div>
+                        </div>
+                        
+                        <hr style="margin: 15px 0;">
+                        
+                        <div>${cellsHTML}</div>
+                        <button onclick="addCell(${sIdx})" style="width: 100%; margin-top: 5px;" class="secondary">+ Add Cell</button>
+                    </div>
+                `;
+            });
+        }
+
+        function generateHTML() {
+            // Icon for "Open in New Tab" (Pop-out arrow)
+            const iconNewTab = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+            // Icon for "Open in Same Tab" (Arrow in box)
+            const iconSameTab = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>`;
+
+            const sectionsHTML = config.sections.map((sec, i) => {
+                const cellsHTML = sec.cells.map(c => {
+                    const isNewTab = c.newTab !== false;
+                    const targetAttr = isNewTab ? 'target="_blank" rel="noopener noreferrer"' : '';
+                    const altIcon = isNewTab ? iconSameTab : iconNewTab;
+                    const altTarget = isNewTab ? '_self' : '_blank';
+                    const altTitle = isNewTab ? 'Open in same tab instead' : 'Open in new tab instead';
+
+                    return `
+                    <a href="${c.link}" class="cell" ${targetAttr}>
+                        <div class="alt-action" title="${altTitle}" onclick="event.preventDefault(); window.open('${c.link}', '${altTarget}');">
+                            ${altIcon}
+                        </div>
+                        ${c.emoji ? `<div class="emoji">${c.emoji}</div>` : ''}
+                        <div class="cell-content">
+                            <div class="cell-title">${c.title}</div>
+                            ${c.description ? `<div class="cell-desc">${c.description}</div>` : ''}
+                        </div>
+                    </a>
+                `}).join('');
+
+                const separator = i > 0 ? `<hr class="section-divider">` : '';
+                const headerHTML = (sec.title || sec.subtitle) ? `
+                    <div class="section-header">
+                        ${sec.title ? `<div class="section-title">${sec.title}</div>` : ''}
+                        ${sec.subtitle ? `<div class="section-subtitle">${sec.subtitle}</div>` : ''}
+                    </div>
+                ` : '';
+
+                return `
+                    ${separator}
+                    <div class="section-container" style="--c1bg: ${sec.cell1Bg}; --c1txt: ${sec.cell1Text}; --c2bg: ${sec.cell2Bg}; --c2txt: ${sec.cell2Text};">
+                        ${headerHTML}
+                        <div class="grid">${cellsHTML}</div>
+                    </div>
+                `;
+            }).join('');
+
+            const safeJSON = JSON.stringify(config, null, 2).replace(/</g, '\\u003c');
+            
+            const footerParts = [];
+            if (config.footerCreator) footerParts.push(config.footerCreator);
+            if (config.footerVersion) footerParts.push(config.footerVersion);
+            if (config.footerDate) footerParts.push(config.footerDate);
+            
+            const footerHTML = footerParts.length > 0 
+                ? `<div class="page-footer">${footerParts.join(' | ')}</div>` 
+                : '';
+
+            return `<!DOCTYPE html>
 <!-- Created by Crosby Marks -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tools for different aspects of Daily Living</title>
+    <title>${config.pageTitle}</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -14,8 +446,8 @@
 
         /* Top Section */
         .top-section {
-            background-color: #ffffff;
-            color: #1e40af;
+            background-color: ${config.headerBgColor};
+            color: ${config.headerTextColor};
             text-align: center;
             padding: 25px 20px;
         }
@@ -26,8 +458,8 @@
 
         /* Bottom Section */
         .bottom-section {
-            background-color: #ffffff;
-            color: #1e1f1f;
+            background-color: ${config.bgColor};
+            color: ${config.textColor};
             padding: 40px 20px;
             min-height: 50vh;
             display: flex;
@@ -120,280 +552,128 @@
 </head>
 <body>
     <script id="chooser-config" type="application/json">
-{
-  "logoUrl": "",
-  "pageTitle": "Tools for different aspects of Daily Living",
-  "pageSubtitle": "Life Style Resources and Tools",
-  "headerBgColor": "#ffffff",
-  "headerTextColor": "#1e40af",
-  "pageMessage": "Welcome to Life Style Tools",
-  "pageSubMessage": "Click on the resource you need below to navigate to the life style tools and resources.",
-  "bgColor": "#ffffff",
-  "textColor": "#1e1f1f",
-  "footerCreator": "",
-  "footerVersion": "1.0",
-  "footerDate": "2026-09-03",
-  "sections": [
-    {
-      "title": "",
-      "subtitle": "",
-      "cell1Bg": "#f0fdf4",
-      "cell1Text": "#15803d",
-      "cell2Bg": "#faf5ff",
-      "cell2Text": "#7e22ce",
-      "cells": [
-        {
-          "emoji": "🔤",
-          "title": "Copy Spanish Letters and Punctuation",
-          "description": "Spanish Tools",
-          "link": "https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html",
-          "newTab": false
-        },
-        {
-          "emoji": "❓",
-          "title": "Chooser Maker",
-          "description": "Make a screen to choose different pages (like this one)",
-          "link": "https://crosbymarks.github.io/LifeTools/chooser.html",
-          "newTab": false
-        },
-        {
-          "emoji": "📏",
-          "title": "Fractions, Inches, and mm Converter",
-          "description": "Go to the Imperial to Metric Converter",
-          "link": "https://crosbymarks.github.io/LifeTools/inch2mm.html",
-          "newTab": false
-        },
-        {
-          "emoji": "📅",
-          "title": "Variable Intermittent Fast Calendar",
-          "description": "Go to the calendar to see your fast",
-          "link": "https://crosbymarks.github.io/LifeTools/IntermittentFast.html",
-          "newTab": false
-        },
-        {
-          "emoji": "📚",
-          "title": "Order the Pages of Booklet",
-          "description": "Go to the Booklet Layout Guide",
-          "link": "https://crosbymarks.github.io/LifeTools/bookletlayout.html",
-          "newTab": false
-        },
-        {
-          "emoji": "🖥️📡",
-          "title": "Web Screen Caster",
-          "description": "Cast or View a Screen/Window on the Lan",
-          "link": "https://crosbymarks.github.io/LifeTools/web_screen_caster.html",
-          "newTab": true
-        },
-        {
-          "emoji": "🎲",
-          "title": "Dice Roller",
-          "description": "Roll Dice for Fun",
-          "link": "https://crosbymarks.github.io/LifeTools/diceroll.html",
-          "newTab": true
-        },
-        {
-          "emoji": "🐽",
-          "title": "Even a Blind Pig Gets Lucky",
-          "description": "Go to the Blind Pig Game",
-          "link": "https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html",
-          "newTab": true
-        }
-      ]
-    },
-    {
-      "title": "Car Fun",
-      "subtitle": "",
-      "cell1Bg": "#f0fdf4",
-      "cell1Text": "#15803d",
-      "cell2Bg": "#faf5ff",
-      "cell2Text": "#7e22ce",
-      "cells": [
-        {
-          "emoji": "🚗🧮",
-          "title": "Gas Trip Calculator",
-          "description": "Validate if it is worth the trip to a distant gas station",
-          "link": "https://crosbymarks.github.io/LifeTools/gastrip.html",
-          "newTab": false
-        },
-        {
-          "emoji": "⛽",
-          "title": "Convert Gas Price",
-          "description": "Gas Price Gallon to Liter",
-          "link": "https://crosbymarks.github.io/LifeTools/gasconverter.html",
-          "newTab": false
-        },
-        {
-          "emoji": "⛽🧮",
-          "title": "Fill Me Up Calculator",
-          "description": "How much to pay for a fillup",
-          "link": "https://crosbymarks.github.io/LifeTools/fillmeup.html",
-          "newTab": false
-        }
-      ]
-    }
-  ]
-}
-    </script>
+${safeJSON}
+    <\/script>
 
     <div class="top-section">
         <div class="container-top">
-            
-            <h1>Tools for different aspects of Daily Living</h1>
-            <div class="subtitle">Life Style Resources and Tools</div>
+            ${config.logoUrl ? `<img src="${config.logoUrl}" alt="Logo" class="logo">` : ''}
+            ${config.pageTitle ? `<h1>${config.pageTitle}</h1>` : ''}
+            ${config.pageSubtitle ? `<div class="subtitle">${config.pageSubtitle}</div>` : ''}
         </div>
     </div>
 
     <div class="bottom-section">
         <div class="container-bottom">
-            
+            ${(config.pageMessage || config.pageSubMessage) ? `
                 <div class="message-container">
-                    <div class="message">Welcome to Life Style Tools</div>
-                    <div class="submessage">Click on the resource you need below to navigate to the life style tools and resources.</div>
+                    ${config.pageMessage ? `<div class="message">${config.pageMessage}</div>` : ''}
+                    ${config.pageSubMessage ? `<div class="submessage">${config.pageSubMessage}</div>` : ''}
                 </div>
-            
+            ` : ''}
 
-            
-                    
-                    <div class="section-container" style="--c1bg: #f0fdf4; --c1txt: #15803d; --c2bg: #faf5ff; --c2txt: #7e22ce;">
-                        
-                        <div class="grid">
-                    <a href="https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html" class="cell" >
-                        <div class="alt-action" title="Open in new tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/LanguageType/spanish-tools.html', '_blank');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div class="emoji">🔤</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Copy Spanish Letters and Punctuation</div>
-                            <div class="cell-desc">Spanish Tools</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/chooser.html" class="cell" >
-                        <div class="alt-action" title="Open in new tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/chooser.html', '_blank');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div class="emoji">❓</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Chooser Maker</div>
-                            <div class="cell-desc">Make a screen to choose different pages (like this one)</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/inch2mm.html" class="cell" >
-                        <div class="alt-action" title="Open in new tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/inch2mm.html', '_blank');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div class="emoji">📏</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Fractions, Inches, and mm Converter</div>
-                            <div class="cell-desc">Go to the Imperial to Metric Converter</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/IntermittentFast.html" class="cell" >
-                        <div class="alt-action" title="Open in new tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/IntermittentFast.html', '_blank');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div class="emoji">📅</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Variable Intermittent Fast Calendar</div>
-                            <div class="cell-desc">Go to the calendar to see your fast</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/bookletlayout.html" class="cell" >
-                        <div class="alt-action" title="Open in new tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/bookletlayout.html', '_blank');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div class="emoji">📚</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Order the Pages of Booklet</div>
-                            <div class="cell-desc">Go to the Booklet Layout Guide</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/web_screen_caster.html" class="cell" target="_blank" rel="noopener noreferrer">
-                        <div class="alt-action" title="Open in same tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/web_screen_caster.html', '_self');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>
-                        </div>
-                        <div class="emoji">🖥️📡</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Web Screen Caster</div>
-                            <div class="cell-desc">Cast or View a Screen/Window on the Lan</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/diceroll.html" class="cell" target="_blank" rel="noopener noreferrer">
-                        <div class="alt-action" title="Open in same tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/diceroll.html', '_self');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>
-                        </div>
-                        <div class="emoji">🎲</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Dice Roller</div>
-                            <div class="cell-desc">Roll Dice for Fun</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html" class="cell" target="_blank" rel="noopener noreferrer">
-                        <div class="alt-action" title="Open in same tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/blindpig/blindpig.html', '_self');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>
-                        </div>
-                        <div class="emoji">🐽</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Even a Blind Pig Gets Lucky</div>
-                            <div class="cell-desc">Go to the Blind Pig Game</div>
-                        </div>
-                    </a>
-                </div>
-                    </div>
-                
-                    <hr class="section-divider">
-                    <div class="section-container" style="--c1bg: #f0fdf4; --c1txt: #15803d; --c2bg: #faf5ff; --c2txt: #7e22ce;">
-                        
-                    <div class="section-header">
-                        <div class="section-title">Car Fun</div>
-                        
-                    </div>
-                
-                        <div class="grid">
-                    <a href="https://crosbymarks.github.io/LifeTools/gastrip.html" class="cell" >
-                        <div class="alt-action" title="Open in new tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/gastrip.html', '_blank');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div class="emoji">🚗🧮</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Gas Trip Calculator</div>
-                            <div class="cell-desc">Validate if it is worth the trip to a distant gas station</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/gasconverter.html" class="cell" >
-                        <div class="alt-action" title="Open in new tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/gasconverter.html', '_blank');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div class="emoji">⛽</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Convert Gas Price</div>
-                            <div class="cell-desc">Gas Price Gallon to Liter</div>
-                        </div>
-                    </a>
-                
-                    <a href="https://crosbymarks.github.io/LifeTools/fillmeup.html" class="cell" >
-                        <div class="alt-action" title="Open in new tab instead" onclick="event.preventDefault(); window.open('https://crosbymarks.github.io/LifeTools/fillmeup.html', '_blank');">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div class="emoji">⛽🧮</div>
-                        <div class="cell-content">
-                            <div class="cell-title">Fill Me Up Calculator</div>
-                            <div class="cell-desc">How much to pay for a fillup</div>
-                        </div>
-                    </a>
-                </div>
-                    </div>
-                
+            ${sectionsHTML}
 
-            <div class="page-footer">1.0 | 2026-09-03</div>
+            ${footerHTML}
         </div>
     </div>
+</body>
+</html>`;
+        }
+
+        function renderPreview() {
+            const iframe = document.getElementById('previewFrame');
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(generateHTML());
+            doc.close();
+        }
+
+        function exportHTML() {
+            let filename = prompt("Enter file name to save as:", "chooser.html");
+            if (!filename) return; 
+            
+            if (!filename.toLowerCase().endsWith('.html')) {
+                filename += '.html';
+            }
+
+            const htmlContent = generateHTML();
+            const blob = new Blob([htmlContent], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename; 
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Modal functions
+        function showHTML() {
+            const output = document.getElementById('htmlOutput');
+            output.value = generateHTML();
+            document.getElementById('htmlModal').classList.add('active');
+            
+            document.getElementById('copyBtn').innerText = "Copy to Clipboard";
+        }
+        
+        function closeModal() {
+            document.getElementById('htmlModal').classList.remove('active');
+        }
+        
+        function copyHTML() {
+            const output = document.getElementById('htmlOutput');
+            output.select();
+            document.execCommand('copy');
+            
+            const btn = document.getElementById('copyBtn');
+            btn.innerText = "Copied! ✔️";
+            setTimeout(() => { btn.innerText = "Copy to Clipboard"; }, 2000);
+        }
+
+        function importHTML(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const htmlText = e.target.result;
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, "text/html");
+                const scriptTag = doc.getElementById("chooser-config");
+                
+                if (scriptTag) {
+                    try {
+                        let importedConfig = JSON.parse(scriptTag.textContent);
+                        importedConfig = ensureConfigVersion(importedConfig);
+                        config = { ...config, ...importedConfig };
+                        renderEditor();
+                        renderPreview();
+                        alert("Page imported successfully!");
+                    } catch (err) {
+                        alert("Found configuration data, but failed to parse it.");
+                    }
+                } else {
+                    alert("Could not find configuration data in this file. Ensure it was exported from this editor.");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ""; 
+        }
+
+        // Close modal if clicking outside of the content
+        window.onclick = function(event) {
+            const modal = document.getElementById('htmlModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Initial render
+        config = ensureConfigVersion(config);
+        renderEditor();
+        renderPreview();
+    </script>
 </body>
 </html>
