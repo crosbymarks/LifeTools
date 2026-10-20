@@ -196,4 +196,319 @@
                 img.onload = () => {
                     const canvas = document.getElementById('cropCanvas');
                     const ctx = canvas.getContext('2d');
-                    const size = Math.min(img.width, img.
+                    const size = Math.min(img.width, img.height);
+                    canvas.width = 400;
+                    canvas.height = 400;
+                    const startX = (img.width - size) / 2;
+                    const startY = (img.height - size) / 2;
+                    ctx.drawImage(img, startX, startY, size, size, 0, 0, 400, 400);
+                    uploadedImageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    lobbyStatus.textContent = "Image ready! Click Create Room.";
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Generate Solvable Shuffle Array
+        function generateShuffledBoard() {
+            let board = [];
+            for (let i = 0; i < 16; i++) {
+                board.push({ id: i, row: Math.floor(i / 4), col: i % 4 });
+            }
+            // Simulate random swaps
+            for(let i=0; i<200; i++) {
+                const idx1 = Math.floor(Math.random() * 16);
+                const idx2 = Math.floor(Math.random() * 16);
+                let tempRow = board[idx1].row;
+                let tempCol = board[idx1].col;
+                board[idx1].row = board[idx2].row;
+                board[idx1].col = board[idx2].col;
+                board[idx2].row = tempRow;
+                board[idx2].col = tempCol;
+            }
+            return board;
+        }
+
+        // Host creates room
+        createRoomBtn.addEventListener('click', async () => {
+            if (!uploadedImageDataUrl) return alert("Please upload an image first.");
+            
+            createRoomBtn.disabled = true;
+            lobbyStatus.textContent = "Generating room...";
+            
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            currentRoomCode = code;
+            isHost = true;
+            
+            const initialBoard = generateShuffledBoard();
+
+            try {
+                await setDoc(doc(db, "rooms", code), {
+                    host: playerId,
+                    guest: null,
+                    status: "waiting",
+                    hostScore: 0,
+                    guestScore: 0,
+                    imageSrc: uploadedImageDataUrl,
+                    boardState: initialBoard
+                });
+                
+                lobbyStatus.innerHTML = `Room Code: <span style="font-size:24px; color:blue;">${code}</span><br>Waiting for opponent...`;
+                listenToRoom(code);
+            } catch (err) {
+                console.error(err);
+                lobbyStatus.textContent = "Error connecting to database. Check rules.";
+                createRoomBtn.disabled = false;
+            }
+        });
+
+        // Guest joins room
+        joinRoomBtn.addEventListener('click', async () => {
+            const code = roomCodeInput.value.trim();
+            if (code.length !== 4) return alert("Enter 4 digit code");
+            
+            joinRoomBtn.disabled = true;
+            lobbyStatus.textContent = "Joining...";
+
+            const roomRef = doc(db, "rooms", code);
+            try {
+                const roomSnap = await getDoc(roomRef);
+                if (roomSnap.exists() && roomSnap.data().status === "waiting") {
+                    currentRoomCode = code;
+                    await updateDoc(roomRef, {
+                        guest: playerId,
+                        status: "ready"
+                    });
+                    listenToRoom(code);
+                } else {
+                    alert("Room not found or game already started.");
+                    joinRoomBtn.disabled = false;
+                    lobbyStatus.textContent = "";
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Database error.");
+                joinRoomBtn.disabled = false;
+            }
+        });
+
+        // Room Listener
+        function listenToRoom(code) {
+            onSnapshot(doc(db, "rooms", code), (docSnap) => {
+                const data = docSnap.data();
+                if (!data) return;
+
+                // Sync Scores
+                if (isHost) {
+                    oppScoreDisplay.textContent = `Opponent: ${data.guestScore}/16`;
+                    if (data.guestScore === 16) endGame("Opponent Wins!");
+                } else {
+                    oppScoreDisplay.textContent = `Opponent: ${data.hostScore}/16`;
+                    if (data.hostScore === 16) endGame("Opponent Wins!");
+                    
+                    // Guest builds board on first load
+                    if (tiles.length === 0 && data.imageSrc && data.boardState) {
+                        buildBoard(data.imageSrc, data.boardState);
+                    }
+                }
+
+                // Check for game start
+                if (data.status === "ready" && !gameActive && lobby.style.display !== 'none') {
+                    lobby.style.display = 'none';
+                    gameArea.style.display = 'block';
+                    if (isHost && tiles.length === 0) {
+                        buildBoard(data.imageSrc, data.boardState);
+                    }
+                    startCountdown();
+                }
+            });
+        }
+
+        function buildBoard(imageSrc, boardState) {
+            container.innerHTML = '<div id="countdownOverlay">3</div>';
+            tiles = [];
+            
+            boardState.forEach(state => {
+                const correctRow = Math.floor(state.id / 4);
+                const correctCol = state.id % 4;
+                
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.style.backgroundImage = `url(${imageSrc})`;
+                tile.style.backgroundSize = '400px 400px';
+                tile.style.backgroundPosition = `-${correctCol * 100}px -${correctRow * 100}px`;
+                
+                const tileObj = {
+                    id: state.id,
+                    element: tile,
+                    correctRow: correctRow,
+                    correctCol: correctCol,
+                    currentRow: state.row,
+                    currentCol: state.col
+                };
+                
+                updateTileVisuals(tileObj);
+                setupDragEvents(tileObj);
+                tiles.push(tileObj);
+                container.appendChild(tile);
+            });
+            
+            // Replaced the broken function call with direct checkWinState call
+            checkWinState(); 
+        }
+
+        function updateTileVisuals(tileObj) {
+            tileObj.element.style.top = `${tileObj.currentRow * 100}px`;
+            tileObj.element.style.left = `${tileObj.currentCol * 100}px`;
+        }
+
+        function startCountdown() {
+            const overlay = document.getElementById('countdownOverlay');
+            overlay.style.display = 'flex';
+            let count = 3;
+            statusDisplay.textContent = "Get Ready!";
+            
+            const timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    overlay.textContent = count;
+                } else if (count === 0) {
+                    overlay.textContent = "GO!";
+                } else {
+                    clearInterval(timer);
+                    overlay.style.display = 'none';
+                    gameActive = true;
+                    statusDisplay.textContent = "Match in Progress!";
+                }
+            }, 1000);
+        }
+
+        // --- GAME MECHANICS (Cluster Logic) ---
+        let draggedCluster = [];
+        let startX, startY;
+        let startTileObj = null;
+
+        function getLinkedTiles(startTile) {
+            let linked = [startTile];
+            let checkQueue = [startTile];
+            while (checkQueue.length > 0) {
+                let current = checkQueue.shift();
+                tiles.forEach(other => {
+                    if (linked.includes(other)) return;
+                    const rDiffCurr = other.currentRow - current.currentRow;
+                    const cDiffCurr = other.currentCol - current.currentCol;
+                    const rDiffCorr = other.correctRow - current.correctRow;
+                    const cDiffCorr = other.correctCol - current.correctCol;
+                    if ((Math.abs(rDiffCurr) + Math.abs(cDiffCurr) === 1) && 
+                        (rDiffCurr === rDiffCorr && cDiffCurr === cDiffCorr)) {
+                        linked.push(other);
+                        checkQueue.push(other);
+                    }
+                });
+            }
+            return linked;
+        }
+
+        function setupDragEvents(tileObj) {
+            tileObj.element.addEventListener('mousedown', (e) => {
+                if (!gameActive) return;
+                startTileObj = tileObj;
+                draggedCluster = getLinkedTiles(tileObj);
+                startX = e.clientX;
+                startY = e.clientY;
+
+                draggedCluster.forEach(t => {
+                    t.element.classList.add('cluster-active');
+                    t.startDragRow = t.currentRow;
+                    t.startDragCol = t.currentCol;
+                });
+
+                document.addEventListener('mousemove', onDragMove);
+                document.addEventListener('mouseup', onDragEnd);
+            });
+        }
+
+        function onDragMove(e) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            draggedCluster.forEach(t => {
+                t.element.style.left = `${(t.startDragCol * 100) + dx}px`;
+                t.element.style.top = `${(t.startDragRow * 100) + dy}px`;
+            });
+        }
+
+        function onDragEnd(e) {
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+
+            draggedCluster.forEach(t => t.element.classList.remove('cluster-active'));
+
+            const dropX = e.clientX;
+            const dropY = e.clientY;
+            const gridDx = Math.round((dropX - startX) / 100);
+            const gridDy = Math.round((dropY - startY) / 100);
+
+            let validMove = true;
+            draggedCluster.forEach(t => {
+                const newR = t.startDragRow + gridDy;
+                const newC = t.startDragCol + gridDx;
+                if (newR < 0 || newR > 3 || newC < 0 || newC > 3) {
+                    validMove = false;
+                }
+            });
+
+            if (validMove && (gridDx !== 0 || gridDy !== 0)) {
+                let displacedTiles = tiles.filter(t => !draggedCluster.includes(t));
+                let targetPositions = draggedCluster.map(t => ({ r: t.startDragRow + gridDy, c: t.startDragCol + gridDx }));
+                
+                let displacedToMove = displacedTiles.filter(t => 
+                    targetPositions.some(pos => pos.r === t.currentRow && pos.c === t.currentCol)
+                );
+
+                draggedCluster.forEach(t => {
+                    t.currentRow = t.startDragRow + gridDy;
+                    t.currentCol = t.startDragCol + gridDx;
+                });
+
+                displacedToMove.forEach(t => {
+                    t.currentRow -= gridDy;
+                    t.currentCol -= gridDx;
+                });
+            }
+
+            tiles.forEach(updateTileVisuals);
+            checkWinState();
+            draggedCluster = [];
+        }
+
+        async function checkWinState() {
+            let correctCount = tiles.filter(t => t.currentRow === t.correctRow && t.currentCol === t.correctCol).length;
+            myScoreDisplay.textContent = `You: ${correctCount}/16`;
+
+            if (currentRoomCode) {
+                const roomRef = doc(db, "rooms", currentRoomCode);
+                try {
+                    if (isHost) await updateDoc(roomRef, { hostScore: correctCount });
+                    else await updateDoc(roomRef, { guestScore: correctCount });
+                } catch (e) { console.error("Score sync failed", e); }
+            }
+
+            if (correctCount === 16) {
+                endGame("You Win!");
+            }
+        }
+
+        function endGame(message) {
+            gameActive = false;
+            statusDisplay.textContent = message;
+            statusDisplay.style.color = message === "You Win!" ? "#2e7d32" : "#c62828";
+            
+            const overlay = document.getElementById('countdownOverlay');
+            overlay.style.display = 'flex';
+            overlay.style.fontSize = '3rem';
+            overlay.textContent = message;
+        }
+    </script>
+</body>
+</html>
