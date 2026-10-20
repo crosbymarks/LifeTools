@@ -3,511 +3,712 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Head-to-Head Photo Puzzle</title>
+    <title>Multiplayer Photo Swap Puzzle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        /* Puzzle Board Setup */
+        .puzzle-board {
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 1 / 1;
+            position: relative;
+            background-color: #1e293b;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            border: 4px solid #334155;
+        }
+
+        /* Individual Tiles */
+        .puzzle-tile {
+            position: absolute;
+            width: 25%;
+            height: 25%;
+            background-size: 400% 400%;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5), inset 0 0 4px rgba(0,0,0,0.3);
+            cursor: grab;
+            transition: top 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                        left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                        box-shadow 0.2s, transform 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            z-index: 1;
+            background-color: #334155;
+        }
+
+        .puzzle-tile:active { cursor: grabbing; }
+
+        .puzzle-tile.cluster-hover {
+            box-shadow: inset 0 0 0 3px #fbbf24, inset 0 0 15px rgba(251, 191, 36, 0.5);
+            z-index: 5;
+            transform: scale(0.98);
+            filter: brightness(1.1);
+        }
+
+        .puzzle-tile.cluster-active {
+            box-shadow: inset 0 0 0 4px #eab308, 0 0 20px rgba(234, 179, 8, 0.8);
+            z-index: 10;
+            transform: scale(0.95);
+            filter: brightness(1.15) opacity(0.9);
+        }
+
+        .puzzle-tile.drag-target-valid {
+            box-shadow: inset 0 0 0 4px #10b981, inset 0 0 20px rgba(16, 185, 129, 0.5);
+            z-index: 8;
+        }
+
+        .puzzle-tile.drag-target-invalid {
+            box-shadow: inset 0 0 0 4px #ef4444, inset 0 0 20px rgba(239, 68, 68, 0.5);
+            z-index: 8;
+        }
+
+        /* Overlays */
+        .game-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            background-color: #f0f2f5;
-            padding: 20px;
-            margin: 0;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 500px;
-        }
-        input[type="text"] {
-            padding: 10px;
-            font-size: 16px;
-            width: 150px;
-            text-align: center;
-            margin: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            margin: 5px;
-        }
-        button:hover { background-color: #45a049; }
-        .secondary-btn { background-color: #2196F3; }
-        .secondary-btn:hover { background-color: #0b7dda; }
-        
-        #gameArea { display: none; }
-        
-        .score-board {
-            display: flex;
-            justify-content: space-between;
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 4px;
-        }
-        .score-you { color: #2e7d32; }
-        .score-opp { color: #c62828; }
-
-        #puzzle-container {
-            width: 400px;
-            height: 400px;
-            position: relative;
-            background-color: #ddd;
-            border: 4px solid #333;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            margin: 0 auto;
-        }
-        .tile {
-            width: 100px;
-            height: 100px;
-            position: absolute;
-            box-sizing: border-box;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            cursor: grab;
-            transition: top 0.2s ease, left 0.2s ease;
-            user-select: none;
-        }
-        .tile:active { cursor: grabbing; }
-        .cluster-active {
-            z-index: 100;
-            border: 2px solid #ffeb3b;
-            opacity: 0.9;
-        }
-        #countdownOverlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            font-size: 5rem;
-            font-weight: bold;
-            z-index: 200;
-            display: none;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            z-index: 20;
         }
+
+        .game-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: flex; }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 min-h-screen flex flex-col items-center py-8 px-4 font-sans text-slate-800">
 
-    <!-- LOBBY AREA -->
-    <div id="lobby" class="container">
-        <h2>Multiplayer Photo Puzzle</h2>
+    <div class="max-w-lg w-full flex flex-col gap-6">
         
-        <div id="hostSection">
-            <h3>Host a Game</h3>
-            <input type="file" id="imageUpload" accept="image/*" style="margin-bottom: 15px;">
-            <br>
-            <button id="createRoomBtn">Create Room</button>
+        <!-- App Header -->
+        <div class="text-center">
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Multiplayer Swap Puzzle</h1>
+            <p id="appSubtitle" class="text-slate-600 mt-2 text-sm px-4">Loading connection...</p>
         </div>
 
-        <hr style="margin: 20px 0;">
-
-        <div id="joinSection">
-            <h3>Join a Game</h3>
-            <input type="text" id="roomCodeInput" placeholder="Enter 4-digit Code" maxlength="4">
-            <br>
-            <button id="joinRoomBtn" class="secondary-btn">Join Room</button>
+        <!-- SCREEN: MENU -->
+        <div id="screen-menu" class="screen flex-col gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <button id="btnCreateRoom" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-colors active:scale-95">Create Room</button>
+            <div class="relative flex py-2 items-center">
+                <div class="flex-grow border-t border-slate-300"></div>
+                <span class="flex-shrink-0 mx-4 text-slate-400 font-medium text-sm">OR</span>
+                <div class="flex-grow border-t border-slate-300"></div>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" id="inputRoomCode" placeholder="Enter Room Code" class="flex-grow px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl font-bold text-center uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 outline-none" maxlength="4">
+                <button id="btnJoinRoom" class="px-6 py-3 bg-slate-800 text-white font-bold rounded-xl shadow-md hover:bg-slate-900 transition-colors active:scale-95">Join</button>
+            </div>
         </div>
 
-        <div id="lobbyStatus" style="margin-top: 15px; font-weight: bold; color: #555;"></div>
+        <!-- SCREEN: LOBBY -->
+        <div id="screen-lobby" class="screen flex-col gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center">
+            <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                <p class="text-sm text-indigo-600 font-semibold mb-1">ROOM CODE</p>
+                <p id="displayRoomCode" class="text-4xl font-black text-indigo-900 tracking-widest uppercase">----</p>
+            </div>
+
+            <div id="lobbyStatus" class="text-sm font-medium text-slate-600 mt-2">Waiting for opponent...</div>
+
+            <div id="hostControls" class="hidden flex-col gap-3 mt-2">
+                <label class="relative flex justify-center items-center px-4 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-md hover:bg-indigo-700 cursor-pointer transition-all active:scale-95">
+                    <span>Upload Puzzle Photo</span>
+                    <input type="file" id="imageUpload" accept="image/*" class="sr-only">
+                </label>
+                <p class="text-xs text-slate-500">Pick a photo to sync to the other player.</p>
+            </div>
+
+            <div id="readyControls" class="hidden flex-col gap-3 mt-4 pt-4 border-t border-slate-100">
+                <img id="previewImage" class="w-24 h-24 object-cover mx-auto rounded-lg border-2 border-slate-200 shadow-sm" src="" alt="Puzzle Preview">
+                <button id="btnReady" class="w-full py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700 transition-colors active:scale-95">I'm Ready!</button>
+            </div>
+        </div>
+
+        <!-- SCREEN: GAME -->
+        <div id="screen-game" class="screen flex-col gap-4">
+            
+            <!-- Multiplayer HUD -->
+            <div class="grid grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col items-center p-2 bg-indigo-50 rounded-lg">
+                    <span class="text-xs font-bold text-indigo-400 uppercase">You</span>
+                    <span class="text-2xl font-black text-indigo-900"><span id="myProgress">0</span><span class="text-sm text-indigo-400">/16</span></span>
+                </div>
+                <div class="flex flex-col items-center p-2 bg-rose-50 rounded-lg">
+                    <span class="text-xs font-bold text-rose-400 uppercase">Opponent</span>
+                    <span class="text-2xl font-black text-rose-900"><span id="oppProgress">0</span><span class="text-sm text-rose-400">/16</span></span>
+                </div>
+            </div>
+
+            <!-- Puzzle Container -->
+            <div class="puzzle-board mx-auto" id="puzzleBoard">
+                
+                <!-- Countdown Overlay -->
+                <div id="countdownOverlay" class="game-overlay bg-slate-900/80">
+                    <div id="countdownText" class="text-7xl font-black text-white drop-shadow-lg transform scale-150 transition-transform">3</div>
+                </div>
+
+                <!-- Win/Lose Overlay -->
+                <div id="endOverlay" class="game-overlay">
+                    <div class="bg-white/95 p-8 rounded-2xl shadow-2xl text-center transform scale-95 transition-transform duration-500 ease-out border" id="endCard">
+                        <h2 id="endTitle" class="text-3xl font-black mb-2"></h2>
+                        <p id="endSubtitle" class="text-slate-600 mb-6 font-medium"></p>
+                        <button onclick="window.location.reload()" class="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition-colors shadow-lg shadow-slate-200">Leave Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- GAME AREA -->
-    <div id="gameArea" class="container" style="max-width: 600px;">
-        <div class="score-board">
-            <div class="score-you" id="myScoreDisplay">You: 0/16</div>
-            <div id="statusDisplay">Waiting...</div>
-            <div class="score-opp" id="oppScoreDisplay">Opponent: 0/16</div>
-        </div>
-        
-        <div id="puzzle-container">
-            <div id="countdownOverlay">3</div>
-        </div>
-    </div>
+    <!-- Hidden canvas for image processing & shrinking -->
+    <canvas id="imageCanvas" class="hidden"></canvas>
 
-    <!-- INTERNAL CANVAS FOR IMAGE CROPPING -->
-    <canvas id="cropCanvas" style="display:none;"></canvas>
-
-    <!-- FIREBASE AND GAME LOGIC -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAgQH18xD8Ls3rrMG81d7enLnl9cLnrMQE",
-            authDomain: "photo-puzzle-63858.firebaseapp.com",
-            projectId: "photo-puzzle-63858",
-            storageBucket: "photo-puzzle-63858.firebasestorage.app",
-            messagingSenderId: "633515768951",
-            appId: "1:633515768951:web:d0790c3a43bca6fa9f1a72",
-            measurementId: "G-4H1QVZ74QV"
-        };
-
+        // --- Firebase Initialization ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'photo-puzzle-multiplayer';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { /* Fallback config */ };
+        
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // UI Elements
-        const lobby = document.getElementById('lobby');
-        const gameArea = document.getElementById('gameArea');
-        const createRoomBtn = document.getElementById('createRoomBtn');
-        const joinRoomBtn = document.getElementById('joinRoomBtn');
-        const roomCodeInput = document.getElementById('roomCodeInput');
-        const imageUpload = document.getElementById('imageUpload');
-        const lobbyStatus = document.getElementById('lobbyStatus');
-        const container = document.getElementById('puzzle-container');
-        const myScoreDisplay = document.getElementById('myScoreDisplay');
-        const oppScoreDisplay = document.getElementById('oppScoreDisplay');
-        const statusDisplay = document.getElementById('statusDisplay');
-        const countdownOverlay = document.getElementById('countdownOverlay');
+        // --- State Variables ---
+        let currentUser = null;
+        let currentRoomCode = null;
+        let isHost = false;
+        let unsubscribeRoom = null;
+        let roomDataCache = null;
 
         // Game State
         const GRID_SIZE = 4;
-        const TILE_SIZE = 100;
+        const TOTAL_PIECES = GRID_SIZE * GRID_SIZE;
         let tiles = [];
         let gameActive = false;
-        let isHost = false;
-        let currentRoomCode = null;
-        let playerId = Math.random().toString(36).substring(2, 9);
-        let uploadedImageDataUrl = null;
+        let hoveredTileObj = null;
+        let selectedAnchorObj = null; 
+        let draggedAnchorObj = null; 
 
-        // Image Cropping Logic
-        imageUpload.addEventListener('change', (e) => {
+        // --- DOM Elements ---
+        const screens = {
+            menu: document.getElementById('screen-menu'),
+            lobby: document.getElementById('screen-lobby'),
+            game: document.getElementById('screen-game')
+        };
+        const appSubtitle = document.getElementById('appSubtitle');
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenName].classList.add('active');
+        }
+
+        // --- Auth Setup ---
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUser = auth.currentUser;
+                appSubtitle.textContent = "Ready to play! Create or Join a room.";
+                showScreen('menu');
+            } catch (error) {
+                appSubtitle.textContent = "Connection failed. Please refresh.";
+                console.error("Auth Error:", error);
+            }
+        }
+        initAuth();
+
+        // --- Network / Lobby Logic ---
+
+        document.getElementById('btnCreateRoom').addEventListener('click', async () => {
+            if (!currentUser) return;
+            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            currentRoomCode = code;
+            isHost = true;
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            await setDoc(roomRef, {
+                createdAt: Date.now(),
+                hostId: currentUser.uid,
+                guestId: null,
+                status: 'waiting', // waiting, readying, playing, finished
+                photoData: null,
+                positions: null,
+                hostReady: false,
+                guestReady: false,
+                hostProgress: 0,
+                guestProgress: 0,
+                winnerId: null
+            });
+
+            document.getElementById('displayRoomCode').textContent = code;
+            document.getElementById('hostControls').classList.remove('hidden');
+            showScreen('lobby');
+            listenToRoom(code);
+        });
+
+        document.getElementById('btnJoinRoom').addEventListener('click', async () => {
+            if (!currentUser) return;
+            const code = document.getElementById('inputRoomCode').value.toUpperCase().trim();
+            if (code.length !== 4) return alert("Enter a valid 4-letter code");
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            const docSnap = await getDoc(roomRef);
+            
+            if (docSnap.exists() && docSnap.data().status === 'waiting' && !docSnap.data().guestId) {
+                currentRoomCode = code;
+                isHost = false;
+                await updateDoc(roomRef, { guestId: currentUser.uid });
+                
+                document.getElementById('displayRoomCode').textContent = code;
+                document.getElementById('hostControls').classList.add('hidden');
+                showScreen('lobby');
+                listenToRoom(code);
+            } else {
+                alert("Room not found or already full.");
+            }
+        });
+
+        function listenToRoom(code) {
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            unsubscribeRoom = onSnapshot(roomRef, (docSnap) => {
+                if (!docSnap.exists()) return;
+                const data = docSnap.data();
+                roomDataCache = data;
+                
+                // Lobby Updates
+                const statusEl = document.getElementById('lobbyStatus');
+                if (data.status === 'waiting') {
+                    statusEl.textContent = data.guestId ? "Opponent joined! Waiting for photo upload..." : "Waiting for opponent to join...";
+                    if (data.guestId && isHost) document.getElementById('hostControls').classList.remove('hidden');
+                }
+
+                // Photo synced
+                if (data.photoData && data.status === 'waiting') {
+                    statusEl.textContent = "Photo loaded! Ready up to start.";
+                    document.getElementById('hostControls').classList.add('hidden');
+                    document.getElementById('readyControls').classList.remove('hidden');
+                    document.getElementById('previewImage').src = data.photoData;
+                    
+                    const imReady = isHost ? data.hostReady : data.guestReady;
+                    const btnReady = document.getElementById('btnReady');
+                    if (imReady) {
+                        btnReady.textContent = "Waiting for Opponent...";
+                        btnReady.disabled = true;
+                        btnReady.classList.replace('bg-green-600', 'bg-slate-400');
+                    } else {
+                        btnReady.textContent = "I'm Ready!";
+                        btnReady.disabled = false;
+                        btnReady.classList.replace('bg-slate-400', 'bg-green-600');
+                    }
+                }
+
+                // Readying Phase
+                if (data.status === 'readying' && screens.lobby.classList.contains('active')) {
+                    startLocalCountdown(data);
+                }
+
+                // Game Active Phase (sync progress)
+                if (data.status === 'playing' || data.status === 'finished') {
+                    const myProg = isHost ? data.hostProgress : data.guestProgress;
+                    const oppProg = isHost ? data.guestProgress : data.hostProgress;
+                    document.getElementById('myProgress').textContent = myProg;
+                    document.getElementById('oppProgress').textContent = oppProg;
+                }
+
+                // Game Over
+                if (data.status === 'finished' && gameActive) {
+                    gameActive = false;
+                    handleGameOver(data.winnerId);
+                }
+                
+            }, (error) => {
+                console.error("Room sync error:", error);
+            });
+        }
+
+        // Host Uploads Image
+        document.getElementById('imageUpload').addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (!file) return;
+            if (!file || !isHost) return;
+
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = function(event) {
                 const img = new Image();
-                img.onload = () => {
-                    const canvas = document.getElementById('cropCanvas');
+                img.onload = async () => {
+                    // Force small size to easily fit Firestore 1MB limit
+                    const TARGET_SIZE = 400; 
+                    const canvas = document.getElementById('imageCanvas');
+                    canvas.width = TARGET_SIZE;
+                    canvas.height = TARGET_SIZE;
                     const ctx = canvas.getContext('2d');
+                    
                     const size = Math.min(img.width, img.height);
-                    canvas.width = 400;
-                    canvas.height = 400;
-                    const startX = (img.width - size) / 2;
-                    const startY = (img.height - size) / 2;
-                    ctx.drawImage(img, startX, startY, size, size, 0, 0, 400, 400);
-                    uploadedImageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                    lobbyStatus.textContent = "Image ready! Click Create Room.";
+                    const sx = (img.width - size) / 2;
+                    const sy = (img.height - size) / 2;
+
+                    ctx.clearRect(0, 0, TARGET_SIZE, TARGET_SIZE);
+                    ctx.drawImage(img, sx, sy, size, size, 0, 0, TARGET_SIZE, TARGET_SIZE);
+
+                    const base64Photo = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // Generate shared shuffle positions
+                    let positions = Array.from({length: TOTAL_PIECES}, (_, i) => ({
+                        row: Math.floor(i / GRID_SIZE),
+                        col: i % GRID_SIZE
+                    }));
+                    for (let i = positions.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [positions[i], positions[j]] = [positions[j], positions[i]];
+                    }
+
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode);
+                    await updateDoc(roomRef, { 
+                        photoData: base64Photo,
+                        positions: positions
+                    });
                 };
                 img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         });
 
-        // Generate Solvable Shuffle Array
-        function generateShuffledBoard() {
-            let board = [];
-            for (let i = 0; i < 16; i++) {
-                board.push({ id: i, row: Math.floor(i / 4), col: i % 4 });
-            }
-            // Simulate random swaps
-            for(let i=0; i<200; i++) {
-                const idx1 = Math.floor(Math.random() * 16);
-                const idx2 = Math.floor(Math.random() * 16);
-                let tempRow = board[idx1].row;
-                let tempCol = board[idx1].col;
-                board[idx1].row = board[idx2].row;
-                board[idx1].col = board[idx2].col;
-                board[idx2].row = tempRow;
-                board[idx2].col = tempCol;
-            }
-            return board;
-        }
+        // Ready Button
+        document.getElementById('btnReady').addEventListener('click', async () => {
+            if (!currentUser || !currentRoomCode) return;
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode);
+            
+            const updateData = isHost ? { hostReady: true } : { guestReady: true };
+            await updateDoc(roomRef, updateData);
 
-        // Host creates room
-        createRoomBtn.addEventListener('click', async () => {
-            if (!uploadedImageDataUrl) return alert("Please upload an image first.");
-            
-            createRoomBtn.disabled = true;
-            lobbyStatus.textContent = "Generating room...";
-            
-            const code = Math.floor(1000 + Math.random() * 9000).toString();
-            currentRoomCode = code;
-            isHost = true;
-            
-            const initialBoard = generateShuffledBoard();
-
-            try {
-                await setDoc(doc(db, "rooms", code), {
-                    host: playerId,
-                    guest: null,
-                    status: "waiting",
-                    hostScore: 0,
-                    guestScore: 0,
-                    imageSrc: uploadedImageDataUrl,
-                    boardState: initialBoard
-                });
-                
-                lobbyStatus.innerHTML = `Room Code: <span style="font-size:24px; color:blue;">${code}</span><br>Waiting for opponent...`;
-                listenToRoom(code);
-            } catch (err) {
-                console.error(err);
-                lobbyStatus.textContent = "Error connecting to database. Check rules.";
-                createRoomBtn.disabled = false;
+            // Check if both are ready to trigger countdown
+            if (isHost && roomDataCache.guestReady) {
+                await updateDoc(roomRef, { status: 'readying' });
+            } else if (!isHost && roomDataCache.hostReady) {
+                await updateDoc(roomRef, { status: 'readying' });
             }
         });
 
-        // Guest joins room
-        joinRoomBtn.addEventListener('click', async () => {
-            const code = roomCodeInput.value.trim();
-            if (code.length !== 4) return alert("Enter 4 digit code");
+        function startLocalCountdown(data) {
+            showScreen('game');
+            buildBoard(data.photoData, data.positions);
             
-            joinRoomBtn.disabled = true;
-            lobbyStatus.textContent = "Joining...";
-
-            const roomRef = doc(db, "rooms", code);
-            try {
-                const roomSnap = await getDoc(roomRef);
-                if (roomSnap.exists() && roomSnap.data().status === "waiting") {
-                    currentRoomCode = code;
-                    await updateDoc(roomRef, {
-                        guest: playerId,
-                        status: "ready"
-                    });
-                    listenToRoom(code);
-                } else {
-                    alert("Room not found or game already started.");
-                    joinRoomBtn.disabled = false;
-                    lobbyStatus.textContent = "";
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Database error.");
-                joinRoomBtn.disabled = false;
-            }
-        });
-
-        // Room Listener
-        function listenToRoom(code) {
-            onSnapshot(doc(db, "rooms", code), (docSnap) => {
-                const data = docSnap.data();
-                if (!data) return;
-
-                // Sync Scores
-                if (isHost) {
-                    oppScoreDisplay.textContent = `Opponent: ${data.guestScore}/16`;
-                    if (data.guestScore === 16) endGame("Opponent Wins!");
-                } else {
-                    oppScoreDisplay.textContent = `Opponent: ${data.hostScore}/16`;
-                    if (data.hostScore === 16) endGame("Opponent Wins!");
-                    
-                    // Guest builds board on first load
-                    if (tiles.length === 0 && data.imageSrc && data.boardState) {
-                        buildBoard(data.imageSrc, data.boardState);
-                    }
-                }
-
-                // Check for game start
-                if (data.status === "ready" && !gameActive && lobby.style.display !== 'none') {
-                    lobby.style.display = 'none';
-                    gameArea.style.display = 'block';
-                    if (isHost && tiles.length === 0) {
-                        buildBoard(data.imageSrc, data.boardState);
-                    }
-                    startCountdown();
-                }
-            });
-        }
-
-        function buildBoard(imageSrc, boardState) {
-            container.innerHTML = '<div id="countdownOverlay">3</div>';
-            tiles = [];
-            
-            boardState.forEach(state => {
-                const correctRow = Math.floor(state.id / 4);
-                const correctCol = state.id % 4;
-                
-                const tile = document.createElement('div');
-                tile.className = 'tile';
-                tile.style.backgroundImage = `url(${imageSrc})`;
-                tile.style.backgroundSize = '400px 400px';
-                tile.style.backgroundPosition = `-${correctCol * 100}px -${correctRow * 100}px`;
-                
-                const tileObj = {
-                    id: state.id,
-                    element: tile,
-                    correctRow: correctRow,
-                    correctCol: correctCol,
-                    currentRow: state.row,
-                    currentCol: state.col
-                };
-                
-                updateTileVisuals(tileObj);
-                setupDragEvents(tileObj);
-                tiles.push(tileObj);
-                container.appendChild(tile);
-            });
-            
-            // Replaced the broken function call with direct checkWinState call
-            checkWinState(); 
-        }
-
-        function updateTileVisuals(tileObj) {
-            tileObj.element.style.top = `${tileObj.currentRow * 100}px`;
-            tileObj.element.style.left = `${tileObj.currentCol * 100}px`;
-        }
-
-        function startCountdown() {
             const overlay = document.getElementById('countdownOverlay');
-            overlay.style.display = 'flex';
-            let count = 3;
-            statusDisplay.textContent = "Get Ready!";
+            const text = document.getElementById('countdownText');
+            overlay.classList.add('active');
             
-            const timer = setInterval(() => {
+            let count = 3;
+            text.textContent = count;
+            
+            const interval = setInterval(async () => {
                 count--;
                 if (count > 0) {
-                    overlay.textContent = count;
+                    text.textContent = count;
                 } else if (count === 0) {
-                    overlay.textContent = "GO!";
+                    text.textContent = "GO!";
                 } else {
-                    clearInterval(timer);
-                    overlay.style.display = 'none';
+                    clearInterval(interval);
+                    overlay.classList.remove('active');
                     gameActive = true;
-                    statusDisplay.textContent = "Match in Progress!";
+                    if (isHost) {
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode);
+                        await updateDoc(roomRef, { status: 'playing' });
+                    }
                 }
             }, 1000);
         }
 
-        // --- GAME MECHANICS (Cluster Logic) ---
-        let draggedCluster = [];
-        let startX, startY;
-        let startTileObj = null;
+        function handleGameOver(winnerId) {
+            const endOverlay = document.getElementById('endOverlay');
+            const endCard = document.getElementById('endCard');
+            const title = document.getElementById('endTitle');
+            const sub = document.getElementById('endSubtitle');
 
-        function getLinkedTiles(startTile) {
-            let linked = [startTile];
-            let checkQueue = [startTile];
-            while (checkQueue.length > 0) {
-                let current = checkQueue.shift();
-                tiles.forEach(other => {
-                    if (linked.includes(other)) return;
-                    const rDiffCurr = other.currentRow - current.currentRow;
-                    const cDiffCurr = other.currentCol - current.currentCol;
-                    const rDiffCorr = other.correctRow - current.correctRow;
-                    const cDiffCorr = other.correctCol - current.correctCol;
-                    if ((Math.abs(rDiffCurr) + Math.abs(cDiffCurr) === 1) && 
-                        (rDiffCurr === rDiffCorr && cDiffCurr === cDiffCorr)) {
-                        linked.push(other);
-                        checkQueue.push(other);
-                    }
-                });
+            const isWinner = currentUser.uid === winnerId;
+            
+            if (isWinner) {
+                title.textContent = "You Won!";
+                title.classList.add('text-green-600');
+                sub.textContent = "Great puzzle solving skills.";
+                endCard.classList.add('border-green-400');
+            } else {
+                title.textContent = "You Lost!";
+                title.classList.add('text-rose-600');
+                sub.textContent = "Your opponent finished first.";
+                endCard.classList.add('border-rose-400');
             }
-            return linked;
+
+            endOverlay.classList.add('active');
+            setTimeout(() => {
+                endCard.classList.remove('scale-95');
+                endCard.classList.add('scale-100');
+            }, 100);
         }
 
-        function setupDragEvents(tileObj) {
-            tileObj.element.addEventListener('mousedown', (e) => {
-                if (!gameActive) return;
-                startTileObj = tileObj;
-                draggedCluster = getLinkedTiles(tileObj);
-                startX = e.clientX;
-                startY = e.clientY;
+        // --- Puzzle Core Logic ---
 
-                draggedCluster.forEach(t => {
-                    t.element.classList.add('cluster-active');
-                    t.startDragRow = t.currentRow;
-                    t.startDragCol = t.currentCol;
-                });
-
-                document.addEventListener('mousemove', onDragMove);
-                document.addEventListener('mouseup', onDragEnd);
+        function buildBoard(imageSrc, positions) {
+            const board = document.getElementById('puzzleBoard');
+            // Remove existing tiles but keep overlays
+            Array.from(board.children).forEach(c => {
+                if(c.classList.contains('puzzle-tile')) c.remove();
             });
+            tiles = [];
+
+            for (let i = 0; i < TOTAL_PIECES; i++) {
+                const correctRow = Math.floor(i / GRID_SIZE);
+                const correctCol = i % GRID_SIZE;
+                
+                const tile = document.createElement('div');
+                tile.className = 'puzzle-tile';
+                tile.draggable = true;
+                tile.style.backgroundImage = `url(${imageSrc})`;
+                
+                const bgPosX = (correctCol / (GRID_SIZE - 1)) * 100;
+                const bgPosY = (correctRow / (GRID_SIZE - 1)) * 100;
+                tile.style.backgroundPosition = `${bgPosX}% ${bgPosY}%`;
+                
+                const tileObj = {
+                    element: tile,
+                    id: i,
+                    correctRow: correctRow,
+                    correctCol: correctCol,
+                    currentRow: positions[i].row,
+                    currentCol: positions[i].col
+                };
+                
+                updateTileDOMPosition(tileObj);
+                setupTileInteractions(tileObj);
+                
+                tiles.push(tileObj);
+                board.appendChild(tile);
+            }
         }
 
-        function onDragMove(e) {
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            draggedCluster.forEach(t => {
-                t.element.style.left = `${(t.startDragCol * 100) + dx}px`;
-                t.element.style.top = `${(t.startDragRow * 100) + dy}px`;
-            });
+        function updateTileDOMPosition(tileObj) {
+            tileObj.element.style.top = `${tileObj.currentRow * 25}%`;
+            tileObj.element.style.left = `${tileObj.currentCol * 25}%`;
         }
 
-        function onDragEnd(e) {
-            document.removeEventListener('mousemove', onDragMove);
-            document.removeEventListener('mouseup', onDragEnd);
+        function getTileAt(row, col) {
+            return tiles.find(t => t.currentRow === row && t.currentCol === col);
+        }
 
-            draggedCluster.forEach(t => t.element.classList.remove('cluster-active'));
+        function isRelativelyCorrect(t1, t2) {
+            if (!t1 || !t2) return false;
+            return (t1.correctRow - t2.correctRow === t1.currentRow - t2.currentRow) &&
+                   (t1.correctCol - t2.correctCol === t1.currentCol - t2.currentCol);
+        }
 
-            const dropX = e.clientX;
-            const dropY = e.clientY;
-            const gridDx = Math.round((dropX - startX) / 100);
-            const gridDy = Math.round((dropY - startY) / 100);
+        function getCluster(startTile) {
+            if (!startTile) return [];
+            let cluster = [];
+            let queue = [startTile];
+            let visited = new Set();
+            visited.add(startTile.id);
 
-            let validMove = true;
-            draggedCluster.forEach(t => {
-                const newR = t.startDragRow + gridDy;
-                const newC = t.startDragCol + gridDx;
-                if (newR < 0 || newR > 3 || newC < 0 || newC > 3) {
-                    validMove = false;
+            while (queue.length > 0) {
+                let curr = queue.shift();
+                cluster.push(curr);
+
+                const neighbors = [
+                    getTileAt(curr.currentRow - 1, curr.currentCol),
+                    getTileAt(curr.currentRow + 1, curr.currentCol),
+                    getTileAt(curr.currentRow, curr.currentCol - 1),
+                    getTileAt(curr.currentRow, curr.currentCol + 1)
+                ];
+
+                for (let n of neighbors) {
+                    if (n && !visited.has(n.id) && isRelativelyCorrect(curr, n)) {
+                        visited.add(n.id);
+                        queue.push(n);
+                    }
+                }
+            }
+            return cluster;
+        }
+
+        function isValidMove(cluster, deltaRow, deltaCol) {
+            for (let t of cluster) {
+                let dstR = t.currentRow + deltaRow;
+                let dstC = t.currentCol + deltaCol;
+                if (dstR < 0 || dstR >= GRID_SIZE || dstC < 0 || dstC >= GRID_SIZE) return false;
+            }
+            return true;
+        }
+
+        function updateHighlights() {
+            if (!gameActive) return;
+            tiles.forEach(t => t.element.classList.remove('cluster-hover', 'cluster-active'));
+            
+            let activeCluster = [];
+            if (draggedAnchorObj) activeCluster = getCluster(draggedAnchorObj);
+            else if (selectedAnchorObj) activeCluster = getCluster(selectedAnchorObj);
+
+            activeCluster.forEach(t => t.element.classList.add('cluster-active'));
+
+            if (hoveredTileObj && !activeCluster.includes(hoveredTileObj)) {
+                getCluster(hoveredTileObj).forEach(t => t.element.classList.add('cluster-hover'));
+            }
+        }
+
+        function setupTileInteractions(tileObj) {
+            const el = tileObj.element;
+
+            el.addEventListener('mouseenter', () => { hoveredTileObj = tileObj; updateHighlights(); });
+            el.addEventListener('mouseleave', () => { if (hoveredTileObj === tileObj) hoveredTileObj = null; updateHighlights(); });
+
+            el.addEventListener('click', (e) => {
+                if (!gameActive || draggedAnchorObj) return;
+                if (!selectedAnchorObj) {
+                    selectedAnchorObj = tileObj;
+                    updateHighlights();
+                } else {
+                    if (!getCluster(selectedAnchorObj).includes(tileObj)) {
+                        const dr = tileObj.currentRow - selectedAnchorObj.currentRow;
+                        const dc = tileObj.currentCol - selectedAnchorObj.currentCol;
+                        performClusterSwap(selectedAnchorObj, dr, dc);
+                    }
+                    selectedAnchorObj = null;
+                    updateHighlights();
                 }
             });
 
-            if (validMove && (gridDx !== 0 || gridDy !== 0)) {
-                let displacedTiles = tiles.filter(t => !draggedCluster.includes(t));
-                let targetPositions = draggedCluster.map(t => ({ r: t.startDragRow + gridDy, c: t.startDragCol + gridDx }));
+            el.addEventListener('dragstart', (e) => {
+                if (!gameActive) { e.preventDefault(); return; }
+                selectedAnchorObj = null;
+                draggedAnchorObj = tileObj;
+                updateHighlights();
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', tileObj.id);
+                const transparentImg = new Image();
+                transparentImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                e.dataTransfer.setDragImage(transparentImg, 0, 0);
+            });
+
+            el.addEventListener('dragover', (e) => {
+                if (!gameActive) return;
+                e.preventDefault(); 
+                e.dataTransfer.dropEffect = 'move';
+                if (draggedAnchorObj && !getCluster(draggedAnchorObj).includes(tileObj)) {
+                    const dr = tileObj.currentRow - draggedAnchorObj.currentRow;
+                    const dc = tileObj.currentCol - draggedAnchorObj.currentCol;
+                    const cluster = getCluster(draggedAnchorObj);
+                    
+                    if (isValidMove(cluster, dr, dc)) {
+                        el.classList.add('drag-target-valid');
+                        el.classList.remove('drag-target-invalid');
+                    } else {
+                        el.classList.add('drag-target-invalid');
+                        el.classList.remove('drag-target-valid');
+                    }
+                }
+            });
+
+            el.addEventListener('dragleave', (e) => el.classList.remove('drag-target-valid', 'drag-target-invalid'));
+
+            el.addEventListener('drop', (e) => {
+                if (!gameActive) return;
+                e.stopPropagation();
+                el.classList.remove('drag-target-valid', 'drag-target-invalid');
                 
-                let displacedToMove = displacedTiles.filter(t => 
-                    targetPositions.some(pos => pos.r === t.currentRow && pos.c === t.currentCol)
-                );
+                if (draggedAnchorObj && !getCluster(draggedAnchorObj).includes(tileObj)) {
+                    const dr = tileObj.currentRow - draggedAnchorObj.currentRow;
+                    const dc = tileObj.currentCol - draggedAnchorObj.currentCol;
+                    performClusterSwap(draggedAnchorObj, dr, dc);
+                }
+            });
 
-                draggedCluster.forEach(t => {
-                    t.currentRow = t.startDragRow + gridDy;
-                    t.currentCol = t.startDragCol + gridDx;
-                });
-
-                displacedToMove.forEach(t => {
-                    t.currentRow -= gridDy;
-                    t.currentCol -= gridDx;
-                });
-            }
-
-            tiles.forEach(updateTileVisuals);
-            checkWinState();
-            draggedCluster = [];
+            el.addEventListener('dragend', (e) => {
+                draggedAnchorObj = null;
+                tiles.forEach(t => t.element.classList.remove('drag-target-valid', 'drag-target-invalid'));
+                updateHighlights();
+            });
         }
 
-        async function checkWinState() {
-            let correctCount = tiles.filter(t => t.currentRow === t.correctRow && t.currentCol === t.correctCol).length;
-            myScoreDisplay.textContent = `You: ${correctCount}/16`;
-
-            if (currentRoomCode) {
-                const roomRef = doc(db, "rooms", currentRoomCode);
-                try {
-                    if (isHost) await updateDoc(roomRef, { hostScore: correctCount });
-                    else await updateDoc(roomRef, { guestScore: correctCount });
-                } catch (e) { console.error("Score sync failed", e); }
-            }
-
-            if (correctCount === 16) {
-                endGame("You Win!");
-            }
-        }
-
-        function endGame(message) {
-            gameActive = false;
-            statusDisplay.textContent = message;
-            statusDisplay.style.color = message === "You Win!" ? "#2e7d32" : "#c62828";
+        async function performClusterSwap(anchorObj, deltaRow, deltaCol) {
+            if (deltaRow === 0 && deltaCol === 0) return;
+            const cluster = getCluster(anchorObj);
             
-            const overlay = document.getElementById('countdownOverlay');
-            overlay.style.display = 'flex';
-            overlay.style.fontSize = '3rem';
-            overlay.textContent = message;
+            if (!isValidMove(cluster, deltaRow, deltaCol)) return;
+
+            let nextGrid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+            let displaced = [];
+            let clusterIds = new Set(cluster.map(t => t.id));
+
+            for (let t of cluster) nextGrid[t.currentRow + deltaRow][t.currentCol + deltaCol] = t;
+
+            for (let t of tiles) {
+                if (!clusterIds.has(t.id)) {
+                    if (nextGrid[t.currentRow][t.currentCol] === null) nextGrid[t.currentRow][t.currentCol] = t;
+                    else displaced.push(t);
+                }
+            }
+
+            for (let t of displaced) {
+                let checkR = t.currentRow - deltaRow;
+                let checkC = t.currentCol - deltaCol;
+                while (true) {
+                    if (checkR < 0 || checkR >= GRID_SIZE || checkC < 0 || checkC >= GRID_SIZE) break; 
+                    if (nextGrid[checkR][checkC] === null) {
+                        nextGrid[checkR][checkC] = t;
+                        break;
+                    }
+                    checkR -= deltaRow;
+                    checkC -= deltaCol;
+                }
+            }
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let t = nextGrid[r][c];
+                    if (t) {
+                        t.currentRow = r;
+                        t.currentCol = c;
+                        updateTileDOMPosition(t);
+                    }
+                }
+            }
+
+            updateHighlights();
+            checkProgress();
+        }
+
+        async function checkProgress() {
+            if (!gameActive || !currentUser) return;
+            
+            let correctCount = 0;
+            tiles.forEach(t => {
+                if (t.currentRow === t.correctRow && t.currentCol === t.correctCol) correctCount++;
+            });
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode);
+            const updateData = isHost ? { hostProgress: correctCount } : { guestProgress: correctCount };
+            
+            // Check Win Condition locally first to instantly freeze interactions
+            if (correctCount === TOTAL_PIECES) {
+                gameActive = false;
+                updateData.status = 'finished';
+                updateData.winnerId = currentUser.uid;
+            }
+
+            await updateDoc(roomRef, updateData);
         }
     </script>
 </body>
