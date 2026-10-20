@@ -144,7 +144,7 @@
 
     <!-- LOBBY AREA -->
     <div id="lobby" class="container">
-        <h2>Multiplayer Photo Puzzle</h2>
+        <h2>Multiplayer Photo Puzzle <span style="font-size: 0.5em; color: gray;">v1.0</span></h2>
         
         <div style="margin-bottom: 15px;">
             <input type="text" id="playerNameInput" placeholder="Enter Your Name" maxlength="15">
@@ -234,7 +234,7 @@
         let isHost = false;
         let currentRoomCode = null;
         let roomData = null;
-        let uploadedImages = []; // Max 5 base64 strings
+        let uploadedImages = [];
         
         // Puzzle Variables
         let tiles = [];
@@ -275,7 +275,7 @@
 
         // --- 1. IMAGE PROCESSING ---
         ui.imageUpload.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files).slice(0, 5); // Max 5
+            const files = Array.from(e.target.files).slice(0, 5);
             if (files.length === 0) return;
             ui.lobbyStatus.textContent = `Processing ${files.length} image(s)...`;
             
@@ -295,7 +295,7 @@
                             const startY = (img.height - size) / 2;
                             ctx.clearRect(0, 0, 400, 400);
                             ctx.drawImage(img, startX, startY, size, size, 0, 0, 400, 400);
-                            resolve(canvas.toDataURL('image/jpeg', 0.6)); // High compression
+                            resolve(canvas.toDataURL('image/jpeg', 0.6));
                         };
                         img.src = ev.target.result;
                     };
@@ -338,14 +338,12 @@
             const code = Math.floor(1000 + Math.random() * 9000).toString();
             currentRoomCode = code;
             isHost = true;
-            ui.startGameBtn.style.display = 'inline-block';
-            ui.hostControls.style.display = 'block';
 
             const initialBoards = generateShuffledBoards(uploadedImages.length);
 
             const initialData = {
                 hostId: playerId,
-                status: "waiting", // waiting, playing, round_ended, game_ended
+                status: "waiting", 
                 mode: ui.gameModeSelect.value,
                 images: uploadedImages,
                 boardStates: initialBoards,
@@ -355,11 +353,21 @@
                 }
             };
 
-            await setDoc(doc(db, "rooms", code), initialData);
-            ui.lobbyStatus.textContent = "";
-            ui.lobbyRoster.style.display = 'block';
-            ui.lobbyRoomCode.textContent = code;
-            listenToRoom(code);
+            try {
+                await setDoc(doc(db, "rooms", code), initialData);
+                ui.startGameBtn.style.display = 'inline-block';
+                ui.hostControls.style.display = 'block';
+                ui.lobbyStatus.textContent = "";
+                ui.lobbyRoster.style.display = 'block';
+                ui.lobbyRoomCode.textContent = code;
+                listenToRoom(code);
+            } catch (error) {
+                console.error("Firebase Error:", error);
+                alert("Database error: Could not create room. Your Firebase Rules may have expired or the image is too large.");
+                ui.createRoomBtn.disabled = false;
+                ui.joinRoomBtn.disabled = false;
+                ui.lobbyStatus.textContent = "Error creating room.";
+            }
         });
 
         ui.joinRoomBtn.addEventListener('click', async () => {
@@ -370,19 +378,26 @@
             ui.joinRoomBtn.disabled = true;
             ui.createRoomBtn.disabled = true;
             
-            const roomRef = doc(db, "rooms", code);
-            const roomSnap = await getDoc(roomRef);
-            
-            if (roomSnap.exists() && roomSnap.data().status === "waiting") {
-                currentRoomCode = code;
-                await updateDoc(roomRef, {
-                    [`players.${playerId}`]: { name: playerName, moves: 0, time: 0, finished: false }
-                });
-                ui.lobbyRoster.style.display = 'block';
-                ui.lobbyRoomCode.textContent = code;
-                listenToRoom(code);
-            } else {
-                alert("Room not found or game already started.");
+            try {
+                const roomRef = doc(db, "rooms", code);
+                const roomSnap = await getDoc(roomRef);
+                
+                if (roomSnap.exists() && roomSnap.data().status === "waiting") {
+                    currentRoomCode = code;
+                    await updateDoc(roomRef, {
+                        [`players.${playerId}`]: { name: playerName, moves: 0, time: 0, finished: false }
+                    });
+                    ui.lobbyRoster.style.display = 'block';
+                    ui.lobbyRoomCode.textContent = code;
+                    listenToRoom(code);
+                } else {
+                    alert("Room not found or game already started.");
+                    ui.joinRoomBtn.disabled = false;
+                    ui.createRoomBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error("Firebase Error:", error);
+                alert("Database error: Could not join room. Your Firebase Rules may have expired.");
                 ui.joinRoomBtn.disabled = false;
                 ui.createRoomBtn.disabled = false;
             }
@@ -390,8 +405,12 @@
 
         ui.startGameBtn.addEventListener('click', async () => {
             if (!isHost) return;
-            const roomRef = doc(db, "rooms", currentRoomCode);
-            await updateDoc(roomRef, { status: "playing" });
+            try {
+                const roomRef = doc(db, "rooms", currentRoomCode);
+                await updateDoc(roomRef, { status: "playing" });
+            } catch (error) {
+                console.error("Error starting game:", error);
+            }
         });
 
         // --- 3. FIREBASE SYNC LISTENER ---
@@ -402,25 +421,20 @@
 
                 updateLeaderboard(roomData.players);
 
-                // State: WAITING (In Lobby)
                 if (roomData.status === "waiting") {
                     ui.lobbyPlayerList.innerHTML = Object.values(roomData.players).map(p => `<div>- ${p.name}</div>`).join('');
                 }
                 
-                // State: PLAYING
                 if (roomData.status === "playing") {
                     if (ui.lobby.style.display !== 'none') {
                         ui.lobby.style.display = 'none';
                         ui.gameArea.style.display = 'block';
                     }
-                    
-                    // If a new round just started, reset local board
                     if (tiles.length === 0 || !gameActive && ui.statusOverlay.style.display === 'flex') {
                         startRound();
                     }
                 }
 
-                // State: ROUND ENDED
                 if (roomData.status === "round_ended") {
                     gameActive = false;
                     clearInterval(timerInterval);
@@ -435,7 +449,6 @@
                     }
                 }
 
-                // State: GAME ENDED
                 if (roomData.status === "game_ended") {
                     gameActive = false;
                     clearInterval(timerInterval);
@@ -452,24 +465,20 @@
             ui.countdownOverlay.style.display = 'flex';
             ui.roundDisplay.textContent = `${roomData.currentRound + 1}/${roomData.images.length}`;
             
-            // Reset local metrics
             movesCount = 0;
             ui.movesDisplay.textContent = '0';
             ui.timerDisplay.textContent = '00:00';
             clearInterval(timerInterval);
             
-            // Build the specific board for this round
             const imageSrc = roomData.images[roomData.currentRound];
             const boardState = roomData.boardStates[roomData.currentRound];
             buildBoard(imageSrc, boardState);
 
-            // Host button resets
             if (isHost) {
                 ui.endRoundBtn.style.display = 'inline-block';
                 ui.nextRoundBtn.style.display = 'none';
             }
 
-            // Countdown
             let count = 3;
             ui.countdownOverlay.textContent = count;
             const timer = setInterval(() => {
@@ -538,7 +547,6 @@
             if (!isHost) return;
             const nextRound = roomData.currentRound + 1;
             
-            // Reset player states for next round
             let updatedPlayers = { ...roomData.players };
             for (let pid in updatedPlayers) {
                 updatedPlayers[pid].moves = 0;
@@ -551,8 +559,6 @@
                 players: updatedPlayers,
                 status: "playing" 
             });
-            
-            // Force local board reset
             tiles = [];
         });
 
@@ -675,7 +681,6 @@
                     }
                 }
 
-                // Register Move
                 movesCount++;
                 ui.movesDisplay.textContent = movesCount;
                 syncProgress();
@@ -689,9 +694,13 @@
         // --- 7. WIN STATE & LEADERBOARD ---
         async function syncProgress() {
             if (!currentRoomCode) return;
-            await updateDoc(doc(db, "rooms", currentRoomCode), {
-                [`players.${playerId}.moves`]: movesCount
-            });
+            try {
+                await updateDoc(doc(db, "rooms", currentRoomCode), {
+                    [`players.${playerId}.moves`]: movesCount
+                });
+            } catch (error) {
+                console.error("Failed to sync progress", error);
+            }
         }
 
         async function checkWinState() {
@@ -704,15 +713,18 @@
                 ui.statusOverlay.style.display = 'flex';
                 ui.statusOverlay.textContent = "Finished!";
                 
-                await updateDoc(doc(db, "rooms", currentRoomCode), {
-                    [`players.${playerId}.finished`]: true,
-                    [`players.${playerId}.time`]: finalTime,
-                    [`players.${playerId}.moves`]: movesCount
-                });
+                try {
+                    await updateDoc(doc(db, "rooms", currentRoomCode), {
+                        [`players.${playerId}.finished`]: true,
+                        [`players.${playerId}.time`]: finalTime,
+                        [`players.${playerId}.moves`]: movesCount
+                    });
 
-                // Fast Mode Check
-                if (roomData.mode === "fast") {
-                    await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" });
+                    if (roomData.mode === "fast") {
+                        await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" });
+                    }
+                } catch (error) {
+                    console.error("Failed to sync win state", error);
                 }
             }
         }
@@ -720,12 +732,11 @@
         function updateLeaderboard(playersObj) {
             let playersArray = Object.values(playersObj);
             
-            // Sort: Finished first (by time), then unfinished (by moves)
             playersArray.sort((a, b) => {
                 if (a.finished && !b.finished) return -1;
                 if (!a.finished && b.finished) return 1;
                 if (a.finished && b.finished) return a.time - b.time;
-                return b.moves - a.moves; // Unfinished sorted by progress/moves
+                return b.moves - a.moves; 
             });
 
             ui.leaderboardList.innerHTML = playersArray.map(p => {
