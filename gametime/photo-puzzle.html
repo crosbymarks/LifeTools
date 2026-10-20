@@ -1,1 +1,114 @@
+<script type="module">
+    // Import Firebase core and Firestore directly from the CDN
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+    // Your specific Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAgQH18xD8Ls3rrMG81d7enLnl9cLnrMQE",
+      authDomain: "photo-puzzle-63858.firebaseapp.com",
+      projectId: "photo-puzzle-63858",
+      storageBucket: "photo-puzzle-63858.firebasestorage.app",
+      messagingSenderId: "633515768951",
+      appId: "1:633515768951:web:d0790c3a43bca6fa9f1a72",
+      measurementId: "G-4H1QVZ74QV"
+    };
+
+    // Initialize Firebase and Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ==========================================
+    // MULTIPLAYER LOBBY & GAME LOGIC BELOW
+    // ==========================================
+    
+    // Global State
+    let currentRoomCode = null;
+    let isHost = false;
+    let playerId = Math.random().toString(36).substring(2, 9); // Unique ID for this session
+    
+    const createRoomBtn = document.getElementById('createRoomBtn');
+    const joinRoomBtn = document.getElementById('joinRoomBtn');
+    const roomCodeInput = document.getElementById('roomCodeInput');
+    const lobbyDiv = document.getElementById('lobby');
+    const gameDiv = document.getElementById('gameArea');
+
+    // 1. Host creates a room
+    createRoomBtn.addEventListener('click', async () => {
+        const code = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit code
+        currentRoomCode = code;
+        isHost = true;
+        
+        // Create the room document in Firestore
+        await setDoc(doc(db, "rooms", code), {
+            host: playerId,
+            guest: null,
+            status: "waiting",
+            hostScore: 0,
+            guestScore: 0,
+            boardState: [] // You will populate this when the image is uploaded
+        });
+
+        alert(`Room created! Tell your opponent to join with code: ${code}`);
+        listenToRoom(code);
+    });
+
+    // 2. Guest joins a room
+    joinRoomBtn.addEventListener('click', async () => {
+        const code = roomCodeInput.value.trim();
+        if (!code) return alert("Enter a room code");
+
+        const roomRef = doc(db, "rooms", code);
+        const roomSnap = await getDoc(roomRef);
+
+        if (roomSnap.exists() && roomSnap.data().status === "waiting") {
+            currentRoomCode = code;
+            await updateDoc(roomRef, {
+                guest: playerId,
+                status: "ready"
+            });
+            listenToRoom(code);
+        } else {
+            alert("Room not found or already full.");
+        }
+    });
+
+    // 3. Listen for real-time changes
+    function listenToRoom(code) {
+        lobbyDiv.style.display = 'none';
+        gameDiv.style.display = 'block';
+
+        onSnapshot(doc(db, "rooms", code), (doc) => {
+            const data = doc.data();
+            
+            // Check if both players are in and start the 3-second countdown
+            if (data.status === "ready" && !gameActive) {
+                startMatchCountdown();
+            }
+
+            // Sync opponent's score live
+            if (isHost) {
+                document.getElementById('opponentScore').textContent = `Opponent: ${data.guestScore}`;
+            } else {
+                document.getElementById('opponentScore').textContent = `Opponent: ${data.hostScore}`;
+                
+                // If guest, sync the initial board state sent by the host
+                if (data.boardState && tiles.length === 0) {
+                    buildBoardFromSync(data.boardState, data.imageSrc);
+                }
+            }
+        });
+    }
+
+    // Call this whenever a player makes a correct move
+    window.updateScoreInDatabase = async function(correctTilesCount) {
+        if (!currentRoomCode) return;
+        const roomRef = doc(db, "rooms", currentRoomCode);
+        
+        if (isHost) {
+            await updateDoc(roomRef, { hostScore: correctTilesCount });
+        } else {
+            await updateDoc(roomRef, { guestScore: correctTilesCount });
+        }
+    }
+</script>
