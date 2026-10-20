@@ -1,3 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Photo Swap Puzzle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Puzzle Board Setup */
+        .puzzle-board {
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 1 / 1;
+            position: relative;
+            background-color: #1e293b;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            border: 4px solid #334155;
+        }
+
+        /* Individual Tiles */
+        .puzzle-tile {
+            position: absolute;
+            width: 25%;
+            height: 25%;
+            background-size: 400% 400%;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5), inset 0 0 4px rgba(0,0,0,0.3);
+            cursor: grab;
+            transition: top 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                        left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                        box-shadow 0.2s, transform 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            z-index: 1;
+            background-color: #334155;
+        }
+
+        .puzzle-tile:active { cursor: grabbing; }
+
+        .puzzle-tile.cluster-hover {
+            box-shadow: inset 0 0 0 3px #fbbf24, inset 0 0 15px rgba(251, 191, 36, 0.5);
+            z-index: 5;
+            transform: scale(0.98);
+            filter: brightness(1.1);
+        }
+
+        .puzzle-tile.cluster-active {
+            box-shadow: inset 0 0 0 4px #eab308, 0 0 20px rgba(234, 179, 8, 0.8);
+            z-index: 10;
+            transform: scale(0.95);
+            filter: brightness(1.15) opacity(0.9);
+        }
+
+        .puzzle-tile.drag-target-valid {
+            box-shadow: inset 0 0 0 4px #10b981, inset 0 0 20px rgba(16, 185, 129, 0.5);
+            z-index: 8;
+        }
+
+        .puzzle-tile.drag-target-invalid {
+            box-shadow: inset 0 0 0 4px #ef4444, inset 0 0 20px rgba(239, 68, 68, 0.5);
+            z-index: 8;
+        }
+
+        /* Overlays */
+        .game-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            z-index: 20;
+        }
+
+        .game-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: flex; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col items-center py-8 px-4 font-sans text-slate-800">
+
+    <div class="max-w-lg w-full flex flex-col gap-6">
+        
+        <!-- App Header -->
+        <div class="text-center">
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Multiplayer Swap Puzzle</h1>
+            <p id="appSubtitle" class="text-slate-600 mt-2 text-sm px-4">Loading connection...</p>
+        </div>
+
+        <!-- SCREEN: MENU -->
+        <div id="screen-menu" class="screen flex-col gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <button id="btnCreateRoom" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-colors active:scale-95">Create Room</button>
+            <div class="relative flex py-2 items-center">
+                <div class="flex-grow border-t border-slate-300"></div>
+                <span class="flex-shrink-0 mx-4 text-slate-400 font-medium text-sm">OR</span>
+                <div class="flex-grow border-t border-slate-300"></div>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" id="inputRoomCode" placeholder="Enter Room Code" class="flex-grow px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl font-bold text-center uppercase tracking-widest focus:ring-2 focus:ring-indigo-500 outline-none" maxlength="4">
+                <button id="btnJoinRoom" class="px-6 py-3 bg-slate-800 text-white font-bold rounded-xl shadow-md hover:bg-slate-900 transition-colors active:scale-95">Join</button>
+            </div>
+        </div>
+
+        <!-- SCREEN: LOBBY -->
+        <div id="screen-lobby" class="screen flex-col gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center">
+            <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                <p class="text-sm text-indigo-600 font-semibold mb-1">ROOM CODE</p>
+                <p id="displayRoomCode" class="text-4xl font-black text-indigo-900 tracking-widest uppercase">----</p>
+            </div>
+
+            <div id="lobbyStatus" class="text-sm font-medium text-slate-600 mt-2">Waiting for opponent...</div>
+
+            <div id="hostControls" class="hidden flex-col gap-3 mt-2">
+                <label class="relative flex justify-center items-center px-4 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-md hover:bg-indigo-700 cursor-pointer transition-all active:scale-95">
+                    <span>Upload Puzzle Photo</span>
+                    <input type="file" id="imageUpload" accept="image/*" class="sr-only">
+                </label>
+                <p class="text-xs text-slate-500">Pick a photo to sync to the other player.</p>
+            </div>
+
+            <div id="readyControls" class="hidden flex-col gap-3 mt-4 pt-4 border-t border-slate-100">
+                <img id="previewImage" class="w-24 h-24 object-cover mx-auto rounded-lg border-2 border-slate-200 shadow-sm" src="" alt="Puzzle Preview">
+                <button id="btnReady" class="w-full py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700 transition-colors active:scale-95">I'm Ready!</button>
+            </div>
+        </div>
+
+        <!-- SCREEN: GAME -->
+        <div id="screen-game" class="screen flex-col gap-4">
+            
+            <!-- Multiplayer HUD -->
+            <div class="grid grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col items-center p-2 bg-indigo-50 rounded-lg">
+                    <span class="text-xs font-bold text-indigo-400 uppercase">You</span>
+                    <span class="text-2xl font-black text-indigo-900"><span id="myProgress">0</span><span class="text-sm text-indigo-400">/16</span></span>
+                </div>
+                <div class="flex flex-col items-center p-2 bg-rose-50 rounded-lg">
+                    <span class="text-xs font-bold text-rose-400 uppercase">Opponent</span>
+                    <span class="text-2xl font-black text-rose-900"><span id="oppProgress">0</span><span class="text-sm text-rose-400">/16</span></span>
+                </div>
+            </div>
+
+            <!-- Puzzle Container -->
+            <div class="puzzle-board mx-auto" id="puzzleBoard">
+                
+                <!-- Countdown Overlay -->
+                <div id="countdownOverlay" class="game-overlay bg-slate-900/80">
+                    <div id="countdownText" class="text-7xl font-black text-white drop-shadow-lg transform scale-150 transition-transform">3</div>
+                </div>
+
+                <!-- Win/Lose Overlay -->
+                <div id="endOverlay" class="game-overlay">
+                    <div class="bg-white/95 p-8 rounded-2xl shadow-2xl text-center transform scale-95 transition-transform duration-500 ease-out border" id="endCard">
+                        <h2 id="endTitle" class="text-3xl font-black mb-2"></h2>
+                        <p id="endSubtitle" class="text-slate-600 mb-6 font-medium"></p>
+                        <button onclick="window.location.reload()" class="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition-colors shadow-lg shadow-slate-200">Leave Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden canvas for image processing & shrinking -->
+    <canvas id="imageCanvas" class="hidden"></canvas>
+
 <script type="module">
     // Import Firebase core and Firestore directly from the CDN
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -112,3 +288,5 @@
         }
     }
 </script>
+</body>
+</html>
