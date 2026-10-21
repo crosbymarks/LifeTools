@@ -306,25 +306,25 @@
             ui.lobbyStatus.textContent = `${uploadedImages.length} Image(s) Ready!`;
         });
 
-        function generateShuffledBoards(numRounds) {
-            let boards = [];
-            for (let r = 0; r < numRounds; r++) {
-                let board = [];
-                for (let i = 0; i < 16; i++) board.push({ id: i, row: Math.floor(i / 4), col: i % 4 });
-                for(let i=0; i<300; i++) {
-                    const idx1 = Math.floor(Math.random() * 16);
-                    const idx2 = Math.floor(Math.random() * 16);
-                    let tempRow = board[idx1].row;
-                    let tempCol = board[idx1].col;
-                    board[idx1].row = board[idx2].row;
-                    board[idx1].col = board[idx2].col;
-                    board[idx2].row = tempRow;
-                    board[idx2].col = tempCol;
-                }
-                boards.push(board);
-            }
-            return boards;
+function generateShuffledBoards(numRounds) {
+    let boards = {}; // Changed from [] to {}
+    for (let r = 0; r < numRounds; r++) {
+        let board = [];
+        for (let i = 0; i < 16; i++) board.push({ id: i, row: Math.floor(i / 4), col: i % 4 });
+        for(let i=0; i<300; i++) {
+            const idx1 = Math.floor(Math.random() * 16);
+            const idx2 = Math.floor(Math.random() * 16);
+            let tempRow = board[idx1].row;
+            let tempCol = board[idx1].col;
+            board[idx1].row = board[idx2].row;
+            board[idx1].col = board[idx2].col;
+            board[idx2].row = tempRow;
+            board[idx2].col = tempCol;
         }
+        boards[r] = board; // Changed from boards.push(board)
+    }
+    return boards;
+}
 
         // --- 2. LOBBY & ROOM CREATION ---
         ui.createRoomBtn.addEventListener('click', async () => {
