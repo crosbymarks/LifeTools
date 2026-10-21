@@ -6,104 +6,91 @@
     <title>Multiplayer Photo Puzzle</title>
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #ec4899;
+            --secondary-hover: #db2777;
             --danger: #ef4444;
-            --danger-hover: #dc2626;
             --success: #10b981;
-            --bg: #f8fafc;
-            --surface: #ffffff;
+            --bg-top: #0f172a;
+            --bg-bottom: #1e293b;
+            --surface: rgba(255, 255, 255, 0.95);
             --text: #1e293b;
+            --text-light: #64748b;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: var(--bg);
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
             color: var(--text);
             padding: 20px 10px;
             margin: 0;
-            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-            background-size: 20px 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
 
         .container {
             background: var(--surface);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
             text-align: center;
             margin-bottom: 20px;
             width: 100%;
-            max-width: 700px;
+            max-width: 800px;
             box-sizing: border-box;
+            backdrop-filter: blur(10px);
         }
 
-        h2 { margin-top: 0; color: var(--primary); }
+        h2 { margin-top: 0; color: var(--primary); font-weight: 800; font-size: 2rem; letter-spacing: -0.5px; }
+        h3 { color: var(--text); font-weight: 700; }
 
         input[type="text"], select {
-            padding: 10px 15px;
+            padding: 12px 16px;
             font-size: 16px;
             width: 100%;
-            max-width: 250px;
+            max-width: 280px;
             text-align: center;
-            margin: 5px;
+            margin: 8px;
             border: 2px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 10px;
             outline: none;
-            transition: border 0.2s;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: var(--text);
+            font-weight: 500;
         }
-        input[type="text"]:focus { border-color: var(--primary); }
+        input[type="text"]:focus, select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
 
         button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            background-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
             color: white;
             border: none;
-            border-radius: 8px;
-            margin: 5px;
-            transition: background 0.2s, transform 0.1s;
+            border-radius: 10px;
+            margin: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
         }
-        button:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-1px); }
-        button:active:not(:disabled) { transform: translateY(1px); }
-        button:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4); }
+        button:active:not(:disabled) { transform: translateY(0); }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; color: #94a3b8; }
         
-        .secondary-btn { background-color: #0ea5e9; }
-        .secondary-btn:hover:not(:disabled) { background-color: #0284c7; }
-        .danger-btn { background-color: var(--danger); }
-        .danger-btn:hover:not(:disabled) { background-color: var(--danger-hover); }
+        .secondary-btn { background: linear-gradient(135deg, var(--secondary), var(--secondary-hover)); box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.3); }
+        .secondary-btn:hover:not(:disabled) { box-shadow: 0 10px 15px -3px rgba(236, 72, 153, 0.4); }
+        .danger-btn { background: var(--danger); box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3); }
 
         /* Image Order Preview */
-        #imagePreviewContainer {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .thumb-wrapper {
-            background: #f1f5f9;
-            padding: 8px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border: 1px solid #e2e8f0;
-        }
-        .thumb {
-            width: 60px; height: 60px;
-            object-fit: cover;
-            border-radius: 4px;
-            margin-bottom: 5px;
-        }
-        .thumb-controls button {
-            padding: 2px 8px; font-size: 12px; margin: 0 2px;
-        }
+        #imagePreviewContainer { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 15px; }
+        .thumb-wrapper { background: #f1f5f9; padding: 10px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; border: 1px solid #e2e8f0; }
+        .thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .thumb-controls button { padding: 4px 10px; font-size: 12px; margin: 0 3px; border-radius: 6px; box-shadow: none; }
 
         #gameArea, #postGameArea { display: none; }
 
@@ -111,146 +98,137 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            padding: 12px 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            padding: 15px 25px;
             background: #f8fafc;
             border: 2px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
+        .top-bar span { color: var(--primary); }
 
-        .main-layout {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            align-items: flex-start;
-            flex-wrap: wrap;
-        }
+        .main-layout { display: flex; gap: 25px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
 
-        /* Responsive Puzzle Grid */
+        /* Puzzle Grid */
         #puzzle-container {
             width: 100%;
             max-width: 450px;
             aspect-ratio: 1 / 1;
             position: relative;
-            background-color: #cbd5e1;
-            border: 4px solid #1e293b;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            background-color: #0f172a;
+            border: 6px solid #334155;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
             flex-shrink: 0;
             overflow: hidden;
         }
 
         .tile {
-            width: 25%; /* 1/4th of container */
-            height: 25%;
+            width: 25%; height: 25%;
             position: absolute;
             box-sizing: border-box;
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             cursor: grab;
-            transition: top 0.2s ease, left 0.2s ease;
+            transition: top 0.15s ease-out, left 0.15s ease-out;
             user-select: none;
             touch-action: none;
-            /* Background scaling for responsive grid */
             background-size: 400% 400%; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
         }
-        .tile:active { cursor: grabbing; }
-        .cluster-active { z-index: 100; border: 3px solid #fbbf24; opacity: 0.9; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
+        .tile:active { cursor: grabbing; z-index: 50; }
+        .cluster-active { z-index: 100; border: 3px solid #fde047; opacity: 0.95; box-shadow: 0 10px 20px rgba(0,0,0,0.4); transform: scale(1.02); transition: transform 0.1s; }
 
         .leaderboard {
             width: 100%;
-            max-width: 250px;
-            background: #f8fafc;
+            max-width: 280px;
+            background: #ffffff;
             border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px;
+            border-radius: 12px;
+            padding: 20px;
             box-sizing: border-box;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
-        .leaderboard h3 { margin-top: 0; color: var(--primary); font-size: 1.1rem; }
+        .leaderboard h3 { margin-top: 0; color: var(--text); font-size: 1.2rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; }
         .player-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 0.95rem;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 1rem;
+            font-weight: 500;
         }
         .player-row:last-child { border-bottom: none; }
-        .player-row.finished { color: var(--success); font-weight: bold; }
+        .player-row.finished { color: var(--success); font-weight: 700; background: #ecfdf5; border-radius: 6px; padding: 10px; margin: -5px -10px 5px -10px; border-bottom: none; }
 
         #countdownOverlay, #statusOverlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(15, 23, 42, 0.85);
             color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            font-weight: bold;
-            z-index: 200;
-            display: none;
-            text-align: center;
-            backdrop-filter: blur(2px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 4rem; font-weight: 800;
+            z-index: 200; display: none; text-align: center;
+            backdrop-filter: blur(4px);
         }
 
         /* Post Game Tables */
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9rem; }
-        th, td { padding: 10px; border: 1px solid #e2e8f0; text-align: center; }
-        th { background: #f1f5f9; font-weight: 600; color: var(--text); }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 25px; font-size: 1rem; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8fafc; font-weight: 700; color: var(--text); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+        tr:last-child td { border-bottom: none; }
         tr:nth-child(even) { background: #f8fafc; }
-        .table-title { font-size: 1.2rem; font-weight: bold; color: var(--primary); margin: 20px 0 10px; text-align: left; }
+        .table-title { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin: 25px 0 15px; text-align: left; }
     </style>
 </head>
 <body>
 
     <!-- LOBBY AREA -->
     <div id="lobby" class="container">
-        <h2>Multiplayer Photo Puzzle <span style="font-size: 0.5em; color: gray;">v1.1</span></h2>
+        <h2>Photo Puzzle <span style="font-size: 0.4em; color: var(--text-light); vertical-align: middle;">v1.2</span></h2>
         
-        <div style="margin-bottom: 25px;">
-            <input type="text" id="playerNameInput" placeholder="Enter Your Name" maxlength="15">
+        <div style="margin-bottom: 30px;">
+            <input type="text" id="playerNameInput" placeholder="Enter Your Screen Name" maxlength="15">
         </div>
 
         <div class="main-layout" style="justify-content: center;">
-            <div id="hostSection" style="flex: 1; min-width: 260px; padding: 20px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+            <div id="hostSection" style="flex: 1; min-width: 280px; padding: 25px; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
                 <h3 style="margin-top:0;">Host a Game</h3>
-                <input type="file" id="imageUpload" accept="image/*" multiple style="margin-bottom: 10px; width: 90%;">
-                <small style="display:block; margin-bottom: 10px; color:#64748b;">Select up to 5 images</small>
+                <input type="file" id="imageUpload" accept="image/*" multiple style="margin-bottom: 10px; width: 90%; font-size: 0.9rem;">
+                <small style="display:block; margin-bottom: 10px; color:var(--text-light);">Select up to 5 images</small>
                 
                 <div id="imagePreviewContainer"></div>
 
-                <select id="gameModeSelect" style="margin-top: 15px;">
-                    <option value="timed">Timed Mode (Everyone finishes)</option>
+                <select id="gameModeSelect" style="margin-top: 20px;">
+                    <option value="timed">Timed Mode (All finish)</option>
                     <option value="fast">Fast Mode (First to win ends round)</option>
                 </select>
                 <br>
-                <button id="createRoomBtn" style="margin-top: 10px; width: 100%;">Create Room</button>
+                <button id="createRoomBtn" style="margin-top: 15px; width: 100%;">Create Room</button>
             </div>
 
-            <div id="joinSection" style="flex: 1; min-width: 260px; padding: 20px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+            <div id="joinSection" style="flex: 1; min-width: 280px; padding: 25px; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
                 <h3 style="margin-top:0;">Join a Game</h3>
-                <input type="text" id="roomCodeInput" placeholder="4-Digit Code" maxlength="4" style="letter-spacing: 2px; font-weight: bold;">
+                <input type="text" id="roomCodeInput" placeholder="4-Digit Code" maxlength="4" style="letter-spacing: 4px; font-weight: 800; font-size: 1.2rem; text-transform: uppercase;">
                 <br>
-                <button id="joinRoomBtn" class="secondary-btn" style="margin-top: 10px; width: 100%;">Join Room</button>
+                <button id="joinRoomBtn" class="secondary-btn" style="margin-top: 15px; width: 100%;">Join Room</button>
             </div>
         </div>
 
-        <div id="lobbyRoster" style="margin-top: 25px; display: none;">
-            <h3 style="margin-bottom: 5px;">Room Code: <span id="lobbyRoomCode" style="color: var(--primary); font-size: 1.5rem;"></span></h3>
-            <div id="lobbyPlayerList" style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #e2e8f0; max-width: 300px; margin: 10px auto; text-align: left; font-weight: 500;"></div>
-            <button id="startGameBtn" style="margin-top: 10px; font-size: 1.2rem; padding: 12px 30px; display: none;">Start Game</button>
+        <div id="lobbyRoster" style="margin-top: 30px; display: none; background: #f8fafc; padding: 20px; border-radius: 12px; border: 2px solid #e2e8f0;">
+            <h3 style="margin-top: 0; margin-bottom: 10px;">Room Code: <span id="lobbyRoomCode" style="color: var(--primary); font-size: 2rem; letter-spacing: 2px;"></span></h3>
+            <div id="lobbyPlayerList" style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; max-width: 300px; margin: 10px auto; text-align: left; font-weight: 600; font-size: 1.1rem; color: var(--text);"></div>
+            <button id="startGameBtn" style="margin-top: 15px; font-size: 1.2rem; padding: 15px 40px; display: none; width: 100%; max-width: 300px;">Start Game</button>
         </div>
 
-        <div id="lobbyStatus" style="margin-top: 15px; font-weight: bold; color: var(--primary);"></div>
+        <div id="lobbyStatus" style="margin-top: 20px; font-weight: 700; color: var(--primary); font-size: 1.1rem;"></div>
     </div>
 
     <!-- GAME AREA -->
-    <div id="gameArea" class="container" style="max-width: 800px;">
+    <div id="gameArea" class="container" style="max-width: 900px;">
         <div class="top-bar">
             <div>Round <span id="roundDisplay">1/1</span></div>
-            <div>Time: <span id="timerDisplay" style="color: var(--primary);">00:00</span></div>
+            <div>Time: <span id="timerDisplay">00:00</span></div>
             <div>Moves: <span id="movesDisplay">0</span></div>
         </div>
         
@@ -264,10 +242,10 @@
                 <h3>Live Standings</h3>
                 <div id="leaderboardList"></div>
                 
-                <div id="hostControls" style="margin-top: 25px; padding-top: 15px; border-top: 2px dashed #e2e8f0; display: none;">
-                    <button id="endRoundBtn" class="secondary-btn" style="width:100%; font-size: 0.9rem; margin: 0 0 10px 0;">Force End Round</button>
-                    <button id="nextRoundBtn" style="width:100%; font-size: 0.9rem; margin: 0 0 10px 0; display: none;">Start Next Round</button>
-                    <button id="endGameBtn" class="danger-btn" style="width:100%; font-size: 0.9rem; margin: 0;">End Game Early</button>
+                <div id="hostControls" style="margin-top: 25px; padding-top: 20px; border-top: 2px dashed #e2e8f0; display: none;">
+                    <button id="endRoundBtn" class="secondary-btn" style="width:100%; font-size: 0.95rem; margin: 0 0 12px 0;">Force End Round</button>
+                    <button id="nextRoundBtn" style="width:100%; font-size: 0.95rem; margin: 0 0 12px 0; display: none;">Start Next Round</button>
+                    <button id="endGameBtn" class="danger-btn" style="width:100%; font-size: 0.95rem; margin: 0;">End Game Early</button>
                 </div>
             </div>
         </div>
@@ -277,7 +255,7 @@
     <div id="postGameArea" class="container" style="max-width: 800px;">
         <h2>Final Results</h2>
         <div id="finalLeaderboards"></div>
-        <button onclick="window.location.reload()" style="margin-top: 20px;">Play Again</button>
+        <button onclick="window.location.reload()" style="margin-top: 30px; font-size: 1.2rem; padding: 15px 40px;">Play Again</button>
     </div>
 
     <canvas id="cropCanvas" style="display:none;"></canvas>
@@ -304,7 +282,8 @@
         let playerName = "Player";
         let isHost = false;
         let currentRoomCode = null;
-        let roomData = null;
+        let roomData = null;       // Fast syncing state
+        let roomAssets = null;     // Heavy one-time payload (images)
         let uploadedImages = []; 
         let tiles = [];
         let gameActive = false;
@@ -312,42 +291,28 @@
         let startTime = 0;
         let timerInterval = null;
 
-        // UI
+        // UI Binding
         const ui = {
-            lobby: document.getElementById('lobby'),
-            gameArea: document.getElementById('gameArea'),
-            postGameArea: document.getElementById('postGameArea'),
-            finalLeaderboards: document.getElementById('finalLeaderboards'),
-            playerNameInput: document.getElementById('playerNameInput'),
-            imageUpload: document.getElementById('imageUpload'),
-            previewContainer: document.getElementById('imagePreviewContainer'),
-            gameModeSelect: document.getElementById('gameModeSelect'),
-            createRoomBtn: document.getElementById('createRoomBtn'),
-            joinRoomBtn: document.getElementById('joinRoomBtn'),
-            roomCodeInput: document.getElementById('roomCodeInput'),
-            lobbyStatus: document.getElementById('lobbyStatus'),
-            lobbyRoster: document.getElementById('lobbyRoster'),
-            lobbyRoomCode: document.getElementById('lobbyRoomCode'),
-            lobbyPlayerList: document.getElementById('lobbyPlayerList'),
-            startGameBtn: document.getElementById('startGameBtn'),
-            container: document.getElementById('puzzle-container'),
-            roundDisplay: document.getElementById('roundDisplay'),
-            timerDisplay: document.getElementById('timerDisplay'),
-            movesDisplay: document.getElementById('movesDisplay'),
-            leaderboardList: document.getElementById('leaderboardList'),
-            countdownOverlay: document.getElementById('countdownOverlay'),
-            statusOverlay: document.getElementById('statusOverlay'),
-            hostControls: document.getElementById('hostControls'),
-            endRoundBtn: document.getElementById('endRoundBtn'),
-            nextRoundBtn: document.getElementById('nextRoundBtn'),
-            endGameBtn: document.getElementById('endGameBtn')
+            lobby: document.getElementById('lobby'), gameArea: document.getElementById('gameArea'), postGameArea: document.getElementById('postGameArea'),
+            finalLeaderboards: document.getElementById('finalLeaderboards'), playerNameInput: document.getElementById('playerNameInput'),
+            imageUpload: document.getElementById('imageUpload'), previewContainer: document.getElementById('imagePreviewContainer'),
+            gameModeSelect: document.getElementById('gameModeSelect'), createRoomBtn: document.getElementById('createRoomBtn'),
+            joinRoomBtn: document.getElementById('joinRoomBtn'), roomCodeInput: document.getElementById('roomCodeInput'),
+            lobbyStatus: document.getElementById('lobbyStatus'), lobbyRoster: document.getElementById('lobbyRoster'),
+            lobbyRoomCode: document.getElementById('lobbyRoomCode'), lobbyPlayerList: document.getElementById('lobbyPlayerList'),
+            startGameBtn: document.getElementById('startGameBtn'), container: document.getElementById('puzzle-container'),
+            roundDisplay: document.getElementById('roundDisplay'), timerDisplay: document.getElementById('timerDisplay'),
+            movesDisplay: document.getElementById('movesDisplay'), leaderboardList: document.getElementById('leaderboardList'),
+            countdownOverlay: document.getElementById('countdownOverlay'), statusOverlay: document.getElementById('statusOverlay'),
+            hostControls: document.getElementById('hostControls'), endRoundBtn: document.getElementById('endRoundBtn'),
+            nextRoundBtn: document.getElementById('nextRoundBtn'), endGameBtn: document.getElementById('endGameBtn')
         };
 
-        // --- 1. IMAGE PROCESSING & ORDERING ---
+        // --- 1. IMAGE PROCESSING ---
         ui.imageUpload.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files).slice(0, 5);
             if (files.length === 0) return;
-            ui.lobbyStatus.textContent = `Processing...`;
+            ui.lobbyStatus.textContent = `Processing Images...`;
             
             uploadedImages = [];
             const canvas = document.getElementById('cropCanvas');
@@ -380,38 +345,23 @@
         function renderImagePreviews() {
             ui.previewContainer.innerHTML = '';
             uploadedImages.forEach((imgSrc, index) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'thumb-wrapper';
+                const wrapper = document.createElement('div'); wrapper.className = 'thumb-wrapper';
+                const img = document.createElement('img'); img.src = imgSrc; img.className = 'thumb';
+                const controls = document.createElement('div'); controls.className = 'thumb-controls';
                 
-                const img = document.createElement('img');
-                img.src = imgSrc;
-                img.className = 'thumb';
-                
-                const controls = document.createElement('div');
-                controls.className = 'thumb-controls';
-                
-                const leftBtn = document.createElement('button');
-                leftBtn.textContent = '◀';
-                leftBtn.disabled = index === 0;
-                leftBtn.onclick = () => { swapImages(index, index - 1); };
-                
-                const rightBtn = document.createElement('button');
-                rightBtn.textContent = '▶';
-                rightBtn.disabled = index === uploadedImages.length - 1;
-                rightBtn.onclick = () => { swapImages(index, index + 1); };
+                const leftBtn = document.createElement('button'); leftBtn.textContent = '◀'; leftBtn.disabled = index === 0;
+                leftBtn.onclick = () => swapImages(index, index - 1);
+                const rightBtn = document.createElement('button'); rightBtn.textContent = '▶'; rightBtn.disabled = index === uploadedImages.length - 1;
+                rightBtn.onclick = () => swapImages(index, index + 1);
 
-                controls.appendChild(leftBtn);
-                controls.appendChild(rightBtn);
-                wrapper.appendChild(img);
-                wrapper.appendChild(controls);
+                controls.appendChild(leftBtn); controls.appendChild(rightBtn);
+                wrapper.appendChild(img); wrapper.appendChild(controls);
                 ui.previewContainer.appendChild(wrapper);
             });
         }
 
         function swapImages(i, j) {
-            const temp = uploadedImages[i];
-            uploadedImages[i] = uploadedImages[j];
-            uploadedImages[j] = temp;
+            const temp = uploadedImages[i]; uploadedImages[i] = uploadedImages[j]; uploadedImages[j] = temp;
             renderImagePreviews();
         }
 
@@ -421,8 +371,7 @@
                 let board = [];
                 for (let i = 0; i < 16; i++) board.push({ id: i, row: Math.floor(i / 4), col: i % 4 });
                 for(let i=0; i<300; i++) {
-                    const idx1 = Math.floor(Math.random() * 16);
-                    const idx2 = Math.floor(Math.random() * 16);
+                    const idx1 = Math.floor(Math.random() * 16); const idx2 = Math.floor(Math.random() * 16);
                     let tempRow = board[idx1].row; let tempCol = board[idx1].col;
                     board[idx1].row = board[idx2].row; board[idx1].col = board[idx2].col;
                     board[idx2].row = tempRow; board[idx2].col = tempCol;
@@ -432,7 +381,8 @@
             return boards;
         }
 
-        // --- 2. LOBBY & ROOM CREATION ---
+        // --- 2. LOBBY CREATION & JOINING ---
+        // V1.2 UPDATE: SPLITTING ASSETS FROM STATE FOR LIGHTNING FAST SYNC
         ui.createRoomBtn.addEventListener('click', async () => {
             playerName = ui.playerNameInput.value.trim() || "Host";
             if (uploadedImages.length === 0) return alert("Please upload at least 1 image.");
@@ -443,131 +393,105 @@
             const code = Math.floor(1000 + Math.random() * 9000).toString();
             currentRoomCode = code; isHost = true;
 
-            const initialData = {
-                hostId: playerId,
-                status: "waiting", 
-                mode: ui.gameModeSelect.value,
-                images: uploadedImages,
-                boardStates: generateShuffledBoards(uploadedImages.length),
-                currentRound: 0,
-                players: {
-                    [playerId]: { name: playerName, moves: 0, time: 0, finished: false, rounds: {} }
-                }
+            const assetsData = { images: uploadedImages, boardStates: generateShuffledBoards(uploadedImages.length) };
+            const stateData = {
+                hostId: playerId, status: "waiting", mode: ui.gameModeSelect.value, currentRound: 0, totalRounds: uploadedImages.length,
+                players: { [playerId]: { name: playerName, moves: 0, time: 0, finished: false, rounds: {} } }
             };
 
             try {
-                await setDoc(doc(db, "rooms", code), initialData);
-                ui.startGameBtn.style.display = 'inline-block';
-                ui.hostControls.style.display = 'block';
-                ui.lobbyStatus.textContent = "";
-                ui.lobbyRoster.style.display = 'block';
+                // Save heavy data to _assets document, fast data to main document
+                await setDoc(doc(db, "rooms", code + "_assets"), assetsData);
+                await setDoc(doc(db, "rooms", code), stateData);
+                
+                roomAssets = assetsData; // Cache locally for host
+                ui.startGameBtn.style.display = 'inline-block'; ui.hostControls.style.display = 'block';
+                ui.lobbyStatus.textContent = ""; ui.lobbyRoster.style.display = 'block';
                 ui.lobbyRoomCode.textContent = code;
                 listenToRoom(code);
             } catch (error) {
-                console.error(error);
-                alert("Database error: Could not create room. Ensure Firebase rules are public.");
-                ui.createRoomBtn.disabled = false; ui.joinRoomBtn.disabled = false;
+                alert("Database error. Ensure rules are public."); ui.createRoomBtn.disabled = false; ui.joinRoomBtn.disabled = false;
             }
         });
 
         ui.joinRoomBtn.addEventListener('click', async () => {
             playerName = ui.playerNameInput.value.trim() || `Player_${Math.floor(Math.random()*1000)}`;
-            const code = ui.roomCodeInput.value.trim();
+            const code = ui.roomCodeInput.value.trim().toUpperCase();
             if (code.length !== 4) return alert("Enter 4-digit code");
             
-            ui.joinRoomBtn.disabled = true; ui.createRoomBtn.disabled = true;
+            ui.joinRoomBtn.disabled = true; ui.createRoomBtn.disabled = true; ui.lobbyStatus.textContent = "Joining...";
             try {
-                const roomRef = doc(db, "rooms", code);
-                const roomSnap = await getDoc(roomRef);
+                const roomSnap = await getDoc(doc(db, "rooms", code));
                 if (roomSnap.exists() && roomSnap.data().status === "waiting") {
                     currentRoomCode = code;
-                    await updateDoc(roomRef, {
+                    
+                    // Fetch heavy assets exactly ONCE on join
+                    const assetSnap = await getDoc(doc(db, "rooms", code + "_assets"));
+                    roomAssets = assetSnap.data();
+
+                    await updateDoc(doc(db, "rooms", code), {
                         [`players.${playerId}`]: { name: playerName, moves: 0, time: 0, finished: false, rounds: {} }
                     });
-                    ui.lobbyRoster.style.display = 'block';
-                    ui.lobbyRoomCode.textContent = code;
+                    ui.lobbyStatus.textContent = ""; ui.lobbyRoster.style.display = 'block'; ui.lobbyRoomCode.textContent = code;
                     listenToRoom(code);
                 } else {
-                    alert("Room not found or already started.");
-                    ui.joinRoomBtn.disabled = false; ui.createRoomBtn.disabled = false;
+                    alert("Room not found or already started."); ui.joinRoomBtn.disabled = false; ui.createRoomBtn.disabled = false; ui.lobbyStatus.textContent = "";
                 }
-            } catch (error) {
-                alert("Connection error.");
-                ui.joinRoomBtn.disabled = false; ui.createRoomBtn.disabled = false;
-            }
+            } catch (error) { alert("Connection error."); ui.joinRoomBtn.disabled = false; ui.createRoomBtn.disabled = false; }
         });
 
         ui.startGameBtn.addEventListener('click', async () => {
-            if (!isHost) return;
-            await updateDoc(doc(db, "rooms", currentRoomCode), { status: "playing" });
+            if (isHost) await updateDoc(doc(db, "rooms", currentRoomCode), { status: "playing" });
         });
 
-        // --- 3. FIREBASE SYNC LISTENER ---
+        // --- 3. FIREBASE LIGHTWEIGHT STATE SYNC ---
         function listenToRoom(code) {
             onSnapshot(doc(db, "rooms", code), (docSnap) => {
                 roomData = docSnap.data();
                 if (!roomData) return;
 
-                if (roomData.status !== "game_ended") {
-                    updateLiveLeaderboard(roomData.players);
-                }
+                if (roomData.status !== "game_ended") updateLiveLeaderboard(roomData.players);
 
                 if (roomData.status === "waiting") {
-                    ui.lobbyPlayerList.innerHTML = Object.values(roomData.players).map(p => `<div>${p.name}</div>`).join('');
+                    ui.lobbyPlayerList.innerHTML = Object.values(roomData.players).map(p => `<div style="padding: 5px 0;">🎮 ${p.name}</div>`).join('');
                 }
                 
                 if (roomData.status === "playing") {
-                    if (ui.lobby.style.display !== 'none') {
-                        ui.lobby.style.display = 'none';
-                        ui.gameArea.style.display = 'block';
-                    }
-                    if (tiles.length === 0 || (!gameActive && ui.statusOverlay.style.display === 'flex')) {
-                        startRound();
-                    }
+                    if (ui.lobby.style.display !== 'none') { ui.lobby.style.display = 'none'; ui.gameArea.style.display = 'block'; }
+                    if (tiles.length === 0 || (!gameActive && ui.statusOverlay.style.display === 'flex')) startRound();
                 }
 
                 if (roomData.status === "round_ended" && gameActive) {
-                    gameActive = false;
-                    clearInterval(timerInterval);
+                    gameActive = false; clearInterval(timerInterval);
                     ui.statusOverlay.style.display = 'flex';
-                    ui.statusOverlay.innerHTML = "Round Over!<br><span style='font-size:1.5rem; margin-top: 10px;'>Check Leaderboard</span>";
+                    ui.statusOverlay.innerHTML = "Round Over!<br><span style='font-size:1.5rem; margin-top: 15px; font-weight: 500;'>Check Leaderboard</span>";
                     
                     if (isHost) {
                         ui.endRoundBtn.style.display = 'none';
-                        if (roomData.currentRound < roomData.images.length - 1) {
-                            ui.nextRoundBtn.style.display = 'inline-block';
-                        } else {
-                            ui.endGameBtn.style.display = 'inline-block';
-                            ui.endGameBtn.textContent = "Finish Game & View Results";
-                        }
+                        if (roomData.currentRound < roomData.totalRounds - 1) ui.nextRoundBtn.style.display = 'inline-block';
+                        else { ui.endGameBtn.style.display = 'inline-block'; ui.endGameBtn.textContent = "Finish Game & View Results"; }
                     }
                 }
 
                 if (roomData.status === "game_ended") {
                     gameActive = false; clearInterval(timerInterval);
-                    ui.gameArea.style.display = 'none';
-                    ui.postGameArea.style.display = 'block';
+                    ui.gameArea.style.display = 'none'; ui.postGameArea.style.display = 'block';
                     generateFinalLeaderboards();
                 }
             });
         }
 
-        // --- 4. GAME & ROUND LOGIC ---
+        // --- 4. GAME LOGIC ---
         function startRound() {
-            ui.statusOverlay.style.display = 'none';
-            ui.countdownOverlay.style.display = 'flex';
-            ui.roundDisplay.textContent = `${roomData.currentRound + 1}/${roomData.images.length}`;
+            ui.statusOverlay.style.display = 'none'; ui.countdownOverlay.style.display = 'flex';
+            ui.roundDisplay.textContent = `${roomData.currentRound + 1}/${roomData.totalRounds}`;
             
-            movesCount = 0; ui.movesDisplay.textContent = '0';
-            ui.timerDisplay.textContent = '00:00';
-            clearInterval(timerInterval);
+            movesCount = 0; ui.movesDisplay.textContent = '0'; ui.timerDisplay.textContent = '00:00'; clearInterval(timerInterval);
             
-            buildBoard(roomData.images[roomData.currentRound], roomData.boardStates[roomData.currentRound]);
+            // Build board from the cached Assets document
+            buildBoard(roomAssets.images[roomData.currentRound], roomAssets.boardStates[roomData.currentRound]);
 
-            if (isHost) {
-                ui.endRoundBtn.style.display = 'inline-block';
-                ui.nextRoundBtn.style.display = 'none';
-            }
+            if (isHost) { ui.endRoundBtn.style.display = 'inline-block'; ui.nextRoundBtn.style.display = 'none'; }
 
             let count = 3; ui.countdownOverlay.textContent = count;
             const timer = setInterval(() => {
@@ -575,13 +499,11 @@
                 if (count > 0) ui.countdownOverlay.textContent = count;
                 else if (count === 0) ui.countdownOverlay.textContent = "GO!";
                 else {
-                    clearInterval(timer);
-                    ui.countdownOverlay.style.display = 'none';
+                    clearInterval(timer); ui.countdownOverlay.style.display = 'none';
                     gameActive = true; startTime = Date.now();
                     timerInterval = setInterval(() => {
                         const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-                        const secs = String(elapsed % 60).padStart(2, '0');
+                        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0'); const secs = String(elapsed % 60).padStart(2, '0');
                         ui.timerDisplay.textContent = `${mins}:${secs}`;
                     }, 1000);
                 }
@@ -590,24 +512,17 @@
 
         function buildBoard(imageSrc, boardState) {
             ui.container.innerHTML = '<div id="countdownOverlay">3</div><div id="statusOverlay"></div>';
-            ui.countdownOverlay = document.getElementById('countdownOverlay');
-            ui.statusOverlay = document.getElementById('statusOverlay');
+            ui.countdownOverlay = document.getElementById('countdownOverlay'); ui.statusOverlay = document.getElementById('statusOverlay');
             tiles = [];
             
             boardState.forEach(state => {
-                const correctRow = Math.floor(state.id / 4);
-                const correctCol = state.id % 4;
-                
-                const tile = document.createElement('div');
-                tile.className = 'tile';
+                const correctRow = Math.floor(state.id / 4); const correctCol = state.id % 4;
+                const tile = document.createElement('div'); tile.className = 'tile';
                 tile.style.backgroundImage = `url(${imageSrc})`;
-                // 33.333% creates steps at 0, 33.3, 66.6, 100 which perfectly aligns the 400% scaled image
                 tile.style.backgroundPosition = `${correctCol * 33.333}% ${correctRow * 33.333}%`; 
                 
                 const tileObj = {
-                    id: state.id, element: tile,
-                    correctRow: correctRow, correctCol: correctCol,
-                    currentRow: state.row, currentCol: state.col
+                    id: state.id, element: tile, correctRow: correctRow, correctCol: correctCol, currentRow: state.row, currentCol: state.col
                 };
                 updateTileVisuals(tileObj); setupDragEvents(tileObj);
                 tiles.push(tileObj); ui.container.appendChild(tile);
@@ -615,25 +530,18 @@
         }
 
         function updateTileVisuals(tileObj) {
-            tileObj.element.style.top = `${tileObj.currentRow * 25}%`;
-            tileObj.element.style.left = `${tileObj.currentCol * 25}%`;
+            tileObj.element.style.top = `${tileObj.currentRow * 25}%`; tileObj.element.style.left = `${tileObj.currentCol * 25}%`;
         }
 
         // --- 5. HOST CONTROLS ---
-        ui.endRoundBtn.addEventListener('click', async () => {
-            if (isHost) await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" });
-        });
+        ui.endRoundBtn.addEventListener('click', async () => { if (isHost) await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" }); });
 
         ui.nextRoundBtn.addEventListener('click', async () => {
             if (!isHost) return;
             const nextRound = roomData.currentRound + 1;
             let updatedPlayers = { ...roomData.players };
-            for (let pid in updatedPlayers) {
-                updatedPlayers[pid].moves = 0; updatedPlayers[pid].time = 0; updatedPlayers[pid].finished = false;
-            }
-            await updateDoc(doc(db, "rooms", currentRoomCode), { 
-                currentRound: nextRound, players: updatedPlayers, status: "playing" 
-            });
+            for (let pid in updatedPlayers) { updatedPlayers[pid].moves = 0; updatedPlayers[pid].time = 0; updatedPlayers[pid].finished = false; }
+            await updateDoc(doc(db, "rooms", currentRoomCode), { currentRound: nextRound, players: updatedPlayers, status: "playing" });
             tiles = [];
         });
 
@@ -641,15 +549,17 @@
             if (!isHost) return;
             await updateDoc(doc(db, "rooms", currentRoomCode), { status: "game_ended" });
             
-            // Cleanup database after 5 seconds to give guests time to see results
+            // Clean up BOTH state and assets documents
             setTimeout(async () => {
-                try { await deleteDoc(doc(db, "rooms", currentRoomCode)); } catch (e) {}
+                try { 
+                    await deleteDoc(doc(db, "rooms", currentRoomCode)); 
+                    await deleteDoc(doc(db, "rooms", currentRoomCode + "_assets")); 
+                } catch (e) {}
             }, 5000);
         });
 
-        // --- 6. DRAG & DROP LOGIC (Responsive) ---
-        let draggedCluster = [];
-        let startX, startY;
+        // --- 6. DRAG & DROP LOGIC ---
+        let draggedCluster = []; let startX, startY;
 
         function getLinkedTiles(startTile) {
             let linked = [startTile]; let checkQueue = [startTile];
@@ -659,9 +569,7 @@
                     if (linked.includes(other)) return;
                     const rDiffCurr = other.currentRow - current.currentRow; const cDiffCurr = other.currentCol - current.currentCol;
                     const rDiffCorr = other.correctRow - current.correctRow; const cDiffCorr = other.correctCol - current.correctCol;
-                    if ((Math.abs(rDiffCurr) + Math.abs(cDiffCurr) === 1) && (rDiffCurr === rDiffCorr && cDiffCurr === cDiffCorr)) {
-                        linked.push(other); checkQueue.push(other);
-                    }
+                    if ((Math.abs(rDiffCurr) + Math.abs(cDiffCurr) === 1) && (rDiffCurr === rDiffCorr && cDiffCurr === cDiffCorr)) { linked.push(other); checkQueue.push(other); }
                 });
             }
             return linked;
@@ -671,23 +579,15 @@
             const startDrag = (e) => {
                 if (!gameActive || roomData.players[playerId].finished) return;
                 e.preventDefault(); 
-                
                 let clientX = e.clientX, clientY = e.clientY;
                 if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-
-                draggedCluster = getLinkedTiles(tileObj);
-                startX = clientX; startY = clientY;
-
-                draggedCluster.forEach(t => {
-                    t.element.classList.add('cluster-active');
-                    t.startDragRow = t.currentRow; t.startDragCol = t.currentCol;
-                });
+                draggedCluster = getLinkedTiles(tileObj); startX = clientX; startY = clientY;
+                draggedCluster.forEach(t => { t.element.classList.add('cluster-active'); t.startDragRow = t.currentRow; t.startDragCol = t.currentCol; });
 
                 document.addEventListener('mousemove', onDragMove); document.addEventListener('mouseup', onDragEnd);
                 document.addEventListener('touchmove', onDragMove, {passive: false}); document.addEventListener('touchend', onDragEnd);
             };
-            tileObj.element.addEventListener('mousedown', startDrag);
-            tileObj.element.addEventListener('touchstart', startDrag, {passive: false});
+            tileObj.element.addEventListener('mousedown', startDrag); tileObj.element.addEventListener('touchstart', startDrag, {passive: false});
         }
 
         function onDragMove(e) {
@@ -695,12 +595,10 @@
             e.preventDefault(); 
             let clientX = e.clientX, clientY = e.clientY;
             if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-            
             const dx = clientX - startX; const dy = clientY - startY;
             
             draggedCluster.forEach(t => {
-                t.element.style.left = `calc(${t.startDragCol * 25}% + ${dx}px)`;
-                t.element.style.top = `calc(${t.startDragRow * 25}% + ${dy}px)`;
+                t.element.style.left = `calc(${t.startDragCol * 25}% + ${dx}px)`; t.element.style.top = `calc(${t.startDragRow * 25}% + ${dy}px)`;
             });
         }
 
@@ -713,17 +611,11 @@
             if (e.changedTouches && e.changedTouches.length > 0) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; }
 
             draggedCluster.forEach(t => t.element.classList.remove('cluster-active'));
-
-            const rect = ui.container.getBoundingClientRect();
-            const tileSize = rect.width / 4; // Dynamic size based on viewport
-            const gridDx = Math.round((clientX - startX) / tileSize);
-            const gridDy = Math.round((clientY - startY) / tileSize);
+            const tileSize = ui.container.getBoundingClientRect().width / 4; 
+            const gridDx = Math.round((clientX - startX) / tileSize); const gridDy = Math.round((clientY - startY) / tileSize);
 
             let validMove = true;
-            draggedCluster.forEach(t => {
-                const newR = t.startDragRow + gridDy; const newC = t.startDragCol + gridDx;
-                if (newR < 0 || newR > 3 || newC < 0 || newC > 3) validMove = false;
-            });
+            draggedCluster.forEach(t => { const newR = t.startDragRow + gridDy; const newC = t.startDragCol + gridDx; if (newR < 0 || newR > 3 || newC < 0 || newC > 3) validMove = false; });
 
             if (validMove && (gridDx !== 0 || gridDy !== 0)) {
                 let vacatedSpaces = [];
@@ -732,22 +624,16 @@
                     if (!willBeCovered) vacatedSpaces.push({r: t.startDragRow, c: t.startDragCol});
                 });
 
-                let displacedTiles = tiles.filter(t => !draggedCluster.includes(t) && 
-                    draggedCluster.some(c => c.startDragRow + gridDy === t.currentRow && c.startDragCol + gridDx === t.currentCol)
-                );
+                let displacedTiles = tiles.filter(t => !draggedCluster.includes(t) && draggedCluster.some(c => c.startDragRow + gridDy === t.currentRow && c.startDragCol + gridDx === t.currentCol));
 
                 draggedCluster.forEach(t => { t.currentRow = t.startDragRow + gridDy; t.currentCol = t.startDragCol + gridDx; });
                 for(let i = 0; i < displacedTiles.length; i++) {
                     if (vacatedSpaces[i]) { displacedTiles[i].currentRow = vacatedSpaces[i].r; displacedTiles[i].currentCol = vacatedSpaces[i].c; }
                 }
-
-                movesCount++; ui.movesDisplay.textContent = movesCount;
-                syncProgress();
+                movesCount++; ui.movesDisplay.textContent = movesCount; syncProgress();
             }
 
-            tiles.forEach(updateTileVisuals);
-            checkWinState();
-            draggedCluster = [];
+            tiles.forEach(updateTileVisuals); checkWinState(); draggedCluster = [];
         }
 
         // --- 7. WIN STATE & LEADERBOARDS ---
@@ -759,52 +645,38 @@
         async function checkWinState() {
             let correctCount = tiles.filter(t => t.currentRow === t.correctRow && t.currentCol === t.correctCol).length;
             if (correctCount === 16 && !roomData.players[playerId].finished) {
-                clearInterval(timerInterval);
-                const finalTime = Math.floor((Date.now() - startTime) / 1000);
+                clearInterval(timerInterval); const finalTime = Math.floor((Date.now() - startTime) / 1000);
                 ui.statusOverlay.style.display = 'flex'; ui.statusOverlay.textContent = "Finished!";
-                
                 try {
                     await updateDoc(doc(db, "rooms", currentRoomCode), {
-                        [`players.${playerId}.finished`]: true,
-                        [`players.${playerId}.time`]: finalTime,
-                        [`players.${playerId}.moves`]: movesCount,
+                        [`players.${playerId}.finished`]: true, [`players.${playerId}.time`]: finalTime, [`players.${playerId}.moves`]: movesCount,
                         [`players.${playerId}.rounds.${roomData.currentRound}`]: { time: finalTime, moves: movesCount }
                     });
-
-                    if (roomData.mode === "fast" && isHost) {
-                        await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" });
-                    }
+                    if (roomData.mode === "fast" && isHost) await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" });
                 } catch(e){}
             }
         }
 
         function updateLiveLeaderboard(playersObj) {
             let playersArray = Object.values(playersObj).sort((a, b) => {
-                if (a.finished && !b.finished) return -1;
-                if (!a.finished && b.finished) return 1;
-                if (a.finished && b.finished) return a.time - b.time;
-                return b.moves - a.moves; 
+                if (a.finished && !b.finished) return -1; if (!a.finished && b.finished) return 1;
+                if (a.finished && b.finished) return a.time - b.time; return b.moves - a.moves; 
             });
 
             ui.leaderboardList.innerHTML = playersArray.map(p => `
                 <div class="player-row ${p.finished ? 'finished' : ''}">
-                    <span>${p.name}</span>
-                    <span>${p.moves} | ${p.finished ? p.time+'s' : '...'}</span>
+                    <span>${p.name}</span><span>${p.moves} | ${p.finished ? p.time+'s' : '...'}</span>
                 </div>
             `).join('');
         }
 
         function generateFinalLeaderboards() {
-            let html = '';
-            let playersArray = Object.values(roomData.players);
+            let html = ''; let playersArray = Object.values(roomData.players);
 
-            // Per Round Tables
-            for (let r = 0; r < roomData.images.length; r++) {
-                if (!playersArray.some(p => p.rounds && p.rounds[r])) continue; // Skip unplayed rounds
-
+            for (let r = 0; r < roomData.totalRounds; r++) {
+                if (!playersArray.some(p => p.rounds && p.rounds[r])) continue; 
                 let roundPlayers = [...playersArray].sort((a, b) => {
-                    let aData = a.rounds[r] || {time: 9999, moves: 0};
-                    let bData = b.rounds[r] || {time: 9999, moves: 0};
+                    let aData = a.rounds[r] || {time: 9999, moves: 0}; let bData = b.rounds[r] || {time: 9999, moves: 0};
                     return aData.time - bData.time;
                 });
 
@@ -812,14 +684,13 @@
                 html += `<table><tr><th>Rank</th><th>Player</th><th>Time</th><th>Moves</th></tr>`;
                 roundPlayers.forEach((p, index) => {
                     let rd = p.rounds[r];
-                    if (rd) html += `<tr><td>${index + 1}</td><td>${p.name}</td><td>${rd.time}s</td><td>${rd.moves}</td></tr>`;
-                    else html += `<tr><td>-</td><td>${p.name}</td><td>DNF</td><td>-</td></tr>`;
+                    if (rd) html += `<tr><td>${index + 1}</td><td style="font-weight:600;">${p.name}</td><td>${rd.time}s</td><td>${rd.moves}</td></tr>`;
+                    else html += `<tr><td>-</td><td style="font-weight:600; color:var(--text-light);">${p.name}</td><td style="color:var(--text-light);">DNF</td><td>-</td></tr>`;
                 });
                 html += `</table>`;
             }
 
-            // Overall Aggregated Table
-            html += `<div class="table-title" style="color:var(--success); border-top: 2px solid #e2e8f0; padding-top:20px;">Overall Totals</div>`;
+            html += `<div class="table-title" style="color:var(--success); border-top: 3px solid #e2e8f0; padding-top:25px; margin-top: 30px;">Overall Totals</div>`;
             html += `<table><tr><th>Rank</th><th>Player</th><th>Total Time</th><th>Total Moves</th></tr>`;
             
             let overallData = playersArray.map(p => {
@@ -827,12 +698,11 @@
                 for (let r in p.rounds) { totalTime += p.rounds[r].time; totalMoves += p.rounds[r].moves; }
                 return { name: p.name, time: totalTime, moves: totalMoves, roundsCompleted: Object.keys(p.rounds || {}).length };
             }).sort((a, b) => {
-                if (a.roundsCompleted !== b.roundsCompleted) return b.roundsCompleted - a.roundsCompleted;
-                return a.time - b.time;
+                if (a.roundsCompleted !== b.roundsCompleted) return b.roundsCompleted - a.roundsCompleted; return a.time - b.time;
             });
 
             overallData.forEach((p, index) => {
-                html += `<tr><td style="font-weight:bold;">${index + 1}</td><td style="font-weight:bold;">${p.name}</td><td>${p.time}s</td><td>${p.moves}</td></tr>`;
+                html += `<tr><td style="font-weight:800; color:var(--primary);">${index + 1}</td><td style="font-weight:800;">${p.name}</td><td style="font-weight:600;">${p.time}s</td><td>${p.moves}</td></tr>`;
             });
             html += `</table>`;
 
