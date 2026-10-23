@@ -129,7 +129,7 @@
             width: 25%; height: 25%;
             position: absolute;
             box-sizing: border-box;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             cursor: grab;
             transition: top 0.15s ease-out, left 0.15s ease-out;
             user-select: none;
@@ -140,37 +140,54 @@
         .tile:active { cursor: grabbing; z-index: 50; }
         .cluster-active { z-index: 100; border: 3px solid #fde047; opacity: 0.95; box-shadow: 0 10px 20px rgba(0,0,0,0.4); transform: scale(1.02); transition: transform 0.1s; }
 
-        .leaderboard {
-            width: 100%;
-            max-width: 280px;
-            background: #ffffff;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px;
-            box-sizing: border-box;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        /* Animations & Flairs */
+        .win-flair { animation: flashWin 2s ease-out; }
+        @keyframes flashWin {
+            0% { box-shadow: inset 0 0 0 0 rgba(16, 185, 129, 0.8); }
+            15% { box-shadow: inset 0 0 60px 20px rgba(16, 185, 129, 0.8); }
+            100% { box-shadow: inset 0 0 0 0 rgba(16, 185, 129, 0); }
         }
-        .leaderboard h3 { margin-top: 0; color: var(--text); font-size: 1.2rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; }
-        .player-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        .player-row:last-child { border-bottom: none; }
-        .player-row.finished { color: var(--success); font-weight: 700; background: #ecfdf5; border-radius: 6px; padding: 10px; margin: -5px -10px 5px -10px; border-bottom: none; }
 
-        #countdownOverlay, #statusOverlay {
+        #countdownOverlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(15, 23, 42, 0.85);
-            color: white;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 4rem; font-weight: 800;
-            z-index: 200; display: none; text-align: center;
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 5rem; font-weight: 800; z-index: 200; display: none;
             backdrop-filter: blur(4px);
         }
+
+        #statusOverlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.15); /* Very light so you can see image */
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            padding-bottom: 25px;
+            z-index: 200; display: none; text-align: center;
+        }
+
+        .status-badge {
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 12px 35px;
+            border-radius: 30px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .leaderboard {
+            width: 100%; max-width: 280px; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px;
+            padding: 20px; box-sizing: border-box; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .leaderboard h3 { margin-top: 0; color: var(--text); font-size: 1.2rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; }
+        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 1rem; font-weight: 500; }
+        .player-row:last-child { border-bottom: none; }
+        .player-row.finished { color: var(--success); font-weight: 700; background: #ecfdf5; border-radius: 6px; padding: 10px; margin: -5px -10px 5px -10px; border-bottom: none; }
 
         /* Post Game Tables */
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 25px; font-size: 1rem; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
@@ -185,7 +202,7 @@
 
     <!-- LOBBY AREA -->
     <div id="lobby" class="container">
-        <h2>Photo Puzzle <span style="font-size: 0.4em; color: var(--text-light); vertical-align: middle;">v1.2</span></h2>
+        <h2>Photo Puzzle <span style="font-size: 0.4em; color: var(--text-light); vertical-align: middle;">v1.3</span></h2>
         
         <div style="margin-bottom: 30px;">
             <input type="text" id="playerNameInput" placeholder="Enter Your Screen Name" maxlength="15">
@@ -282,8 +299,8 @@
         let playerName = "Player";
         let isHost = false;
         let currentRoomCode = null;
-        let roomData = null;       // Fast syncing state
-        let roomAssets = null;     // Heavy one-time payload (images)
+        let roomData = null;
+        let roomAssets = null;
         let uploadedImages = []; 
         let tiles = [];
         let gameActive = false;
@@ -326,10 +343,8 @@
                         const img = new Image();
                         img.onload = () => {
                             const size = Math.min(img.width, img.height);
-                            const startX = (img.width - size) / 2;
-                            const startY = (img.height - size) / 2;
-                            ctx.clearRect(0, 0, 400, 400);
-                            ctx.drawImage(img, startX, startY, size, size, 0, 0, 400, 400);
+                            const startX = (img.width - size) / 2; const startY = (img.height - size) / 2;
+                            ctx.clearRect(0, 0, 400, 400); ctx.drawImage(img, startX, startY, size, size, 0, 0, 400, 400);
                             resolve(canvas.toDataURL('image/jpeg', 0.6));
                         };
                         img.src = ev.target.result;
@@ -338,8 +353,7 @@
                 });
                 uploadedImages.push(dataUrl);
             }
-            renderImagePreviews();
-            ui.lobbyStatus.textContent = "";
+            renderImagePreviews(); ui.lobbyStatus.textContent = "";
         });
 
         function renderImagePreviews() {
@@ -348,15 +362,13 @@
                 const wrapper = document.createElement('div'); wrapper.className = 'thumb-wrapper';
                 const img = document.createElement('img'); img.src = imgSrc; img.className = 'thumb';
                 const controls = document.createElement('div'); controls.className = 'thumb-controls';
-                
                 const leftBtn = document.createElement('button'); leftBtn.textContent = '◀'; leftBtn.disabled = index === 0;
                 leftBtn.onclick = () => swapImages(index, index - 1);
                 const rightBtn = document.createElement('button'); rightBtn.textContent = '▶'; rightBtn.disabled = index === uploadedImages.length - 1;
                 rightBtn.onclick = () => swapImages(index, index + 1);
 
                 controls.appendChild(leftBtn); controls.appendChild(rightBtn);
-                wrapper.appendChild(img); wrapper.appendChild(controls);
-                ui.previewContainer.appendChild(wrapper);
+                wrapper.appendChild(img); wrapper.appendChild(controls); ui.previewContainer.appendChild(wrapper);
             });
         }
 
@@ -382,13 +394,10 @@
         }
 
         // --- 2. LOBBY CREATION & JOINING ---
-        // V1.2 UPDATE: SPLITTING ASSETS FROM STATE FOR LIGHTNING FAST SYNC
         ui.createRoomBtn.addEventListener('click', async () => {
             playerName = ui.playerNameInput.value.trim() || "Host";
             if (uploadedImages.length === 0) return alert("Please upload at least 1 image.");
-            
-            ui.createRoomBtn.disabled = true; ui.joinRoomBtn.disabled = true;
-            ui.lobbyStatus.textContent = "Creating room...";
+            ui.createRoomBtn.disabled = true; ui.joinRoomBtn.disabled = true; ui.lobbyStatus.textContent = "Creating room...";
             
             const code = Math.floor(1000 + Math.random() * 9000).toString();
             currentRoomCode = code; isHost = true;
@@ -400,49 +409,35 @@
             };
 
             try {
-                // Save heavy data to _assets document, fast data to main document
-                await setDoc(doc(db, "rooms", code + "_assets"), assetsData);
-                await setDoc(doc(db, "rooms", code), stateData);
-                
-                roomAssets = assetsData; // Cache locally for host
+                await setDoc(doc(db, "rooms", code + "_assets"), assetsData); await setDoc(doc(db, "rooms", code), stateData);
+                roomAssets = assetsData; 
                 ui.startGameBtn.style.display = 'inline-block'; ui.hostControls.style.display = 'block';
-                ui.lobbyStatus.textContent = ""; ui.lobbyRoster.style.display = 'block';
-                ui.lobbyRoomCode.textContent = code;
+                ui.lobbyStatus.textContent = ""; ui.lobbyRoster.style.display = 'block'; ui.lobbyRoomCode.textContent = code;
                 listenToRoom(code);
-            } catch (error) {
-                alert("Database error. Ensure rules are public."); ui.createRoomBtn.disabled = false; ui.joinRoomBtn.disabled = false;
-            }
+            } catch (error) { alert("Database error."); ui.createRoomBtn.disabled = false; ui.joinRoomBtn.disabled = false; }
         });
 
         ui.joinRoomBtn.addEventListener('click', async () => {
             playerName = ui.playerNameInput.value.trim() || `Player_${Math.floor(Math.random()*1000)}`;
             const code = ui.roomCodeInput.value.trim().toUpperCase();
             if (code.length !== 4) return alert("Enter 4-digit code");
-            
             ui.joinRoomBtn.disabled = true; ui.createRoomBtn.disabled = true; ui.lobbyStatus.textContent = "Joining...";
+            
             try {
                 const roomSnap = await getDoc(doc(db, "rooms", code));
                 if (roomSnap.exists() && roomSnap.data().status === "waiting") {
                     currentRoomCode = code;
-                    
-                    // Fetch heavy assets exactly ONCE on join
                     const assetSnap = await getDoc(doc(db, "rooms", code + "_assets"));
                     roomAssets = assetSnap.data();
 
-                    await updateDoc(doc(db, "rooms", code), {
-                        [`players.${playerId}`]: { name: playerName, moves: 0, time: 0, finished: false, rounds: {} }
-                    });
+                    await updateDoc(doc(db, "rooms", code), { [`players.${playerId}`]: { name: playerName, moves: 0, time: 0, finished: false, rounds: {} } });
                     ui.lobbyStatus.textContent = ""; ui.lobbyRoster.style.display = 'block'; ui.lobbyRoomCode.textContent = code;
                     listenToRoom(code);
-                } else {
-                    alert("Room not found or already started."); ui.joinRoomBtn.disabled = false; ui.createRoomBtn.disabled = false; ui.lobbyStatus.textContent = "";
-                }
+                } else { alert("Room not found or already started."); ui.joinRoomBtn.disabled = false; ui.createRoomBtn.disabled = false; ui.lobbyStatus.textContent = ""; }
             } catch (error) { alert("Connection error."); ui.joinRoomBtn.disabled = false; ui.createRoomBtn.disabled = false; }
         });
 
-        ui.startGameBtn.addEventListener('click', async () => {
-            if (isHost) await updateDoc(doc(db, "rooms", currentRoomCode), { status: "playing" });
-        });
+        ui.startGameBtn.addEventListener('click', async () => { if (isHost) await updateDoc(doc(db, "rooms", currentRoomCode), { status: "playing" }); });
 
         // --- 3. FIREBASE LIGHTWEIGHT STATE SYNC ---
         function listenToRoom(code) {
@@ -452,19 +447,38 @@
 
                 if (roomData.status !== "game_ended") updateLiveLeaderboard(roomData.players);
 
-                if (roomData.status === "waiting") {
-                    ui.lobbyPlayerList.innerHTML = Object.values(roomData.players).map(p => `<div style="padding: 5px 0;">🎮 ${p.name}</div>`).join('');
-                }
+                if (roomData.status === "waiting") ui.lobbyPlayerList.innerHTML = Object.values(roomData.players).map(p => `<div style="padding: 5px 0;">🎮 ${p.name}</div>`).join('');
                 
                 if (roomData.status === "playing") {
                     if (ui.lobby.style.display !== 'none') { ui.lobby.style.display = 'none'; ui.gameArea.style.display = 'block'; }
                     if (tiles.length === 0 || (!gameActive && ui.statusOverlay.style.display === 'flex')) startRound();
+
+                    // Host exclusively handles auto-ending the timed mode when everyone finishes
+                    if (isHost && roomData.mode === "timed" && Object.keys(roomData.players).length > 0) {
+                        const allFinished = Object.values(roomData.players).every(p => p.finished);
+                        if (allFinished) updateDoc(doc(db, "rooms", code), { status: "round_ended" });
+                    }
                 }
 
                 if (roomData.status === "round_ended" && gameActive) {
                     gameActive = false; clearInterval(timerInterval);
-                    ui.statusOverlay.style.display = 'flex';
-                    ui.statusOverlay.innerHTML = "Round Over!<br><span style='font-size:1.5rem; margin-top: 15px; font-weight: 500;'>Check Leaderboard</span>";
+                    ui.container.classList.remove('win-flair'); // Reset flair just in case
+
+                    // Handle "Losers" in Fast Mode or end of Timed mode
+                    if (!roomData.players[playerId].finished) {
+                        // Snap remaining pieces to finished state for them to see
+                        tiles.forEach(t => { t.currentRow = t.correctRow; t.currentCol = t.correctCol; t.element.style.border = 'none'; });
+                        tiles.forEach(updateTileVisuals);
+                        
+                        let winner = Object.values(roomData.players).find(p => p.finished);
+                        let winnerName = winner ? winner.name : "Someone";
+                        ui.statusOverlay.style.display = 'flex';
+                        ui.statusOverlay.innerHTML = `<div class="status-badge">${winnerName} Won!</div>`;
+                    } else {
+                        // Already saw their 2-second flair. Overwrite with Round Over badge.
+                        ui.statusOverlay.style.display = 'flex';
+                        ui.statusOverlay.innerHTML = `<div class="status-badge">Round Over!</div>`;
+                    }
                     
                     if (isHost) {
                         ui.endRoundBtn.style.display = 'none';
@@ -485,10 +499,9 @@
         function startRound() {
             ui.statusOverlay.style.display = 'none'; ui.countdownOverlay.style.display = 'flex';
             ui.roundDisplay.textContent = `${roomData.currentRound + 1}/${roomData.totalRounds}`;
+            ui.container.classList.remove('win-flair');
             
             movesCount = 0; ui.movesDisplay.textContent = '0'; ui.timerDisplay.textContent = '00:00'; clearInterval(timerInterval);
-            
-            // Build board from the cached Assets document
             buildBoard(roomAssets.images[roomData.currentRound], roomAssets.boardStates[roomData.currentRound]);
 
             if (isHost) { ui.endRoundBtn.style.display = 'inline-block'; ui.nextRoundBtn.style.display = 'none'; }
@@ -520,18 +533,13 @@
                 const tile = document.createElement('div'); tile.className = 'tile';
                 tile.style.backgroundImage = `url(${imageSrc})`;
                 tile.style.backgroundPosition = `${correctCol * 33.333}% ${correctRow * 33.333}%`; 
-                
-                const tileObj = {
-                    id: state.id, element: tile, correctRow: correctRow, correctCol: correctCol, currentRow: state.row, currentCol: state.col
-                };
+                const tileObj = { id: state.id, element: tile, correctRow: correctRow, correctCol: correctCol, currentRow: state.row, currentCol: state.col };
                 updateTileVisuals(tileObj); setupDragEvents(tileObj);
                 tiles.push(tileObj); ui.container.appendChild(tile);
             });
         }
 
-        function updateTileVisuals(tileObj) {
-            tileObj.element.style.top = `${tileObj.currentRow * 25}%`; tileObj.element.style.left = `${tileObj.currentCol * 25}%`;
-        }
+        function updateTileVisuals(tileObj) { tileObj.element.style.top = `${tileObj.currentRow * 25}%`; tileObj.element.style.left = `${tileObj.currentCol * 25}%`; }
 
         // --- 5. HOST CONTROLS ---
         ui.endRoundBtn.addEventListener('click', async () => { if (isHost) await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" }); });
@@ -548,14 +556,7 @@
         ui.endGameBtn.addEventListener('click', async () => {
             if (!isHost) return;
             await updateDoc(doc(db, "rooms", currentRoomCode), { status: "game_ended" });
-            
-            // Clean up BOTH state and assets documents
-            setTimeout(async () => {
-                try { 
-                    await deleteDoc(doc(db, "rooms", currentRoomCode)); 
-                    await deleteDoc(doc(db, "rooms", currentRoomCode + "_assets")); 
-                } catch (e) {}
-            }, 5000);
+            setTimeout(async () => { try { await deleteDoc(doc(db, "rooms", currentRoomCode)); await deleteDoc(doc(db, "rooms", currentRoomCode + "_assets")); } catch (e) {} }, 5000);
         });
 
         // --- 6. DRAG & DROP LOGIC ---
@@ -596,10 +597,7 @@
             let clientX = e.clientX, clientY = e.clientY;
             if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
             const dx = clientX - startX; const dy = clientY - startY;
-            
-            draggedCluster.forEach(t => {
-                t.element.style.left = `calc(${t.startDragCol * 25}% + ${dx}px)`; t.element.style.top = `calc(${t.startDragRow * 25}% + ${dy}px)`;
-            });
+            draggedCluster.forEach(t => { t.element.style.left = `calc(${t.startDragCol * 25}% + ${dx}px)`; t.element.style.top = `calc(${t.startDragRow * 25}% + ${dy}px)`; });
         }
 
         function onDragEnd(e) {
@@ -627,33 +625,41 @@
                 let displacedTiles = tiles.filter(t => !draggedCluster.includes(t) && draggedCluster.some(c => c.startDragRow + gridDy === t.currentRow && c.startDragCol + gridDx === t.currentCol));
 
                 draggedCluster.forEach(t => { t.currentRow = t.startDragRow + gridDy; t.currentCol = t.startDragCol + gridDx; });
-                for(let i = 0; i < displacedTiles.length; i++) {
-                    if (vacatedSpaces[i]) { displacedTiles[i].currentRow = vacatedSpaces[i].r; displacedTiles[i].currentCol = vacatedSpaces[i].c; }
-                }
+                for(let i = 0; i < displacedTiles.length; i++) { if (vacatedSpaces[i]) { displacedTiles[i].currentRow = vacatedSpaces[i].r; displacedTiles[i].currentCol = vacatedSpaces[i].c; } }
                 movesCount++; ui.movesDisplay.textContent = movesCount; syncProgress();
             }
-
             tiles.forEach(updateTileVisuals); checkWinState(); draggedCluster = [];
         }
 
         // --- 7. WIN STATE & LEADERBOARDS ---
-        async function syncProgress() {
-            if (!currentRoomCode) return;
-            try { await updateDoc(doc(db, "rooms", currentRoomCode), { [`players.${playerId}.moves`]: movesCount }); } catch(e){}
-        }
+        async function syncProgress() { if (!currentRoomCode) return; try { await updateDoc(doc(db, "rooms", currentRoomCode), { [`players.${playerId}.moves`]: movesCount }); } catch(e){} }
 
         async function checkWinState() {
             let correctCount = tiles.filter(t => t.currentRow === t.correctRow && t.currentCol === t.correctCol).length;
             if (correctCount === 16 && !roomData.players[playerId].finished) {
                 clearInterval(timerInterval); const finalTime = Math.floor((Date.now() - startTime) / 1000);
-                ui.statusOverlay.style.display = 'flex'; ui.statusOverlay.textContent = "Finished!";
+                
+                // Add the 2 second un-obstructed win flair view
+                ui.container.classList.add('win-flair');
+                tiles.forEach(t => t.element.style.border = 'none');
+                
                 try {
                     await updateDoc(doc(db, "rooms", currentRoomCode), {
                         [`players.${playerId}.finished`]: true, [`players.${playerId}.time`]: finalTime, [`players.${playerId}.moves`]: movesCount,
                         [`players.${playerId}.rounds.${roomData.currentRound}`]: { time: finalTime, moves: movesCount }
                     });
-                    if (roomData.mode === "fast" && isHost) await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" });
+                    
+                    // ANY player finishing in fast mode ends the round
+                    if (roomData.mode === "fast") await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" });
                 } catch(e){}
+
+                setTimeout(() => {
+                    // Only show the badge if the round hasn't forcefully ended from elsewhere
+                    if (roomData.status === "playing") {
+                        ui.statusOverlay.style.display = 'flex';
+                        ui.statusOverlay.innerHTML = `<div class="status-badge">Finished!</div>`;
+                    }
+                }, 2000);
             }
         }
 
@@ -662,7 +668,6 @@
                 if (a.finished && !b.finished) return -1; if (!a.finished && b.finished) return 1;
                 if (a.finished && b.finished) return a.time - b.time; return b.moves - a.moves; 
             });
-
             ui.leaderboardList.innerHTML = playersArray.map(p => `
                 <div class="player-row ${p.finished ? 'finished' : ''}">
                     <span>${p.name}</span><span>${p.moves} | ${p.finished ? p.time+'s' : '...'}</span>
@@ -679,9 +684,7 @@
                     let aData = a.rounds[r] || {time: 9999, moves: 0}; let bData = b.rounds[r] || {time: 9999, moves: 0};
                     return aData.time - bData.time;
                 });
-
-                html += `<div class="table-title">Round ${r + 1}</div>`;
-                html += `<table><tr><th>Rank</th><th>Player</th><th>Time</th><th>Moves</th></tr>`;
+                html += `<div class="table-title">Round ${r + 1}</div><table><tr><th>Rank</th><th>Player</th><th>Time</th><th>Moves</th></tr>`;
                 roundPlayers.forEach((p, index) => {
                     let rd = p.rounds[r];
                     if (rd) html += `<tr><td>${index + 1}</td><td style="font-weight:600;">${p.name}</td><td>${rd.time}s</td><td>${rd.moves}</td></tr>`;
