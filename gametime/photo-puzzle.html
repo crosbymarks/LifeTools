@@ -85,6 +85,9 @@
         .secondary-btn { background: linear-gradient(135deg, var(--secondary), var(--secondary-hover)); box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.3); }
         .secondary-btn:hover:not(:disabled) { box-shadow: 0 10px 15px -3px rgba(236, 72, 153, 0.4); }
         .danger-btn { background: var(--danger); box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3); }
+        
+        .recovery-btn { background: #f59e0b; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3); width: 100%; max-width: 300px; margin-bottom: 20px; display: none; }
+        .recovery-btn:hover:not(:disabled) { background: #d97706; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.4); }
 
         /* Image Order Preview */
         #imagePreviewContainer { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 15px; }
@@ -158,10 +161,11 @@
 
         #statusOverlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.15); /* Very light so you can see image */
+            background: rgba(15, 23, 42, 0.15); 
             display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
             padding-bottom: 25px;
             z-index: 200; display: none; text-align: center;
+            pointer-events: none; /* Let clicks pass through if needed */
         }
 
         .status-badge {
@@ -202,33 +206,37 @@
 
     <!-- LOBBY AREA -->
     <div id="lobby" class="container">
-        <h2>Photo Puzzle <span style="font-size: 0.4em; color: var(--text-light); vertical-align: middle;">v1.3</span></h2>
+        <h2>Photo Puzzle <span style="font-size: 0.4em; color: var(--text-light); vertical-align: middle;">v1.4</span></h2>
         
-        <div style="margin-bottom: 30px;">
-            <input type="text" id="playerNameInput" placeholder="Enter Your Screen Name" maxlength="15">
-        </div>
+        <button id="reconnectBtn" class="recovery-btn">Rejoin Active Game</button>
 
-        <div class="main-layout" style="justify-content: center;">
-            <div id="hostSection" style="flex: 1; min-width: 280px; padding: 25px; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-                <h3 style="margin-top:0;">Host a Game</h3>
-                <input type="file" id="imageUpload" accept="image/*" multiple style="margin-bottom: 10px; width: 90%; font-size: 0.9rem;">
-                <small style="display:block; margin-bottom: 10px; color:var(--text-light);">Select up to 5 images</small>
-                
-                <div id="imagePreviewContainer"></div>
-
-                <select id="gameModeSelect" style="margin-top: 20px;">
-                    <option value="timed">Timed Mode (All finish)</option>
-                    <option value="fast">Fast Mode (First to win ends round)</option>
-                </select>
-                <br>
-                <button id="createRoomBtn" style="margin-top: 15px; width: 100%;">Create Room</button>
+        <div id="initialSetupArea">
+            <div style="margin-bottom: 30px;">
+                <input type="text" id="playerNameInput" placeholder="Enter Your Screen Name" maxlength="15">
             </div>
 
-            <div id="joinSection" style="flex: 1; min-width: 280px; padding: 25px; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-                <h3 style="margin-top:0;">Join a Game</h3>
-                <input type="text" id="roomCodeInput" placeholder="4-Digit Code" maxlength="4" style="letter-spacing: 4px; font-weight: 800; font-size: 1.2rem; text-transform: uppercase;">
-                <br>
-                <button id="joinRoomBtn" class="secondary-btn" style="margin-top: 15px; width: 100%;">Join Room</button>
+            <div class="main-layout" style="justify-content: center;">
+                <div id="hostSection" style="flex: 1; min-width: 280px; padding: 25px; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+                    <h3 style="margin-top:0;">Host a Game</h3>
+                    <input type="file" id="imageUpload" accept="image/*" multiple style="margin-bottom: 10px; width: 90%; font-size: 0.9rem;">
+                    <small style="display:block; margin-bottom: 10px; color:var(--text-light);">Select up to 5 images</small>
+                    
+                    <div id="imagePreviewContainer"></div>
+
+                    <select id="gameModeSelect" style="margin-top: 20px;">
+                        <option value="timed">Timed Mode (All finish)</option>
+                        <option value="fast">Fast Mode (First to win ends round)</option>
+                    </select>
+                    <br>
+                    <button id="createRoomBtn" style="margin-top: 15px; width: 100%;">Create Room</button>
+                </div>
+
+                <div id="joinSection" style="flex: 1; min-width: 280px; padding: 25px; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+                    <h3 style="margin-top:0;">Join a Game</h3>
+                    <input type="text" id="roomCodeInput" placeholder="4-Digit Code" maxlength="4" style="letter-spacing: 4px; font-weight: 800; font-size: 1.2rem; text-transform: uppercase;">
+                    <br>
+                    <button id="joinRoomBtn" class="secondary-btn" style="margin-top: 15px; width: 100%;">Join Room</button>
+                </div>
             </div>
         </div>
 
@@ -272,7 +280,7 @@
     <div id="postGameArea" class="container" style="max-width: 800px;">
         <h2>Final Results</h2>
         <div id="finalLeaderboards"></div>
-        <button onclick="window.location.reload()" style="margin-top: 30px; font-size: 1.2rem; padding: 15px 40px;">Play Again</button>
+        <button onclick="clearSessionAndReload()" style="margin-top: 30px; font-size: 1.2rem; padding: 15px 40px;">Play Again</button>
     </div>
 
     <canvas id="cropCanvas" style="display:none;"></canvas>
@@ -322,8 +330,58 @@
             movesDisplay: document.getElementById('movesDisplay'), leaderboardList: document.getElementById('leaderboardList'),
             countdownOverlay: document.getElementById('countdownOverlay'), statusOverlay: document.getElementById('statusOverlay'),
             hostControls: document.getElementById('hostControls'), endRoundBtn: document.getElementById('endRoundBtn'),
-            nextRoundBtn: document.getElementById('nextRoundBtn'), endGameBtn: document.getElementById('endGameBtn')
+            nextRoundBtn: document.getElementById('nextRoundBtn'), endGameBtn: document.getElementById('endGameBtn'),
+            reconnectBtn: document.getElementById('reconnectBtn'), initialSetupArea: document.getElementById('initialSetupArea')
         };
+
+        // --- SESSION RECOVERY ---
+        function saveSession() {
+            sessionStorage.setItem('puzzleSession', JSON.stringify({
+                playerId, playerName, isHost, currentRoomCode
+            }));
+        }
+
+        function checkSession() {
+            const session = sessionStorage.getItem('puzzleSession');
+            if (session) {
+                const data = JSON.parse(session);
+                ui.reconnectBtn.style.display = 'inline-block';
+                ui.reconnectBtn.textContent = `Rejoin Room ${data.currentRoomCode} as ${data.playerName}`;
+                
+                ui.reconnectBtn.onclick = async () => {
+                    ui.reconnectBtn.disabled = true; ui.reconnectBtn.textContent = "Reconnecting...";
+                    try {
+                        const roomSnap = await getDoc(doc(db, "rooms", data.currentRoomCode));
+                        if (roomSnap.exists()) {
+                            playerId = data.playerId; playerName = data.playerName;
+                            isHost = data.isHost; currentRoomCode = data.currentRoomCode;
+                            
+                            const assetSnap = await getDoc(doc(db, "rooms", currentRoomCode + "_assets"));
+                            roomAssets = assetSnap.data();
+
+                            ui.initialSetupArea.style.display = 'none';
+                            ui.reconnectBtn.style.display = 'none';
+                            if (isHost) ui.hostControls.style.display = 'block';
+                            
+                            listenToRoom(currentRoomCode);
+                        } else {
+                            alert("Room no longer exists.");
+                            sessionStorage.removeItem('puzzleSession');
+                            ui.reconnectBtn.style.display = 'none';
+                        }
+                    } catch (e) {
+                        alert("Error reconnecting."); ui.reconnectBtn.disabled = false; ui.reconnectBtn.textContent = "Try Again";
+                    }
+                };
+            }
+        }
+        
+        window.clearSessionAndReload = () => {
+            sessionStorage.removeItem('puzzleSession');
+            window.location.reload();
+        };
+
+        checkSession(); // Run on load
 
         // --- 1. IMAGE PROCESSING ---
         ui.imageUpload.addEventListener('change', async (e) => {
@@ -401,6 +459,7 @@
             
             const code = Math.floor(1000 + Math.random() * 9000).toString();
             currentRoomCode = code; isHost = true;
+            saveSession();
 
             const assetsData = { images: uploadedImages, boardStates: generateShuffledBoards(uploadedImages.length) };
             const stateData = {
@@ -411,6 +470,7 @@
             try {
                 await setDoc(doc(db, "rooms", code + "_assets"), assetsData); await setDoc(doc(db, "rooms", code), stateData);
                 roomAssets = assetsData; 
+                ui.initialSetupArea.style.display = 'none';
                 ui.startGameBtn.style.display = 'inline-block'; ui.hostControls.style.display = 'block';
                 ui.lobbyStatus.textContent = ""; ui.lobbyRoster.style.display = 'block'; ui.lobbyRoomCode.textContent = code;
                 listenToRoom(code);
@@ -426,11 +486,15 @@
             try {
                 const roomSnap = await getDoc(doc(db, "rooms", code));
                 if (roomSnap.exists() && roomSnap.data().status === "waiting") {
-                    currentRoomCode = code;
+                    currentRoomCode = code; isHost = false;
+                    saveSession();
+
                     const assetSnap = await getDoc(doc(db, "rooms", code + "_assets"));
                     roomAssets = assetSnap.data();
 
                     await updateDoc(doc(db, "rooms", code), { [`players.${playerId}`]: { name: playerName, moves: 0, time: 0, finished: false, rounds: {} } });
+                    
+                    ui.initialSetupArea.style.display = 'none';
                     ui.lobbyStatus.textContent = ""; ui.lobbyRoster.style.display = 'block'; ui.lobbyRoomCode.textContent = code;
                     listenToRoom(code);
                 } else { alert("Room not found or already started."); ui.joinRoomBtn.disabled = false; ui.createRoomBtn.disabled = false; ui.lobbyStatus.textContent = ""; }
@@ -447,13 +511,15 @@
 
                 if (roomData.status !== "game_ended") updateLiveLeaderboard(roomData.players);
 
-                if (roomData.status === "waiting") ui.lobbyPlayerList.innerHTML = Object.values(roomData.players).map(p => `<div style="padding: 5px 0;">🎮 ${p.name}</div>`).join('');
+                if (roomData.status === "waiting") {
+                    ui.lobbyRoster.style.display = 'block'; ui.lobbyRoomCode.textContent = currentRoomCode;
+                    ui.lobbyPlayerList.innerHTML = Object.values(roomData.players).map(p => `<div style="padding: 5px 0;">🎮 ${p.name}</div>`).join('');
+                }
                 
                 if (roomData.status === "playing") {
                     if (ui.lobby.style.display !== 'none') { ui.lobby.style.display = 'none'; ui.gameArea.style.display = 'block'; }
                     if (tiles.length === 0 || (!gameActive && ui.statusOverlay.style.display === 'flex')) startRound();
 
-                    // Host exclusively handles auto-ending the timed mode when everyone finishes
                     if (isHost && roomData.mode === "timed" && Object.keys(roomData.players).length > 0) {
                         const allFinished = Object.values(roomData.players).every(p => p.finished);
                         if (allFinished) updateDoc(doc(db, "rooms", code), { status: "round_ended" });
@@ -462,11 +528,9 @@
 
                 if (roomData.status === "round_ended" && gameActive) {
                     gameActive = false; clearInterval(timerInterval);
-                    ui.container.classList.remove('win-flair'); // Reset flair just in case
+                    ui.container.classList.remove('win-flair'); 
 
-                    // Handle "Losers" in Fast Mode or end of Timed mode
                     if (!roomData.players[playerId].finished) {
-                        // Snap remaining pieces to finished state for them to see
                         tiles.forEach(t => { t.currentRow = t.correctRow; t.currentCol = t.correctCol; t.element.style.border = 'none'; });
                         tiles.forEach(updateTileVisuals);
                         
@@ -475,7 +539,6 @@
                         ui.statusOverlay.style.display = 'flex';
                         ui.statusOverlay.innerHTML = `<div class="status-badge">${winnerName} Won!</div>`;
                     } else {
-                        // Already saw their 2-second flair. Overwrite with Round Over badge.
                         ui.statusOverlay.style.display = 'flex';
                         ui.statusOverlay.innerHTML = `<div class="status-badge">Round Over!</div>`;
                     }
@@ -491,6 +554,7 @@
                     gameActive = false; clearInterval(timerInterval);
                     ui.gameArea.style.display = 'none'; ui.postGameArea.style.display = 'block';
                     generateFinalLeaderboards();
+                    sessionStorage.removeItem('puzzleSession');
                 }
             });
         }
@@ -639,7 +703,6 @@
             if (correctCount === 16 && !roomData.players[playerId].finished) {
                 clearInterval(timerInterval); const finalTime = Math.floor((Date.now() - startTime) / 1000);
                 
-                // Add the 2 second un-obstructed win flair view
                 ui.container.classList.add('win-flair');
                 tiles.forEach(t => t.element.style.border = 'none');
                 
@@ -649,12 +712,10 @@
                         [`players.${playerId}.rounds.${roomData.currentRound}`]: { time: finalTime, moves: movesCount }
                     });
                     
-                    // ANY player finishing in fast mode ends the round
                     if (roomData.mode === "fast") await updateDoc(doc(db, "rooms", currentRoomCode), { status: "round_ended" });
                 } catch(e){}
 
                 setTimeout(() => {
-                    // Only show the badge if the round hasn't forcefully ended from elsewhere
                     if (roomData.status === "playing") {
                         ui.statusOverlay.style.display = 'flex';
                         ui.statusOverlay.innerHTML = `<div class="status-badge">Finished!</div>`;
