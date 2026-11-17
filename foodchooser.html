@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystic Bite — Magic 8-Ball Food Chooser</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for synthesized mystical sound effects (no external audio URLs) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts: Inter & Cinzel/Space Grotesk for mystical diner flair -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        cosmic: {
+                            950: '#07070e',
+                            900: '#0f1021',
+                            800: '#181a36',
+                            700: '#252850',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom animations & realistic 3D Magic 8-Ball styling */
+        body {
+            background: radial-gradient(circle at 50% 15%, #1d1b4b 0%, #0b0c1d 55%, #05050c 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle twinkling starfield background */
+        .stars-bg {
+            background-image: 
+                radial-gradient(1.5px 1.5px at 20px 30px, rgba(255,255,255,0.45), rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, rgba(167,139,250,0.5), rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 160px 120px, rgba(255,255,255,0.3), rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 250px 80px, rgba(96,165,250,0.45), rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 320px 190px, rgba(255,255,255,0.4), rgba(0,0,0,0));
+            background-size: 380px 260px;
+        }
+
+        /* Realistic 3D Glossy Magic 8-Ball Sphere */
+        .eight-ball {
+            background: radial-gradient(circle at 32% 26%, 
+                #47495e 0%, 
+                #222330 22%, 
+                #0b0c12 58%, 
+                #020205 88%, 
+                #161829 100%);
+            box-shadow: 
+                0 30px 65px -12px rgba(0, 0, 0, 0.9),
+                0 0 50px rgba(99, 102, 241, 0.22),
+                inset -18px -22px 38px rgba(0, 0, 0, 0.95),
+                inset 12px 14px 28px rgba(255, 255, 255, 0.16);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+
+        .eight-ball:hover {
+            box-shadow: 
+                0 35px 75px -12px rgba(0, 0, 0, 0.95),
+                0 0 70px rgba(129, 140, 248, 0.38),
+                inset -18px -22px 38px rgba(0, 0, 0, 0.95),
+                inset 12px 14px 28px rgba(255, 255, 255, 0.22);
+        }
+
+        /* Specular gloss reflection on upper-left of ball */
+        .eight-ball-gloss {
+            background: radial-gradient(ellipse at 50% 50%, 
+                rgba(255, 255, 255, 0.28) 0%, 
+                rgba(255, 255, 255, 0.06) 45%, 
+                rgba(255, 255, 255, 0) 70%);
+            transform: rotate(-32deg);
+        }
+
+        /* Recessed liquid window bezel */
+        .liquid-bezel {
+            background: linear-gradient(145deg, #040408, #1e2030);
+            box-shadow: 
+                inset 0 6px 14px rgba(0, 0, 0, 0.95),
+                0 2px 6px rgba(255, 255, 255, 0.12);
+        }
+
+        /* Deep blue-indigo mysterious fluid inside window */
+        .liquid-window {
+            background: radial-gradient(circle at 50% 45%, 
+                #171b4d 0%, 
+                #0a0c29 65%, 
+                #030412 100%);
+            box-shadow: inset 0 0 24px #000000;
+        }
+
+        /* Floating Icosahedron Triangle Die */
+        .die-triangle {
+            width: 0;
+            height: 0;
+            border-left: 58px solid transparent;
+            border-right: 58px solid transparent;
+            border-bottom: 100px solid #2536b8;
+            filter: drop-shadow(0 0 12px rgba(79, 110, 247, 0.65));
+            position: relative;
+            transition: all 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Inner subtle gradient facet on triangle */
+        .die-triangle::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: -53px;
+            width: 0;
+            height: 0;
+            border-left: 53px solid transparent;
+            border-right: 53px solid transparent;
+            border-bottom: 92px solid rgba(56, 78, 235, 0.85);
+            z-index: 1;
+        }
+
+        /* Realistic vigorous shake animation */
+        @keyframes ballShake {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            10% { transform: translate(-18px, -14px) rotate(-8deg) scale(1.03); }
+            20% { transform: translate(20px, 12px) rotate(9deg) scale(1.04); }
+            30% { transform: translate(-22px, 10px) rotate(-10deg) scale(1.03); }
+            40% { transform: translate(18px, -16px) rotate(7deg) scale(1.05); }
+            50% { transform: translate(-15px, -12px) rotate(-6deg) scale(1.04); }
+            60% { transform: translate(16px, 14px) rotate(8deg) scale(1.03); }
+            70% { transform: translate(-12px, 8px) rotate(-5deg) scale(1.02); }
+            80% { transform: translate(10px, -8px) rotate(4deg) scale(1.01); }
+            90% { transform: translate(-5px, 4px) rotate(-2deg) scale(1); }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
+
+        .is-shaking {
+            animation: ballShake 0.85s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        /* Gentle ambient floating when idle */
+        @keyframes idleFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-4px) rotate(1.5deg); }
+        }
+
+        .die-idle-float {
+            animation: idleFloat 3.6s ease-in-out infinite;
+        }
+
+        /* Liquid swirl ripple effect during shake */
+        @keyframes ripplePulse {
+            0% { transform: scale(0.6); opacity: 0.75; }
+            100% { transform: scale(1.45); opacity: 0; }
+        }
+
+        .liquid-ripple {
+            animation: ripplePulse 0.8s ease-out forwards;
+        }
+
+        /* Winner card highlight pulse */
+        @keyframes winnerGlow {
+            0%, 100% { box-shadow: 0 0 0 2px #818cf8, 0 10px 25px -5px rgba(99, 102, 241, 0.55); }
+            50% { box-shadow: 0 0 0 3px #c084fc, 0 14px 32px -5px rgba(192, 132, 252, 0.75); }
+        }
+
+        .winner-card {
+            animation: winnerGlow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="stars-bg text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 flex flex-col items-center">
+        
+        <!-- Header -->
+        <header class="text-center max-w-2xl mb-6 sm:mb-8">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 text-xs font-semibold tracking-wider uppercase mb-3 shadow-sm">
+                <span>🎱</span> Culinary Oracle • 20+ Cravings
+            </div>
+            <h1 class="font-display text-3xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-white via-indigo-200 to-purple-300 bg-clip-text text-transparent">
+                Magic 8-Ball Food Chooser
+            </h1>
+            <p class="mt-2 text-slate-400 text-sm sm:text-base">
+                Stuck saying <em>"I don't know what I want to eat"</em>? Toggle off what you're not feeling, then consult the oracle.
+            </p>
+        </header>
+
+        <!-- Primary Interactive Zone: 8-Ball + Controls -->
+        <main class="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            
+            <!-- Left / Center Column: Magic 8-Ball Centerpiece -->
+            <section class="lg:col-span-5 flex flex-col items-center justify-center bg-cosmic-900/60 backdrop-blur-md border border-indigo-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+                
+                <!-- Subtle radial aura behind 8-ball -->
+                <div class="absolute w-72 h-72 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- Sound Toggle Pill (Top Right) -->
+                <button id="soundToggleBtn" type="button" aria-label="Toggle sound effects"
+                    class="self-end mb-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700/70 transition cursor-pointer">
+                    <span id="soundIcon">🔊</span>
+                    <span id="soundLabel">Sound On</span>
+                </button>
+
+                <!-- The Interactive Magic 8-Ball -->
+                <div class="relative my-2 select-none">
+                    <div id="magicBall" role="button" tabindex="0" aria-label="Shake Magic 8-Ball to choose food"
+                        class="eight-ball w-64 h-64 sm:w-76 sm:h-76 md:w-80 md:h-80 rounded-full flex items-center justify-center relative cursor-pointer group">
+                        
+                        <!-- Upper-left glossy highlight -->
+                        <div class="eight-ball-gloss absolute top-5 left-7 w-28 h-16 rounded-full pointer-events-none"></div>
+
+                        <!-- Outer Recessed Window Bezel -->
+                        <div class="liquid-bezel w-36 h-36 sm:w-44 sm:h-44 rounded-full p-2.5 flex items-center justify-center relative">
+                            
+                            <!-- Dark Liquid Chamber -->
+                            <div id="liquidChamber" class="liquid-window w-full h-full rounded-full flex items-center justify-center relative overflow-hidden">
+                                
+                                <!-- Ripple Effect Element (triggered dynamically) -->
+                                <div id="rippleContainer" class="absolute inset-0 pointer-events-none flex items-center justify-center"></div>
+
+                                <!-- Floating Blue Triangle Die -->
+                                <div id="triangleDie" class="die-triangle die-idle-float flex items-center justify-center mt-4">
+                                    <!-- Answer Text Positioned Inside Triangle -->
+                                    <div id="dieContent" class="relative z-10 w-24 text-center flex flex-col items-center justify-center pt-11 px-1 transition-opacity duration-500">
+                                        <span id="dieEmoji" class="text-xl sm:text-2xl leading-none mb-0.5 drop-shadow">🎱</span>
+                                        <span id="dieText" class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-indigo-100 leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                                            Ask Me
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Glass dome subtle sheen over window -->
+                                <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/5 to-white/15 pointer-events-none"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Oracle Fortune Readout Banner -->
+                <div id="fortuneBox" class="mt-4 min-h-[76px] w-full rounded-2xl bg-cosmic-950/75 border border-indigo-500/25 px-4 py-3 text-center flex flex-col items-center justify-center transition-all duration-300">
+                    <p id="fortunePhrase" class="text-xs uppercase tracking-widest text-indigo-400 font-semibold">
+                        Ready when you are
+                    </p>
+                    <p id="fortuneResult" class="text-lg sm:text-xl font-bold text-white mt-0.5">
+                        Tap "Food Chooser" below!
+                    </p>
+                </div>
+
+                <!-- Primary Action Button: "Food Chooser" -->
+                <button id="foodChooserBtn" type="button"
+                    class="mt-5 w-full py-4 px-6 rounded-2xl font-display font-bold text-lg tracking-wide text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] shadow-lg shadow-indigo-600/30 border border-indigo-400/30 transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer">
+                    <span class="text-xl">🔮</span>
+                    <span>Food Chooser</span>
+                </button>
+                <p class="mt-2.5 text-xs text-slate-400">
+                    Tip: You can also click or tap directly on the 8-Ball!
+                </p>
+            </section>
+
+            <!-- Right Column: All 20 Food Choices + Customization -->
+            <section class="lg:col-span-7 bg-cosmic-900/60 backdrop-blur-md border border-indigo-500/20 rounded-3xl p-5 sm:p-7 shadow-2xl">
+                
+                <!-- Top Controls Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-white flex items-center gap-2">
+                            <span>Menu Possibilities</span>
+                            <span id="activeCountBadge" class="text-xs font-sans font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                20 / 20 Active
+                            </span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Click any food card to toggle it on or off before shaking.
+                        </p>
+                    </div>
+
+                    <!-- Quick Filter Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button id="selectAllBtn" type="button"
+                            class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
+                            Select All
+                        </button>
+                        <button id="resetBtn" type="button"
+                            class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/70 hover:bg-slate-700 text-slate-300 border border-slate-700/70 transition cursor-pointer">
+                            Reset Defaults
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Food Option Adder -->
+                <form id="customFoodForm" class="mt-4 flex gap-2">
+                    <input id="customFoodInput" type="text" maxlength="24" placeholder="Add a custom craving (e.g. Pho, Gyros, Poke)..."
+                        class="flex-1 bg-cosmic-950/90 border border-slate-700/80 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition">
+                    <button type="submit"
+                        class="px-4 py-2.5 rounded-xl bg-indigo-600/90 hover:bg-indigo-500 text-white text-sm font-semibold transition cursor-pointer shrink-0">
+                        + Add
+                    </button>
+                </form>
+
+                <!-- Inline Status Message Box (replaces alert()) -->
+                <div id="statusToast" class="hidden mt-3 px-3.5 py-2 rounded-xl text-xs font-medium bg-amber-500/15 border border-amber-500/30 text-amber-200">
+                </div>
+
+                <!-- 20 Food Choices Grid -->
+                <div id="foodGrid" class="mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
+                    <!-- Populated dynamically by JS -->
+                </div>
+
+                <!-- Legend Footer -->
+                <div class="mt-5 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> Original 12</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-400"></span> 8 Bonus Picks</span>
+                    </div>
+                    <span>Click any tile to veto/include</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        /**
+         * Magic 8-Ball Food Chooser Application
+         * Includes the 12 core choices from the user's graphic plus 8 curated additions.
+         */
+
+        // Default 20 Food Choices (12 original + 8 bonus additions)
+        const DEFAULT_FOODS = [
+            // Original 12 from image
+            { id: 'seafood', name: 'Seafood', emoji: '🦞', category: 'original', active: true },
+            { id: 'mexican', name: 'Mexican', emoji: '🌮', category: 'original', active: true },
+            { id: 'chicken', name: 'Chicken', emoji: '🍗', category: 'original', active: true },
+            { id: 'pasta', name: 'Pasta', emoji: '🍝', category: 'original', active: true },
+            { id: 'chinese', name: 'Chinese', emoji: '🥟', category: 'original', active: true },
+            { id: 'burgers', name: 'Burgers', emoji: '🍔', category: 'original', active: true },
+            { id: 'pizza', name: 'Pizza', emoji: '🍕', category: 'original', active: true },
+            { id: 'sandwiches', name: 'Sandwiches', emoji: '🥪', category: 'original', active: true },
+            { id: 'steakhouse', name: 'Steakhouse', emoji: '🥩', category: 'original', active: true },
+            { id: 'bbq', name: 'BBQ', emoji: '🍖', category: 'original', active: true },
+            { id: 'thai', name: 'Thai', emoji: '🍜', category: 'original', active: true },
+            { id: 'sushi', name: 'Sushi', emoji: '🍣', category: 'original', active: true },
+
+            // 8 Great Additions
+            { id: 'indian', name: 'Indian', emoji: '🍛', category: 'bonus', active: true },
+            { id: 'mediterranean', name: 'Mediterranean', emoji: '🥙', category: 'bonus', active: true },
+            { id: 'tacos', name: 'Tacos', emoji: '🌯', category: 'bonus', active: true },
+            { id: 'ramen', name: 'Ramen', emoji: '🍥', category: 'bonus', active: true },
+            { id: 'breakfast', name: 'Breakfast / Brunch', emoji: '🥞', category: 'bonus', active: true },
+            { id: 'salad', name: 'Salad / Bowls', emoji: '🥗', category: 'bonus', active: true },
+            { id: 'korean', name: 'Korean', emoji: '🍲', category: 'bonus', active: true },
+            { id: 'wings', name: 'Wings', emoji: '🔥', category: 'bonus', active: true }
+        ];
+
+        // Classic Magic 8-Ball style culinary fortune phrases
+        const FORTUNE_PHRASES = [
+            "Signs point to...",
+            "It is decidedly...",
+            "The culinary spirits say...",
+            "Without a doubt, get...",
+            "Outlook delicious for...",
+            "My sources say...",
+            "You may rely on...",
+            "Stars align for...",
+            "Most likely craving...",
+            "Yes — definitely..."
+        ];
+
+        // Application State
+        let foods = JSON.parse(JSON.stringify(DEFAULT_FOODS));
+        let isShaking = false;
+        let winningId = null;
+        let soundEnabled = true;
+
+        // DOM References
+        const magicBall = document.getElementById('magicBall');
+        const triangleDie = document.getElementById('triangleDie');
+        const dieContent = document.getElementById('dieContent');
+        const dieEmoji = document.getElementById('dieEmoji');
+        const dieText = document.getElementById('dieText');
+        const rippleContainer = document.getElementById('rippleContainer');
+        const fortuneBox = document.getElementById('fortuneBox');
+        const fortunePhrase = document.getElementById('fortunePhrase');
+        const fortuneResult = document.getElementById('fortuneResult');
+        const foodChooserBtn = document.getElementById('foodChooserBtn');
+        const foodGrid = document.getElementById('foodGrid');
+        const activeCountBadge = document.getElementById('activeCountBadge');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const customFoodForm = document.getElementById('customFoodForm');
+        const customFoodInput = document.getElementById('customFoodInput');
+        const statusToast = document.getElementById('statusToast');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundLabel = document.getElementById('soundLabel');
+
+        /**
+         * Sound Synthesizer using Tone.js (Zero external audio files needed)
+         */
+        async function playShakeSound() {
+            if (!soundEnabled || typeof Tone === 'undefined') return;
+            try {
+                await Tone.start();
+                const noise = new Tone.NoiseSynth({
+                    noise: { type: 'brown' },
+                    envelope: { attack: 0.05, decay: 0.35, sustain: 0.1, release: 0.3 }
+                }).toDestination();
+                noise.volume.value = -14;
+                noise.triggerAttackRelease('0.5s');
+            } catch (err) {
+                console.warn('Audio playback skipped:', err);
+            }
+        }
+
+        async function playRevealSound() {
+            if (!soundEnabled || typeof Tone === 'undefined') return;
+            try {
+                await Tone.start();
+                const synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.04, decay: 0.4, sustain: 0.2, release: 1.1 }
+                }).toDestination();
+                synth.volume.value = -12;
+                const now = Tone.now();
+                synth.triggerAttackRelease('C5', '8n', now);
+                synth.triggerAttackRelease('E5', '8n', now + 0.08);
+                synth.triggerAttackRelease('G5', '4n', now + 0.16);
+                synth.triggerAttackRelease('B5', '2n', now + 0.26);
+            } catch (err) {
+                console.warn('Audio reveal skipped:', err);
+            }
+        }
+
+        /**
+         * Show a temporary non-blocking toast message
+         */
+        let toastTimer = null;
+        function showMessage(msg) {
+            statusToast.textContent = msg;
+            statusToast.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                statusToast.classList.add('hidden');
+            }, 3500);
+        }
+
+        /**
+         * Render the interactive food cards grid
+         */
+        function renderFoodGrid() {
+            foodGrid.innerHTML = '';
+            const activeCount = foods.filter(f => f.active).length;
+            activeCountBadge.textContent = `${activeCount} / ${foods.length} Active`;
+
+            foods.forEach(food => {
+                const isWinner = food.id === winningId;
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.setAttribute('aria-pressed', food.active);
+                
+                // Dynamic Tailwind classes based on active/inactive/winner state
+                let stateClasses = '';
+                if (isWinner) {
+                    stateClasses = 'bg-gradient-to-br from-indigo-600/40 via-purple-600/35 to-indigo-900/50 border-indigo-400 text-white winner-card scale-[1.03]';
+                } else if (food.active) {
+                    stateClasses = 'bg-slate-800/65 hover:bg-slate-800 border-slate-700/80 hover:border-indigo-400/50 text-slate-100';
+                } else {
+                    stateClasses = 'bg-slate-950/50 border-slate-800/50 text-slate-500 opacity-50 hover:opacity-75';
+                }
+
+                card.className = `group relative flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-200 cursor-pointer select-none ${stateClasses}`;
+
+                // Small category indicator dot
+                const dotColor = food.category === 'original' 
+                    ? 'bg-indigo-400' 
+                    : (food.category === 'bonus' ? 'bg-purple-400' : 'bg-emerald-400');
+
+                card.innerHTML = `
+                    <span class="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full ${food.active ? dotColor : 'bg-slate-700'}"></span>
+                    <span class="text-2xl sm:text-3xl mb-1.5 transition-transform duration-200 ${food.active ? 'group-hover:scale-110' : 'grayscale'}">${food.emoji}</span>
+                    <span class="text-xs sm:text-[13px] font-semibold text-center leading-tight line-clamp-1 ${!food.active ? 'line-through' : ''}">
+                        ${food.name}
+                    </span>
+                    ${isWinner ? '<span class="mt-1 text-[10px] font-bold uppercase tracking-wider text-indigo-300">★ Chosen ★</span>' : ''}
+                `;
+
+                card.addEventListener('click', () => toggleFood(food.id));
+                foodGrid.appendChild(card);
+            });
+        }
+
+        /**
+         * Toggle a food option on or off
+         */
+        function toggleFood(id) {
+            if (isShaking) return;
+            const target = foods.find(f => f.id === id);
+            if (!target) return;
+
+            target.active = !target.active;
+            if (!target.active && winningId === id) {
+                winningId = null;
+            }
+            renderFoodGrid();
+        }
+
+        /**
+         * Trigger a liquid ripple animation inside the 8-ball window
+         */
+        function spawnLiquidRipple() {
+            const ripple = document.createElement('div');
+            ripple.className = 'w-28 h-28 rounded-full border-2 border-indigo-400/40 liquid-ripple';
+            rippleContainer.innerHTML = '';
+            rippleContainer.appendChild(ripple);
+        }
+
+        /**
+         * Core Magic 8-Ball Shake & Decision Logic
+         */
+        function chooseFood() {
+            if (isShaking) return;
+
+            const activeFoods = foods.filter(f => f.active);
+            if (activeFoods.length === 0) {
+                showMessage('Please activate at least one food option before shaking!');
+                return;
+            }
+
+            isShaking = true;
+            foodChooserBtn.disabled = true;
+            foodChooserBtn.classList.add('opacity-80', 'cursor-wait');
+
+            // 1. Submerge the triangle die into the dark liquid
+            triangleDie.classList.remove('die-idle-float');
+            triangleDie.style.opacity = '0.12';
+            triangleDie.style.transform = 'scale(0.68) rotate(-28deg)';
+            dieContent.style.opacity = '0';
+
+            // Update fortune box to suspense state
+            fortunePhrase.textContent = 'Consulting the culinary spirits...';
+            fortuneResult.textContent = 'Shaking...';
+            fortuneBox.classList.remove('border-indigo-400/60', 'bg-indigo-950/60');
+
+            // 2. Trigger vigorous 8-Ball shake animation & sound
+            magicBall.classList.remove('is-shaking');
+            void magicBall.offsetWidth; // Force reflow to restart animation
+            magicBall.classList.add('is-shaking');
+            spawnLiquidRipple();
+            playShakeSound();
+
+            // 3. Pick random active food (avoid repeating exact same choice if >1 option exists)
+            let candidates = activeFoods;
+            if (activeFoods.length > 1 && winningId) {
+                const filtered = activeFoods.filter(f => f.id !== winningId);
+                if (filtered.length > 0) candidates = filtered;
+            }
+            const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+            const phrase = FORTUNE_PHRASES[Math.floor(Math.random() * FORTUNE_PHRASES.length)];
+
+            // 4. Slowly float the triangle die back to the surface with the winning food
+            setTimeout(() => {
+                winningId = chosen.id;
+                dieEmoji.textContent = chosen.emoji;
+                
+                // Adjust font size slightly for longer names like "Breakfast / Brunch"
+                if (chosen.name.length > 13) {
+                    dieText.className = 'text-[8.5px] sm:text-[9.5px] font-extrabold uppercase tracking-tight text-indigo-100 leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]';
+                } else {
+                    dieText.className = 'text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-indigo-100 leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]';
+                }
+                dieText.textContent = chosen.name;
+
+                // Surface animation
+                triangleDie.style.opacity = '1';
+                triangleDie.style.transform = 'scale(1) rotate(0deg)';
+                dieContent.style.opacity = '1';
+
+                // Update fortune readout banner
+                fortunePhrase.textContent = phrase;
+                fortuneResult.innerHTML = `${chosen.emoji} <span class="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">${chosen.name}!</span>`;
+                fortuneBox.classList.add('border-indigo-400/60', 'bg-indigo-950/60');
+
+                playRevealSound();
+                renderFoodGrid();
+
+                setTimeout(() => {
+                    magicBall.classList.remove('is-shaking');
+                    triangleDie.classList.add('die-idle-float');
+                    isShaking = false;
+                    foodChooserBtn.disabled = false;
+                    foodChooserBtn.classList.remove('opacity-80', 'cursor-wait');
+                }, 400);
+
+            }, 820);
+        }
+
+        // Event Listeners
+        foodChooserBtn.addEventListener('click', chooseFood);
+        magicBall.addEventListener('click', chooseFood);
+        magicBall.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                chooseFood();
+            }
+        });
+
+        // Select All active
+        selectAllBtn.addEventListener('click', () => {
+            foods.forEach(f => f.active = true);
+            renderFoodGrid();
+        });
+
+        // Reset to original 20 foods
+        resetBtn.addEventListener('click', () => {
+            foods = JSON.parse(JSON.stringify(DEFAULT_FOODS));
+            winningId = null;
+            dieEmoji.textContent = '🎱';
+            dieText.textContent = 'Ask Me';
+            fortunePhrase.textContent = 'Ready when you are';
+            fortuneResult.textContent = 'Tap "Food Chooser" below!';
+            fortuneBox.classList.remove('border-indigo-400/60', 'bg-indigo-950/60');
+            renderFoodGrid();
+            showMessage('Reset to all 20 default food choices.');
+        });
+
+        // Add custom food craving
+        customFoodForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const rawVal = customFoodInput.value.trim();
+            if (!rawVal) return;
+
+            const exists = foods.some(f => f.name.toLowerCase() === rawVal.toLowerCase());
+            if (exists) {
+                showMessage(`"${rawVal}" is already on your menu!`);
+                customFoodInput.value = '';
+                return;
+            }
+
+            const newFood = {
+                id: 'custom-' + Date.now(),
+                name: rawVal,
+                emoji: '🍽️',
+                category: 'custom',
+                active: true
+            };
+
+            foods.unshift(newFood);
+            customFoodInput.value = '';
+            renderFoodGrid();
+            showMessage(`Added "${rawVal}" to the Magic 8-Ball!`);
+        });
+
+        // Sound effects toggle
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundIcon.textContent = soundEnabled ? '🔊' : '🔇';
+            soundLabel.textContent = soundEnabled ? 'Sound On' : 'Muted';
+        });
+
+        // Initial render on load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderFoodGrid();
+        });
+    </script>
+</body>
+</html>
